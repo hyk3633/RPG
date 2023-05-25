@@ -16,7 +16,12 @@ class RPG_API ARPGBasePlayerCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
+
 	ARPGBasePlayerCharacter();
+
+	virtual void Tick(float DeltaTime) override;
+
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
 
@@ -26,12 +31,35 @@ protected:
 
 public:	
 
-	virtual void Tick(float DeltaTime) override;
+	void DoNormalAttack(const FVector& AttackPoint);
 
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	void NormalAttackWithCombo(const FVector& AttackPoint);
 
 protected:
 
+	UFUNCTION(Server, Reliable)
+	void PlayAttackEffectServer(const FVector& AttackPoint);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayAttackEffectMulticast(const FVector& AttackPoint);
+
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	void TurnTowardAttackPoint(const FVector& AttackPoint);
+
+	void PlayerDie();
+
+	UFUNCTION()
+	void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+private:
+
+	void AttackStartComboState();
+	void AttackEndComboState();
+
+	UFUNCTION()
+	void NormalAttackNextCombo();
 
 private:
 
@@ -44,4 +72,14 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
+
+	bool bIsAttacking = false;
+
+	bool CanNextCombo = false;
+
+	bool IsComboInputOn;
+
+	int32 CurrentCombo = 0;
+
+	int32 MaxCombo = 4;
 };

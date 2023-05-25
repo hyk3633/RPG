@@ -1,5 +1,6 @@
 
 #include "Player/RPGPlayerController.h"
+#include "Player/Character/RPGBasePlayerCharacter.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "EnhancedInputComponent.h"
@@ -79,6 +80,7 @@ void ARPGPlayerController::SetupInputComponent()
 	{
 		EnhancedInputComponent->BindAction(SetDestinationClickAction, ETriggerEvent::Started, this, &ARPGPlayerController::StopMove);
 		EnhancedInputComponent->BindAction(SetDestinationClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::SetDestinationAndPath);
+		EnhancedInputComponent->BindAction(NormalAttackClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::NormalAttackPressed);
 	}
 }
 
@@ -158,6 +160,29 @@ void ARPGPlayerController::UpdateMovement()
 void ARPGPlayerController::OnRep_PathX()
 {
 	InitDestAndDir();
+}
+
+void ARPGPlayerController::NormalAttackPressed()
+{
+	FHitResult GroundHit, EnemyHit;
+	GetHitResultUnderCursor(ECC_Visibility, false, GroundHit);
+	//GetHitResultUnderCursor(ECC_GroundTrace, false, GroundHit);
+	//GetHitResultUnderCursor(ECC_EnemyTrace, false, EnemyHit);
+
+	if (GroundHit.bBlockingHit)
+	{
+		if (EnemyHit.bBlockingHit)
+		{
+			// º¸¿Ï
+			/*if (MyPawn->GetDistanceTo(EnemyHit.GetActor()) > 120.f)
+			{
+				SetNewMoveDestination(GroundHit.ImpactPoint);
+			}*/
+		}
+		ARPGBasePlayerCharacter* PCharacter = Cast<ARPGBasePlayerCharacter>(GetPawn());
+		PCharacter->DoNormalAttack(GroundHit.ImpactPoint);
+		//SpawnClickParticle(GroundHit.ImpactPoint);
+	}
 }
 
 void ARPGPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

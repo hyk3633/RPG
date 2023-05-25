@@ -51,6 +51,8 @@ protected:
 	UFUNCTION()
 	void OnRep_PathX();
 
+	void NormalAttackPressed();
+
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 private:
@@ -60,6 +62,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SetDestinationClickAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* NormalAttackClickAction;
 
 	UPROPERTY(ReplicatedUsing = OnRep_PathX)
 	TArray<float> PathX;
