@@ -60,16 +60,15 @@ void ARPGPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
+	MyCharacter = Cast<ARPGBasePlayerCharacter>(InPawn);
+	if (MyCharacter == nullptr)
+		ELOG(TEXT("Player Pawn Cast Failed!"));
 }
 
 void ARPGPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bUpdateMovement)
-	{
-		UpdateMovement();
-	}
 }
 
 void ARPGPlayerController::SetupInputComponent()
@@ -78,118 +77,34 @@ void ARPGPlayerController::SetupInputComponent()
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent))
 	{
-		EnhancedInputComponent->BindAction(SetDestinationClickAction, ETriggerEvent::Started, this, &ARPGPlayerController::StopMove);
-		EnhancedInputComponent->BindAction(SetDestinationClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::SetDestinationAndPath);
-		EnhancedInputComponent->BindAction(NormalAttackClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::NormalAttackPressed);
+		EnhancedInputComponent->BindAction(SetDestinationClickAction, ETriggerEvent::Started, this, &ARPGPlayerController::SetDestinationClick_StopMove);
+		EnhancedInputComponent->BindAction(SetDestinationClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::SetDestinationClick_SetPath);
+		EnhancedInputComponent->BindAction(NormalAttackClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::NormalAttackClick_NormalAttack);
 	}
 }
 
-void ARPGPlayerController::StopMove()
+void ARPGPlayerController::SetDestinationClick_StopMove()
 {
-	StopMovement();
-	bUpdateMovement = false;
-	PathIdx = 0;
+	if (MyCharacter == nullptr) return;
+	MyCharacter->StopMove();
 }
 
-void ARPGPlayerController::SetDestinationAndPath()
+void ARPGPlayerController::SetDestinationClick_SetPath()
 {
-	FHitResult Hit;
-	GetHitResultUnderCursor(ECC_Visibility, false, Hit);
-
-	if (Hit.bBlockingHit == false)
-	{
-		WLOG(TEXT("Nothing Hit"));
-		return;
-	}
-
-	//SpawnClickParticle(Hit.ImpactPoint);
-
-	if (HasAuthority())
-	{
-		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetPawn()->GetActorLocation(), Hit.ImpactPoint, PathX, PathY);
-		InitDestAndDir();
-	}
-	else
-	{
-		SetDestinaionAndPathServer(Hit.ImpactPoint);
-	}
-
-	/*if (HasAuthority())
-	{
-		for (int32 i = 0; i < PathX.Num(); i++)
-		{
-			DrawDebugPoint(GetWorld(), FVector(PathX[i], PathY[i], 10.f), 10.f, FColor::Blue, false, 2.f);
-		}
-	}*/
+	if (MyCharacter == nullptr) return;
+	MyCharacter->SetDestinationAndPath();
 }
 
-void ARPGPlayerController::InitDestAndDir()
+void ARPGPlayerController::NormalAttackClick_NormalAttack()
 {
-	bUpdateMovement = true;
-	NextPoint = FVector(PathX[0], PathY[0], GetPawn()->GetActorLocation().Z);
-	NextDirection = (NextPoint - GetPawn()->GetActorLocation()).GetSafeNormal();
-}
-
-void ARPGPlayerController::SetDestinaionAndPathServer_Implementation(const FVector& HitLocation)
-{
-	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetPawn()->GetActorLocation(), HitLocation, PathX, PathY);
-}
-
-void ARPGPlayerController::UpdateMovement()
-{
-	if (FVector::Dist(NextPoint, GetPawn()->GetActorLocation()) > 20.f)
-	{
-		GetPawn()->AddMovementInput(NextDirection);
-	}
-	else
-	{
-		PathIdx++;
-		if (PathIdx == PathX.Num())
-		{
-			bUpdateMovement = false;
-			PathIdx = 0;
-		}
-		else
-		{
-			NextPoint = FVector(PathX[PathIdx], PathY[PathIdx], GetPawn()->GetActorLocation().Z);
-			NextDirection = (NextPoint - GetPawn()->GetActorLocation()).GetSafeNormal();
-		}
-	}
-}
-
-void ARPGPlayerController::OnRep_PathX()
-{
-	InitDestAndDir();
-}
-
-void ARPGPlayerController::NormalAttackPressed()
-{
-	FHitResult GroundHit, EnemyHit;
-	GetHitResultUnderCursor(ECC_Visibility, false, GroundHit);
-	//GetHitResultUnderCursor(ECC_GroundTrace, false, GroundHit);
-	//GetHitResultUnderCursor(ECC_EnemyTrace, false, EnemyHit);
-
-	if (GroundHit.bBlockingHit)
-	{
-		if (EnemyHit.bBlockingHit)
-		{
-			// º¸¿Ï
-			/*if (MyPawn->GetDistanceTo(EnemyHit.GetActor()) > 120.f)
-			{
-				SetNewMoveDestination(GroundHit.ImpactPoint);
-			}*/
-		}
-		ARPGBasePlayerCharacter* PCharacter = Cast<ARPGBasePlayerCharacter>(GetPawn());
-		PCharacter->DoNormalAttack(GroundHit.ImpactPoint);
-		//SpawnClickParticle(GroundHit.ImpactPoint);
-	}
+	if (MyCharacter == nullptr) return;
+	MyCharacter->DoNormalAttack();
 }
 
 void ARPGPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ARPGPlayerController, PathX);
-	DOREPLIFETIME(ARPGPlayerController, PathY);
+	DOREPLIFETIME(ARPGPlayerController, MyCharacter);
 }
 

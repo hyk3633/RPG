@@ -1,12 +1,15 @@
 
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Player/RPGAnimInstance.h"
+#include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 {
@@ -59,68 +62,170 @@ void ARPGBasePlayerCharacter::BeginPlay()
 	RPGAnimInstance->OnMontageEnded.AddDynamic(this, &ARPGBasePlayerCharacter::OnAttackMontageEnded);
 }
 
-void ARPGBasePlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-}
-
 void ARPGBasePlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (bUpdateMovement)
+	{
+		UpdateMovement();
+	}
 }
 
-void ARPGBasePlayerCharacter::DoNormalAttack(const FVector& AttackPoint)
+void ARPGBasePlayerCharacter::StopMove()
 {
-	PlayAttackEffectServer(AttackPoint);
+	GetMovementComponent()->StopMovementImmediately();
+	bUpdateMovement = false;
+	PathIdx = 0;
+}
+
+void ARPGBasePlayerCharacter::SetDestinationAndPath()
+{
+	FHitResult Hit;
+	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
+	
+	if (Hit.bBlockingHit == false)
+	{
+		WLOG(TEXT("Nothing Hit"));
+		return;
+	}
+
+	SpawnClickParticle(Hit.ImpactPoint);
+
+	if (HasAuthority())
+	{
+		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), Hit.ImpactPoint, PathX, PathY);
+		InitDestAndDir();
+	}
+	else
+	{
+		SetDestinaionAndPathServer(Hit.ImpactPoint);
+	}
+
+	/*if (HasAuthority())
+	{
+		for (int32 i = 0; i < PathX.Num(); i++)
+		{
+			DrawDebugPoint(GetWorld(), FVector(PathX[i], PathY[i], 10.f), 10.f, FColor::Blue, false, 2.f);
+		}
+	}*/
+}
+
+void ARPGBasePlayerCharacter::DoNormalAttack()
+{
+	FHitResult GroundHit, EnemyHit;
+	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, GroundHit);
+	//GetHitResultUnderCursor(ECC_GroundTrace, false, GroundHit);
+	//GetHitResultUnderCursor(ECC_EnemyTrace, false, EnemyHit);
+
+	if (GroundHit.bBlockingHit)
+	{
+		if (HasAuthority())
+		{
+			NormalAttackWithCombo(GroundHit.ImpactPoint);
+		}
+		else
+		{
+			NormalAttackWithComboServer(GroundHit.ImpactPoint);
+		}
+
+		SpawnClickParticle(GroundHit.ImpactPoint);
+	}
+}
+
+void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)
+{
+	if (ClickParticle == nullptr) return;
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ClickParticle, EmitLocation);
+}
+
+void ARPGBasePlayerCharacter::InitDestAndDir()
+{
+	bUpdateMovement = true;
+	NextPoint = FVector(PathX[0], PathY[0], GetActorLocation().Z);
+	NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+}
+
+void ARPGBasePlayerCharacter::SetDestinaionAndPathServer_Implementation(const FVector& HitLocation)
+{
+	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), HitLocation, PathX, PathY);
+}
+
+void ARPGBasePlayerCharacter::UpdateMovement()
+{
+	if (FVector::Dist(NextPoint, GetActorLocation()) > 20.f)
+	{
+		AddMovementInput(NextDirection);
+	}
+	else
+	{
+		PathIdx++;
+		if (PathIdx == PathX.Num())
+		{
+			bUpdateMovement = false;
+			PathIdx = 0;
+		}
+		else
+		{
+			NextPoint = FVector(PathX[PathIdx], PathY[PathIdx], GetActorLocation().Z);
+			NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+		}
+	}
+}
+
+void ARPGBasePlayerCharacter::OnRep_PathX()
+{
+	InitDestAndDir();
+}
+
+void ARPGBasePlayerCharacter::NormalAttackWithComboServer_Implementation(const FVector& AttackPoint)
+{
+	NormalAttackWithComboMulticast(AttackPoint);
+}
+
+void ARPGBasePlayerCharacter::NormalAttackWithComboMulticast_Implementation(const FVector& AttackPoint)
+{
+	NormalAttackWithCombo(AttackPoint);
 }
 
 void ARPGBasePlayerCharacter::NormalAttackWithCombo(const FVector& AttackPoint)
 {
 	TurnTowardAttackPoint(AttackPoint);
 
-	if (bIsAttacking)
+	if (bIsAttacking) return;
+	if (bCanNextCombo)
 	{
-		if (FMath::IsWithinInclusive<int32>(CurrentCombo, 1, MaxCombo) == false) return;
-		if (CanNextCombo)
-		{
-			IsComboInputOn = true;
-		}
+		CurrentCombo = (CurrentCombo + 1) % MaxCombo;
+		bCanNextCombo = false;
 	}
-	else
-	{
-		if (CurrentCombo == 0)
-		{
-			AttackStartComboState();
-			RPGAnimInstance->PlayNormalAttackMontage();
-			RPGAnimInstance->JumpToAttackMontageSection(CurrentCombo);
-			bIsAttacking = true;
-		}
-	}
-}
-
-void ARPGBasePlayerCharacter::PlayAttackEffectServer_Implementation(const FVector& AttackPoint)
-{
-	PlayAttackEffectMulticast(AttackPoint);
-}
-
-void ARPGBasePlayerCharacter::PlayAttackEffectMulticast_Implementation(const FVector& AttackPoint)
-{
-	NormalAttackWithCombo(AttackPoint);
+	RPGAnimInstance->PlayNormalAttackMontage();
+	RPGAnimInstance->JumpToAttackMontageSection(CurrentCombo+1);
+	bIsAttacking = true;
 }
 
 void ARPGBasePlayerCharacter::TurnTowardAttackPoint(const FVector& AttackPoint)
 {
 	const FVector LookAtPoint(AttackPoint.X, AttackPoint.Y, GetActorLocation().Z);
 	SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), LookAtPoint));
+	GetCharacterMovement()->FlushServerMoves();
 }
 
 void ARPGBasePlayerCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (bIsAttacking == false || CurrentCombo == 0) return;
 	bIsAttacking = false;
 	AttackEndComboState();
+}
+
+void ARPGBasePlayerCharacter::AttackEndComboState()
+{
+	bCanNextCombo = false;
+	CurrentCombo = 0;
+}
+
+void ARPGBasePlayerCharacter::NormalAttackNextCombo()
+{
+	bCanNextCombo = true;
+	bIsAttacking = false;
 }
 
 void ARPGBasePlayerCharacter::PlayerDie()
@@ -133,28 +238,10 @@ void ARPGBasePlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bI
 
 }
 
-void ARPGBasePlayerCharacter::AttackStartComboState()
+void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	CanNextCombo = true;
-	IsComboInputOn = false;
-	CurrentCombo = FMath::Clamp<int32>(CurrentCombo + 1, 1, MaxCombo);
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ARPGBasePlayerCharacter, PathX);
+	DOREPLIFETIME(ARPGBasePlayerCharacter, PathY);
 }
-
-void ARPGBasePlayerCharacter::AttackEndComboState()
-{
-	IsComboInputOn = false;
-	CanNextCombo = false;
-	CurrentCombo = 0;
-}
-
-void ARPGBasePlayerCharacter::NormalAttackNextCombo()
-{
-	CanNextCombo = false;
-
-	if (IsComboInputOn)
-	{
-		AttackStartComboState();
-		RPGAnimInstance->JumpToAttackMontageSection(CurrentCombo);
-	}
-}
-

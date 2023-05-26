@@ -9,6 +9,7 @@
  * 
  */
 
+class ARPGBasePlayerCharacter;
 class UInputMappingContext;
 class UInputAction;
 
@@ -37,25 +38,18 @@ protected:
 
 	virtual void SetupInputComponent() override;
 
-	void StopMove();
+	void SetDestinationClick_StopMove();
 
-	void SetDestinationAndPath();
+	void SetDestinationClick_SetPath();
 
-	void InitDestAndDir();
-
-	UFUNCTION(Server, Reliable)
-	void SetDestinaionAndPathServer(const FVector& HitLocation);
-
-	void UpdateMovement();
-
-	UFUNCTION()
-	void OnRep_PathX();
-
-	void NormalAttackPressed();
+	void NormalAttackClick_NormalAttack();
 
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 private:
+
+	UPROPERTY(Replicated)
+	ARPGBasePlayerCharacter* MyCharacter;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
@@ -66,15 +60,4 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* NormalAttackClickAction;
 
-	UPROPERTY(ReplicatedUsing = OnRep_PathX)
-	TArray<float> PathX;
-
-	UPROPERTY(Replicated)
-	TArray<float> PathY;
-
-	bool bUpdateMovement = false;
-	
-	FVector NextPoint;
-	FVector NextDirection;
-	int32 PathIdx;
 };

@@ -21,8 +21,6 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 protected:
 
 	virtual void PostInitializeComponents() override;
@@ -31,35 +29,58 @@ protected:
 
 public:	
 
-	void DoNormalAttack(const FVector& AttackPoint);
+	void StopMove();
 
-	void NormalAttackWithCombo(const FVector& AttackPoint);
+	void SetDestinationAndPath();
+
+	void DoNormalAttack();
 
 protected:
 
+	void SpawnClickParticle(const FVector& EmitLocation);
+
+	/** 이동 */
+
+	void InitDestAndDir();
+
 	UFUNCTION(Server, Reliable)
-	void PlayAttackEffectServer(const FVector& AttackPoint);
+	void SetDestinaionAndPathServer(const FVector& HitLocation);
+
+	void UpdateMovement();
+
+	UFUNCTION()
+	void OnRep_PathX();
+
+	/** 일반 공격 */
+
+	void NormalAttackPressed();
+
+	void NormalAttackWithCombo(const FVector& AttackPoint);
+
+	UFUNCTION(Server, Reliable)
+	void NormalAttackWithComboServer(const FVector& AttackPoint);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void PlayAttackEffectMulticast(const FVector& AttackPoint);
+	void NormalAttackWithComboMulticast(const FVector& AttackPoint);
+
+	void TurnTowardAttackPoint(const FVector& AttackPoint);
 
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-	void TurnTowardAttackPoint(const FVector& AttackPoint);
+	void AttackEndComboState();
+
+	UFUNCTION()
+	void NormalAttackNextCombo();
+
+	/** 죽음 */
 
 	void PlayerDie();
 
 	UFUNCTION()
 	void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-private:
-
-	void AttackStartComboState();
-	void AttackEndComboState();
-
-	UFUNCTION()
-	void NormalAttackNextCombo();
+	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 private:
 
@@ -73,11 +94,28 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
 
+	UPROPERTY(EditAnywhere, Category = "Click")
+	UParticleSystem* ClickParticle;
+
+	UPROPERTY(ReplicatedUsing = OnRep_PathX)
+	TArray<float> PathX;
+
+	UPROPERTY(Replicated)
+	TArray<float> PathY;
+
+	/** 이동 관련 */
+
+	bool bUpdateMovement = false;
+
+	FVector NextPoint;
+	FVector NextDirection;
+	int32 PathIdx;
+
+	/** 일반 공격 */
+
 	bool bIsAttacking = false;
 
-	bool CanNextCombo = false;
-
-	bool IsComboInputOn;
+	bool bCanNextCombo = false;
 
 	int32 CurrentCombo = 0;
 

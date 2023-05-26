@@ -11,6 +11,7 @@ void URPGAnimInstance::PlayDeathMontage()
 void URPGAnimInstance::PlayNormalAttackMontage()
 {
 	if (NormalAttackMontage == nullptr) return;
+	if (Montage_IsPlaying(NormalAttackMontage)) return;
 	Montage_Play(NormalAttackMontage);
 }
 
