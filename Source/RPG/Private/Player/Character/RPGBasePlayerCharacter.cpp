@@ -65,7 +65,19 @@ void ARPGBasePlayerCharacter::BeginPlay()
 
 void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
-	PLOG(TEXT("Damaged %f"), Damage);
+	if (Health == 0.f) return;
+
+	Health = FMath::Max(Health - Damage, 0.f);
+	DOnChangeHealthPercentage.Broadcast(Health / MaxHealth);
+
+	if (Health == 0.f)
+	{
+		PlayerDie();
+	}
+	else
+	{
+		// TODO : ÀÌÆåÆ® Àç»ý
+	}
 }
 
 void ARPGBasePlayerCharacter::Tick(float DeltaTime)
@@ -250,4 +262,6 @@ void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 
 	DOREPLIFETIME(ARPGBasePlayerCharacter, PathX);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, PathY);
+	DOREPLIFETIME(ARPGBasePlayerCharacter, Health);
+	DOREPLIFETIME(ARPGBasePlayerCharacter, Mana);
 }

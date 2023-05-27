@@ -10,6 +10,8 @@ class URPGAnimInstance;
 class USpringArmComponent;
 class UCameraComponent;
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnChangeHealthPercentageDelegate, float Percentage);
+
 UCLASS()
 class RPG_API ARPGBasePlayerCharacter : public ACharacter
 {
@@ -20,6 +22,8 @@ public:
 	ARPGBasePlayerCharacter();
 
 	virtual void Tick(float DeltaTime) override;
+
+	FOnChangeHealthPercentageDelegate DOnChangeHealthPercentage;
 
 protected:
 
@@ -99,6 +103,20 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Click")
 	UParticleSystem* ClickParticle;
+
+	/** Ω∫≈» */
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Status")
+	float Health = 200.f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Status")
+	float MaxHealth = 200.f;
+
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Status")
+	float Mana = 100.f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Status")
+	float MaxMana = 100.f;
 
 	/** ¿Ãµø */
 
