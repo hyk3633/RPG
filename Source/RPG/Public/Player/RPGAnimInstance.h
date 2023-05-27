@@ -10,6 +10,7 @@
  */
 
 DECLARE_MULTICAST_DELEGATE(FOnAttackInputCheckDelegate);
+DECLARE_DELEGATE(FOnAbility_Q_Cast);
 
 UCLASS()
 class RPG_API URPGAnimInstance : public UAnimInstance
@@ -18,18 +19,28 @@ class RPG_API URPGAnimInstance : public UAnimInstance
 	
 public:
 
-	void PlayDeathMontage();
-
 	void PlayNormalAttackMontage();
 
 	void JumpToAttackMontageSection(int32 NewSection);
 
+	void PlayAbility_Q_Montage();
+	void PlayAbility_W_Montage();
+	void PlayAbility_E_Montage();
+	void PlayAbility_R_Montage();
+
+	void PlayDeathMontage();
+
 	FOnAttackInputCheckDelegate DOnAttackInputCheck;
+
+	FOnAbility_Q_Cast DOnAbility_Q_Cast;
 
 protected:
 
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_AttackInputCheck();
+
+	UFUNCTION(BlueprintCallable)
+	void AnimNotify_Ability_Q_Cast();
 
 private:
 
@@ -43,4 +54,15 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Montages")
 	UAnimMontage* NormalAttackMontage;
 
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* Ability_Q_Montage;
+
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* Ability_W_Montage;
+
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* Ability_E_Montage;
+
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* Ability_R_Montage;
 };

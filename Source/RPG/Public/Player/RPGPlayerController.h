@@ -44,6 +44,14 @@ protected:
 
 	void NormalAttackClick_NormalAttack();
 
+	void Ability_Q_PressedAction_Cast();
+
+	void Ability_W_PressedAction_Cast();
+
+	void Ability_E_PressedAction_Cast();
+
+	void Ability_R_PressedAction_Cast();
+
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 private:
@@ -60,4 +68,15 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* NormalAttackClickAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* Ability_Q_PressedAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* Ability_W_PressedAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* Ability_E_PressedAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* Ability_R_PressedAction;
 };

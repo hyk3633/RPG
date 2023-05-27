@@ -24,6 +24,7 @@ void ARPGBaseEnemyCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
+	OnTakeAnyDamage.AddDynamic(this, &ARPGBaseEnemyCharacter::TakeAnyDamage);
 }
 
 void ARPGBaseEnemyCharacter::BeginPlay()

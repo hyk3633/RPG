@@ -80,6 +80,10 @@ void ARPGPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(SetDestinationClickAction, ETriggerEvent::Started, this, &ARPGPlayerController::SetDestinationClick_StopMove);
 		EnhancedInputComponent->BindAction(SetDestinationClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::SetDestinationClick_SetPath);
 		EnhancedInputComponent->BindAction(NormalAttackClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::NormalAttackClick_NormalAttack);
+		EnhancedInputComponent->BindAction(Ability_Q_PressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::Ability_Q_PressedAction_Cast);
+		EnhancedInputComponent->BindAction(Ability_W_PressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::Ability_W_PressedAction_Cast);
+		EnhancedInputComponent->BindAction(Ability_E_PressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::Ability_E_PressedAction_Cast);
+		EnhancedInputComponent->BindAction(Ability_R_PressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::Ability_R_PressedAction_Cast);
 	}
 }
 
@@ -99,6 +103,30 @@ void ARPGPlayerController::NormalAttackClick_NormalAttack()
 {
 	if (MyCharacter == nullptr) return;
 	MyCharacter->DoNormalAttack();
+}
+
+void ARPGPlayerController::Ability_Q_PressedAction_Cast()
+{
+	if (MyCharacter == nullptr) return;
+	MyCharacter->Ability_Q();
+}
+
+void ARPGPlayerController::Ability_W_PressedAction_Cast()
+{
+	if (MyCharacter == nullptr) return;
+	MyCharacter->Ability_W();
+}
+
+void ARPGPlayerController::Ability_E_PressedAction_Cast()
+{
+	if (MyCharacter == nullptr) return;
+	MyCharacter->Ability_E();
+}
+
+void ARPGPlayerController::Ability_R_PressedAction_Cast()
+{
+	if (MyCharacter == nullptr) return;
+	MyCharacter->Ability_R();
 }
 
 void ARPGPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -151,6 +151,30 @@ void ARPGBasePlayerCharacter::DoNormalAttack()
 	}
 }
 
+void ARPGBasePlayerCharacter::Ability_Q()
+{
+	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->PlayAbility_Q_Montage();
+}
+
+void ARPGBasePlayerCharacter::Ability_W()
+{
+	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->PlayAbility_W_Montage();
+}
+
+void ARPGBasePlayerCharacter::Ability_E()
+{
+	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->PlayAbility_E_Montage();
+}
+
+void ARPGBasePlayerCharacter::Ability_R()
+{
+	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->PlayAbility_R_Montage();
+}
+
 void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)
 {
 	if (ClickParticle == nullptr) return;
@@ -216,6 +240,7 @@ void ARPGBasePlayerCharacter::NormalAttackWithCombo(const FVector& AttackPoint)
 		CurrentCombo = (CurrentCombo + 1) % MaxCombo;
 		bCanNextCombo = false;
 	}
+	if (RPGAnimInstance == nullptr) return;
 	RPGAnimInstance->PlayNormalAttackMontage();
 	RPGAnimInstance->JumpToAttackMontageSection(CurrentCombo+1);
 	bIsAttacking = true;

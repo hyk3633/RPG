@@ -42,6 +42,16 @@ public:
 
 	void DoNormalAttack();
 
+	virtual void Ability_Q();
+
+	virtual void Ability_W();
+
+	virtual void Ability_E();
+
+	virtual void Ability_R();
+
+	FORCEINLINE URPGAnimInstance* GetRPGAnimInstance() const { return RPGAnimInstance; }
+
 protected:
 
 	void SpawnClickParticle(const FVector& EmitLocation);
