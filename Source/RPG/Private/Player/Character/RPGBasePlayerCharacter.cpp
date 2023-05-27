@@ -39,9 +39,9 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(60.f);
-	//GetCapsuleComponent()->SetCollisionObjectType(ECC_PlayerBody);
-	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyAttack, ECollisionResponse::ECR_Block);
-	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionObjectType(ECC_PlayerBody);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyAttack, ECollisionResponse::ECR_Block);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
 
 	AttackEndComboState();
@@ -51,6 +51,7 @@ void ARPGBasePlayerCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
+	OnTakeAnyDamage.AddDynamic(this, &ARPGBasePlayerCharacter::TakeAnyDamage);
 }
 
 void ARPGBasePlayerCharacter::BeginPlay()
@@ -60,6 +61,11 @@ void ARPGBasePlayerCharacter::BeginPlay()
 	RPGAnimInstance = Cast<URPGAnimInstance>(GetMesh()->GetAnimInstance());
 	RPGAnimInstance->DOnAttackInputCheck.AddUFunction(this, FName("NormalAttackNextCombo"));
 	RPGAnimInstance->OnMontageEnded.AddDynamic(this, &ARPGBasePlayerCharacter::OnAttackMontageEnded);
+}
+
+void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
+{
+	PLOG(TEXT("Damaged %f"), Damage);
 }
 
 void ARPGBasePlayerCharacter::Tick(float DeltaTime)

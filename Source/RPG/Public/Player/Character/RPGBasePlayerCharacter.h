@@ -27,6 +27,9 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	UFUNCTION()
+	void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
+
 public:	
 
 	void StopMove();
@@ -97,13 +100,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Click")
 	UParticleSystem* ClickParticle;
 
+	/** 이동 */
+
 	UPROPERTY(ReplicatedUsing = OnRep_PathX)
 	TArray<float> PathX;
 
 	UPROPERTY(Replicated)
 	TArray<float> PathY;
-
-	/** 이동 관련 */
 
 	bool bUpdateMovement = false;
 
