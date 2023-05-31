@@ -42,5 +42,7 @@ protected:
 
 	bool IsActorInRange(const AActor* Target);
 
+	UFUNCTION()
+	void RevealNearbyEnemies();
 	
 };

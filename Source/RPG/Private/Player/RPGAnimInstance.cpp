@@ -58,6 +58,11 @@ void URPGAnimInstance::AnimNotify_Ability_Q_Cast()
 	DOnAbility_Q_Cast.ExecuteIfBound();
 }
 
+void URPGAnimInstance::AnimNotify_Ability_W_Cast()
+{
+	DOnAbility_W_Cast.ExecuteIfBound();
+}
+
 FName URPGAnimInstance::GetAttackMontageSectionName(int32 Section)
 {
 	if (FMath::IsWithinInclusive<int32>(Section, 1, 4))

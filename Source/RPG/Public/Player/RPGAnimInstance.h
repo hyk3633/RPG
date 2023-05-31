@@ -11,6 +11,7 @@
 
 DECLARE_MULTICAST_DELEGATE(FOnAttackInputCheckDelegate);
 DECLARE_DELEGATE(FOnAbility_Q_Cast);
+DECLARE_DELEGATE(FOnAbility_W_Cast);
 
 UCLASS()
 class RPG_API URPGAnimInstance : public UAnimInstance
@@ -34,6 +35,8 @@ public:
 
 	FOnAbility_Q_Cast DOnAbility_Q_Cast;
 
+	FOnAbility_W_Cast DOnAbility_W_Cast;
+
 protected:
 
 	UFUNCTION(BlueprintCallable)
@@ -41,6 +44,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_Ability_Q_Cast();
+
+	UFUNCTION(BlueprintCallable)
+	void AnimNotify_Ability_W_Cast();
 
 private:
 

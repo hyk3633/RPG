@@ -36,6 +36,10 @@ public:
 
 	virtual void BTTask_Attack();
 
+	void OnRenderCustomDepthEffect() const;
+
+	void OffRenderCustomDepthEffect() const;
+
 protected:
 
 	UFUNCTION()

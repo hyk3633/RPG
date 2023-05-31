@@ -9,7 +9,7 @@
 
 ARPGWarriorPlayerCharacter::ARPGWarriorPlayerCharacter()
 {
-
+	
 }
 
 void ARPGWarriorPlayerCharacter::Tick(float DeltaTime)
@@ -31,6 +31,7 @@ void ARPGWarriorPlayerCharacter::BeginPlay()
 	if (GetRPGAnimInstance())
 	{
 		GetRPGAnimInstance()->DOnAbility_Q_Cast.BindUFunction(this, FName("FindEnemiesInFront"));
+		GetRPGAnimInstance()->DOnAbility_W_Cast.BindUFunction(this, FName("RevealNearbyEnemies"));
 	}
 }
 
@@ -81,4 +82,17 @@ bool ARPGWarriorPlayerCharacter::IsActorInRange(const AActor* Target)
 		return false;
 
 	return true;
+}
+
+void ARPGWarriorPlayerCharacter::RevealNearbyEnemies()
+{
+	// TODO : 같은 맵에 있는 적들만 감지
+	// TODO : 투사체 자동 반사 (다른 함수)
+	for (ARPGBaseEnemyCharacter* Enemy : TActorRange<ARPGBaseEnemyCharacter>(GetWorld()))
+	{
+		if (GetDistanceTo(Enemy) < 1000.f)
+		{
+			Enemy->OnRenderCustomDepthEffect();
+		}
+	}
 }

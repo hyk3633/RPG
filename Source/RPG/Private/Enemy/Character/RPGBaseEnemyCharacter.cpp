@@ -52,6 +52,16 @@ void ARPGBaseEnemyCharacter::BTTask_Attack()
 	MyAnimInst->PlayAttackMontage();
 }
 
+void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffect() const
+{
+	GetMesh()->SetRenderCustomDepth(true);
+}
+
+void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffect() const
+{
+	GetMesh()->SetRenderCustomDepth(false);
+}
+
 void ARPGBaseEnemyCharacter::AttackLineTrace()
 {
 	FVector TraceStart = GetActorLocation();
