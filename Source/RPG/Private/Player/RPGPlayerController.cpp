@@ -3,6 +3,7 @@
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
+#include "Enums/PressedKey.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Net/UnrealNetwork.h"
@@ -108,25 +109,25 @@ void ARPGPlayerController::NormalAttackClick_NormalAttack()
 void ARPGPlayerController::Ability_Q_PressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->Ability_Q();
+	MyCharacter->CastAbilityByKey(EPressedKey::EPK_Q);
 }
 
 void ARPGPlayerController::Ability_W_PressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->Ability_W();
+	MyCharacter->CastAbilityByKey(EPressedKey::EPK_W);
 }
 
 void ARPGPlayerController::Ability_E_PressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->Ability_E();
+	MyCharacter->CastAbilityByKey(EPressedKey::EPK_E);
 }
 
 void ARPGPlayerController::Ability_R_PressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->Ability_R();
+	MyCharacter->CastAbilityByKey(EPressedKey::EPK_R);
 }
 
 void ARPGPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

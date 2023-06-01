@@ -15,32 +15,31 @@ void URPGAnimInstance::JumpToAttackMontageSection(int32 NewSection)
 	Montage_JumpToSection(GetAttackMontageSectionName(NewSection), NormalAttackMontage);
 }
 
-void URPGAnimInstance::PlayAbility_Q_Montage()
+void URPGAnimInstance::PlayAbilityMontage(EPressedKey KeyType)
 {
-	if (Ability_Q_Montage == nullptr) return;
-	if (Montage_IsPlaying(Ability_Q_Montage)) return;
-	Montage_Play(Ability_Q_Montage);
-}
-
-void URPGAnimInstance::PlayAbility_W_Montage()
-{
-	if (Ability_W_Montage == nullptr) return;
-	if (Montage_IsPlaying(Ability_W_Montage)) return;
-	Montage_Play(Ability_W_Montage);
-}
-
-void URPGAnimInstance::PlayAbility_E_Montage()
-{
-	if (Ability_E_Montage == nullptr) return;
-	if (Montage_IsPlaying(Ability_E_Montage)) return;
-	Montage_Play(Ability_E_Montage);
-}
-
-void URPGAnimInstance::PlayAbility_R_Montage()
-{
-	if (Ability_R_Montage == nullptr) return;
-	if (Montage_IsPlaying(Ability_R_Montage)) return;
-	Montage_Play(Ability_R_Montage);
+	switch (KeyType)
+	{
+	case EPressedKey::EPK_Q:
+		if (Ability_Q_Montage == nullptr) return;
+		if (Montage_IsPlaying(Ability_Q_Montage)) return;
+		Montage_Play(Ability_Q_Montage);
+		break;
+	case EPressedKey::EPK_W:
+		if (Ability_W_Montage == nullptr) return;
+		if (Montage_IsPlaying(Ability_W_Montage)) return;
+		Montage_Play(Ability_W_Montage);
+		break;
+	case EPressedKey::EPK_E:
+		if (Ability_E_Montage == nullptr) return;
+		if (Montage_IsPlaying(Ability_E_Montage)) return;
+		Montage_Play(Ability_E_Montage);
+		break;
+	case EPressedKey::EPK_R:
+		if (Ability_R_Montage == nullptr) return;
+		if (Montage_IsPlaying(Ability_R_Montage)) return;
+		Montage_Play(Ability_R_Montage);
+		break;
+	}
 }
 
 void URPGAnimInstance::PlayDeathMontage()
@@ -61,6 +60,16 @@ void URPGAnimInstance::AnimNotify_Ability_Q_Cast()
 void URPGAnimInstance::AnimNotify_Ability_W_Cast()
 {
 	DOnAbility_W_Cast.ExecuteIfBound();
+}
+
+void URPGAnimInstance::AnimNotify_Ability_E_Cast()
+{
+	DOnAbility_E_Cast.ExecuteIfBound();
+}
+
+void URPGAnimInstance::AnimNotify_Ability_R_Cast()
+{
+	DOnAbility_R_Cast.ExecuteIfBound();
 }
 
 FName URPGAnimInstance::GetAttackMontageSectionName(int32 Section)

@@ -151,28 +151,11 @@ void ARPGBasePlayerCharacter::DoNormalAttack()
 	}
 }
 
-void ARPGBasePlayerCharacter::Ability_Q()
+void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 {
 	if (RPGAnimInstance == nullptr) return;
-	RPGAnimInstance->PlayAbility_Q_Montage();
-}
 
-void ARPGBasePlayerCharacter::Ability_W()
-{
-	if (RPGAnimInstance == nullptr) return;
-	RPGAnimInstance->PlayAbility_W_Montage();
-}
-
-void ARPGBasePlayerCharacter::Ability_E()
-{
-	if (RPGAnimInstance == nullptr) return;
-	RPGAnimInstance->PlayAbility_E_Montage();
-}
-
-void ARPGBasePlayerCharacter::Ability_R()
-{
-	if (RPGAnimInstance == nullptr) return;
-	RPGAnimInstance->PlayAbility_R_Montage();
+	RPGAnimInstance->PlayAbilityMontage(KeyType);
 }
 
 void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)

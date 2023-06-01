@@ -32,31 +32,8 @@ void ARPGWarriorPlayerCharacter::BeginPlay()
 	{
 		GetRPGAnimInstance()->DOnAbility_Q_Cast.BindUFunction(this, FName("FindEnemiesInFront"));
 		GetRPGAnimInstance()->DOnAbility_W_Cast.BindUFunction(this, FName("RevealNearbyEnemies"));
+		GetRPGAnimInstance()->DOnAbility_E_Cast.BindUFunction(this, FName("PushawayEnemies"));
 	}
-}
-
-void ARPGWarriorPlayerCharacter::Ability_Q()
-{
-	Super::Ability_Q();
-	
-}
-
-void ARPGWarriorPlayerCharacter::Ability_W()
-{
-	Super::Ability_W();
-	
-}
-
-void ARPGWarriorPlayerCharacter::Ability_E()
-{
-	Super::Ability_E();
-	
-}
-
-void ARPGWarriorPlayerCharacter::Ability_R()
-{
-	Super::Ability_R();
-	
 }
 
 void ARPGWarriorPlayerCharacter::FindEnemiesInFront()
@@ -93,6 +70,18 @@ void ARPGWarriorPlayerCharacter::RevealNearbyEnemies()
 		if (GetDistanceTo(Enemy) < 1000.f)
 		{
 			Enemy->OnRenderCustomDepthEffect();
+		}
+	}
+}
+
+void ARPGWarriorPlayerCharacter::PushawayEnemies()
+{
+	// TODO : 적들이 물러남
+	for (ARPGBaseEnemyCharacter* Enemy : TActorRange<ARPGBaseEnemyCharacter>(GetWorld()))
+	{
+		if (GetDistanceTo(Enemy) < 600.f)
+		{
+			Enemy->LaunchCharacter(Enemy->GetActorForwardVector() * -700.f, false, true);
 		}
 	}
 }

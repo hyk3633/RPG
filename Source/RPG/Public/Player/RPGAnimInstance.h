@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "Enums/PressedKey.h"
 #include "RPGAnimInstance.generated.h"
 
 /**
@@ -10,8 +11,7 @@
  */
 
 DECLARE_MULTICAST_DELEGATE(FOnAttackInputCheckDelegate);
-DECLARE_DELEGATE(FOnAbility_Q_Cast);
-DECLARE_DELEGATE(FOnAbility_W_Cast);
+DECLARE_DELEGATE(FOnAbility_Cast);
 
 UCLASS()
 class RPG_API URPGAnimInstance : public UAnimInstance
@@ -24,18 +24,16 @@ public:
 
 	void JumpToAttackMontageSection(int32 NewSection);
 
-	void PlayAbility_Q_Montage();
-	void PlayAbility_W_Montage();
-	void PlayAbility_E_Montage();
-	void PlayAbility_R_Montage();
+	void PlayAbilityMontage(EPressedKey KeyType);
 
 	void PlayDeathMontage();
 
 	FOnAttackInputCheckDelegate DOnAttackInputCheck;
 
-	FOnAbility_Q_Cast DOnAbility_Q_Cast;
-
-	FOnAbility_W_Cast DOnAbility_W_Cast;
+	FOnAbility_Cast DOnAbility_Q_Cast;
+	FOnAbility_Cast DOnAbility_W_Cast;
+	FOnAbility_Cast DOnAbility_E_Cast;
+	FOnAbility_Cast DOnAbility_R_Cast;
 
 protected:
 
@@ -47,6 +45,12 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_Ability_W_Cast();
+
+	UFUNCTION(BlueprintCallable)
+	void AnimNotify_Ability_E_Cast();
+
+	UFUNCTION(BlueprintCallable)
+	void AnimNotify_Ability_R_Cast();
 
 private:
 

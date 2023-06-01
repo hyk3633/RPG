@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Enums/PressedKey.h"
 #include "RPGBasePlayerCharacter.generated.h"
 
 class ARPGPlayerController;
@@ -42,13 +43,7 @@ public:
 
 	void DoNormalAttack();
 
-	virtual void Ability_Q();
-
-	virtual void Ability_W();
-
-	virtual void Ability_E();
-
-	virtual void Ability_R();
+	virtual void CastAbilityByKey(EPressedKey KeyType);
 
 	FORCEINLINE URPGAnimInstance* GetRPGAnimInstance() const { return RPGAnimInstance; }
 

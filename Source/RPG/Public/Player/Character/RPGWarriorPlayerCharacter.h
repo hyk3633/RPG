@@ -25,16 +25,6 @@ protected:
 
 	virtual void BeginPlay() override;
 
-public:
-
-	virtual void Ability_Q() override;
-							 
-	virtual void Ability_W() override;
-							 
-	virtual void Ability_E() override;
-							 
-	virtual void Ability_R() override;
-
 protected:
 
 	UFUNCTION()
@@ -45,4 +35,6 @@ protected:
 	UFUNCTION()
 	void RevealNearbyEnemies();
 	
+	UFUNCTION()
+	void PushawayEnemies();
 };
