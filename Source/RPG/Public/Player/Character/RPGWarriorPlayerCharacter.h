@@ -27,14 +27,22 @@ protected:
 
 protected:
 
+	/** Q 스킬 함수 */
 	UFUNCTION()
-	void FindEnemiesInFront();
+	void FindEnemiesInFrontAndDamage();
 
 	bool IsActorInRange(const AActor* Target);
 
+	/** W 스킬 함수 */
 	UFUNCTION()
 	void RevealNearbyEnemies();
 	
+	/** E 스킬 함수 */
 	UFUNCTION()
-	void PushawayEnemies();
+	void PushawayNearbyEnemies();
+
+	/** R 스킬 함수 */
+	UFUNCTION()
+	void AnnihilateNearbyEnemies();
+
 };

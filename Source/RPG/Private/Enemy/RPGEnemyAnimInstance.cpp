@@ -1,6 +1,7 @@
 
 
 #include "Enemy/RPGEnemyAnimInstance.h"
+#include "../RPG.h"
 
 void URPGEnemyAnimInstance::PlayAttackMontage()
 {

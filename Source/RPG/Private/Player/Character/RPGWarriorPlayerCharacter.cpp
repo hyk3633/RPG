@@ -30,13 +30,14 @@ void ARPGWarriorPlayerCharacter::BeginPlay()
 
 	if (GetRPGAnimInstance())
 	{
-		GetRPGAnimInstance()->DOnAbility_Q_Cast.BindUFunction(this, FName("FindEnemiesInFront"));
+		GetRPGAnimInstance()->DOnAbility_Q_Cast.BindUFunction(this, FName("FindEnemiesInFrontAndDamage"));
 		GetRPGAnimInstance()->DOnAbility_W_Cast.BindUFunction(this, FName("RevealNearbyEnemies"));
-		GetRPGAnimInstance()->DOnAbility_E_Cast.BindUFunction(this, FName("PushawayEnemies"));
+		GetRPGAnimInstance()->DOnAbility_E_Cast.BindUFunction(this, FName("PushawayNearbyEnemies"));
+		GetRPGAnimInstance()->DOnAbility_R_Cast.BindUFunction(this, FName("AnnihilateNearbyEnemies"));
 	}
 }
 
-void ARPGWarriorPlayerCharacter::FindEnemiesInFront()
+void ARPGWarriorPlayerCharacter::FindEnemiesInFrontAndDamage()
 {
 	// TODO : 투사체 제거
 	for (ARPGBaseEnemyCharacter* Enemy : TActorRange<ARPGBaseEnemyCharacter>(GetWorld()))
@@ -74,14 +75,28 @@ void ARPGWarriorPlayerCharacter::RevealNearbyEnemies()
 	}
 }
 
-void ARPGWarriorPlayerCharacter::PushawayEnemies()
+void ARPGWarriorPlayerCharacter::PushawayNearbyEnemies()
 {
 	// TODO : 적들이 물러남
+	// TODO : 적 쓰러지는 애니메이션
+	// TODO : 데미지 주기
 	for (ARPGBaseEnemyCharacter* Enemy : TActorRange<ARPGBaseEnemyCharacter>(GetWorld()))
 	{
 		if (GetDistanceTo(Enemy) < 600.f)
 		{
 			Enemy->LaunchCharacter(Enemy->GetActorForwardVector() * -700.f, false, true);
+		}
+	}
+}
+
+void ARPGWarriorPlayerCharacter::AnnihilateNearbyEnemies()
+{
+	// TODO : 데미지 주기
+	for (ARPGBaseEnemyCharacter* Enemy : TActorRange<ARPGBaseEnemyCharacter>(GetWorld()))
+	{
+		if (GetDistanceTo(Enemy) < 1000.f)
+		{
+			Enemy->AnnihilatedByPlayer();
 		}
 	}
 }

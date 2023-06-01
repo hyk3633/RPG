@@ -62,6 +62,12 @@ void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffect() const
 	GetMesh()->SetRenderCustomDepth(false);
 }
 
+void ARPGBaseEnemyCharacter::AnnihilatedByPlayer()
+{
+	// TODO : ม๏ป็
+	MyAnimInst->PlayDeathMontage();
+}
+
 void ARPGBaseEnemyCharacter::AttackLineTrace()
 {
 	FVector TraceStart = GetActorLocation();
