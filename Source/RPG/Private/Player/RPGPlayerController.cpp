@@ -80,7 +80,7 @@ void ARPGPlayerController::SetupInputComponent()
 	{
 		EnhancedInputComponent->BindAction(SetDestinationClickAction, ETriggerEvent::Started, this, &ARPGPlayerController::SetDestinationClick_StopMove);
 		EnhancedInputComponent->BindAction(SetDestinationClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::SetDestinationClick_SetPath);
-		EnhancedInputComponent->BindAction(NormalAttackClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::NormalAttackClick_NormalAttack);
+		EnhancedInputComponent->BindAction(RightClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::RightClick_AttackOrSetAbilityPoint);
 		EnhancedInputComponent->BindAction(Ability_Q_PressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::Ability_Q_PressedAction_Cast);
 		EnhancedInputComponent->BindAction(Ability_W_PressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::Ability_W_PressedAction_Cast);
 		EnhancedInputComponent->BindAction(Ability_E_PressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::Ability_E_PressedAction_Cast);
@@ -100,10 +100,18 @@ void ARPGPlayerController::SetDestinationClick_SetPath()
 	MyCharacter->SetDestinationAndPath();
 }
 
-void ARPGPlayerController::NormalAttackClick_NormalAttack()
+void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->DoNormalAttack();
+
+	if (MyCharacter->GetAiming())
+	{
+		MyCharacter->CastAbilityAfterTargeting();
+	}
+	else
+	{
+		MyCharacter->DoNormalAttack();
+	}
 }
 
 void ARPGPlayerController::Ability_Q_PressedAction_Cast()

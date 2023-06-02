@@ -45,7 +45,10 @@ public:
 
 	virtual void CastAbilityByKey(EPressedKey KeyType);
 
+	virtual void CastAbilityAfterTargeting();
+
 	FORCEINLINE URPGAnimInstance* GetRPGAnimInstance() const { return RPGAnimInstance; }
+	FORCEINLINE bool GetAiming() const { return bAiming; }
 
 protected:
 
@@ -83,7 +86,7 @@ protected:
 	void AttackEndComboState();
 
 	UFUNCTION()
-	void NormalAttackNextCombo();
+	virtual void CastNormalAttack();
 
 	/** Á×À½ */
 
@@ -94,11 +97,15 @@ protected:
 
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
-private:
+protected:
+
+	bool bAiming = false;
 
 	ARPGPlayerController* RPGPlayerController;
 
 	URPGAnimInstance* RPGAnimInstance;
+
+private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraArm;
@@ -106,21 +113,21 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
 
-	UPROPERTY(EditAnywhere, Category = "Click")
+	UPROPERTY(EditAnywhere, Category = "Character | Click")
 	UParticleSystem* ClickParticle;
 
 	/** ½ºÅÈ */
 
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Status")
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Character | Status")
 	float Health = 200.f;
 
-	UPROPERTY(VisibleAnywhere, Category = "Status")
+	UPROPERTY(VisibleAnywhere, Category = "Character | Status")
 	float MaxHealth = 200.f;
 
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Status")
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Character | Status")
 	float Mana = 100.f;
 
-	UPROPERTY(VisibleAnywhere, Category = "Status")
+	UPROPERTY(VisibleAnywhere, Category = "Character | Status")
 	float MaxMana = 100.f;
 
 	/** ÀÌµ¿ */
@@ -144,6 +151,8 @@ private:
 	bool bCanNextCombo = false;
 
 	int32 CurrentCombo = 0;
+
+protected:
 
 	int32 MaxCombo = 4;
 };

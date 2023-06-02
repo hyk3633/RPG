@@ -25,6 +25,12 @@ protected:
 
 	virtual void BeginPlay() override;
 
+public:
+
+	virtual void CastAbilityByKey(EPressedKey KeyType) override;
+
+	virtual void CastAbilityAfterTargeting() override;
+
 protected:
 
 	/** Q 스킬 함수 */

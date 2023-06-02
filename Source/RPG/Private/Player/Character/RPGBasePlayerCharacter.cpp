@@ -36,6 +36,7 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	FollowCamera->bUsePawnControlRotation = false;
 
 	//GetMesh()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(60.f);
@@ -59,8 +60,12 @@ void ARPGBasePlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	RPGAnimInstance = Cast<URPGAnimInstance>(GetMesh()->GetAnimInstance());
-	RPGAnimInstance->DOnAttackInputCheck.AddUFunction(this, FName("NormalAttackNextCombo"));
-	RPGAnimInstance->OnMontageEnded.AddDynamic(this, &ARPGBasePlayerCharacter::OnAttackMontageEnded);
+	if (RPGAnimInstance)
+	{
+		RPGAnimInstance->DOnAttackInputCheck.AddUFunction(this, FName("CastNormalAttack"));
+		RPGAnimInstance->OnMontageEnded.AddDynamic(this, &ARPGBasePlayerCharacter::OnAttackMontageEnded);
+		RPGAnimInstance->SetMaxCombo(MaxCombo);
+	}
 }
 
 void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
@@ -154,8 +159,13 @@ void ARPGBasePlayerCharacter::DoNormalAttack()
 void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 {
 	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->SetCurrentState(KeyType);
+}
 
-	RPGAnimInstance->PlayAbilityMontage(KeyType);
+void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
+{
+	if (RPGAnimInstance == nullptr) return;
+	bAiming = false;
 }
 
 void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)
@@ -248,7 +258,7 @@ void ARPGBasePlayerCharacter::AttackEndComboState()
 	CurrentCombo = 0;
 }
 
-void ARPGBasePlayerCharacter::NormalAttackNextCombo()
+void ARPGBasePlayerCharacter::CastNormalAttack()
 {
 	bCanNextCombo = true;
 	bIsAttacking = false;

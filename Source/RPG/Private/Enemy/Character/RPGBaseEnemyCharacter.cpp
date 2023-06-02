@@ -14,6 +14,7 @@ ARPGBaseEnemyCharacter::ARPGBaseEnemyCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	//GetMesh()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECollisionResponse::ECR_Ignore);
 
 	GetCapsuleComponent()->SetCollisionObjectType(ECC_EnemyBody);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Block);

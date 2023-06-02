@@ -24,9 +24,17 @@ public:
 
 	void JumpToAttackMontageSection(int32 NewSection);
 
-	void PlayAbilityMontage(EPressedKey KeyType);
+	void PlayAbilityMontageOfKey(bool bJumpToSection = false);
+
+	void PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJumpToSection);
 
 	void PlayDeathMontage();
+
+	FORCEINLINE void SetCurrentState(EPressedKey KeyType) { CurrentKeyState = KeyType; }
+	FORCEINLINE EPressedKey GetCurrentState() const { return CurrentKeyState; }
+	FORCEINLINE void AimingPoseOn() { bAimingPose = true; };
+	FORCEINLINE void AimingPoseOff() { bAimingPose = false; };
+	FORCEINLINE void SetMaxCombo(const int8 MaxValue) { MaxCombo = MaxValue; }
 
 	FOnAttackInputCheckDelegate DOnAttackInputCheck;
 
@@ -75,4 +83,12 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
 	UAnimMontage* Ability_R_Montage;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Aiming", meta = (AllowPrivateAccess = "true"))
+	bool bAimingPose = false;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Aiming", meta = (AllowPrivateAccess = "true"))
+	EPressedKey CurrentKeyState = EPressedKey::EPK_None;
+
+	int8 MaxCombo;
 };

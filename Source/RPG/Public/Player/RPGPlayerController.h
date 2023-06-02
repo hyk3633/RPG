@@ -42,7 +42,7 @@ protected:
 
 	void SetDestinationClick_SetPath();
 
-	void NormalAttackClick_NormalAttack();
+	void RightClick_AttackOrSetAbilityPoint();
 
 	void Ability_Q_PressedAction_Cast();
 
@@ -66,7 +66,7 @@ private:
 	UInputAction* SetDestinationClickAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* NormalAttackClickAction;
+	UInputAction* RightClickAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* Ability_Q_PressedAction;
@@ -79,4 +79,6 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* Ability_R_PressedAction;
+
+	
 };

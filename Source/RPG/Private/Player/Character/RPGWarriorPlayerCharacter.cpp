@@ -37,6 +37,28 @@ void ARPGWarriorPlayerCharacter::BeginPlay()
 	}
 }
 
+void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
+{
+	Super::CastAbilityByKey(KeyType);
+
+	// W 스킬만 에이밍
+	if (KeyType == EPressedKey::EPK_W)
+	{
+		RPGAnimInstance->PlayAbilityMontageOfKey();
+	}
+	else
+	{
+		bAiming = true;
+	}
+}
+
+void ARPGWarriorPlayerCharacter::CastAbilityAfterTargeting()
+{
+	Super::CastAbilityAfterTargeting();
+
+	RPGAnimInstance->PlayAbilityMontageOfKey();
+}
+
 void ARPGWarriorPlayerCharacter::FindEnemiesInFrontAndDamage()
 {
 	// TODO : 투사체 제거
