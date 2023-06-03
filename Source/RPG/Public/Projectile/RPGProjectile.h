@@ -5,6 +5,7 @@
 #include "GameFramework/Actor.h"
 #include "RPGProjectile.generated.h"
 
+class USphereComponent;
 class UProjectileMovementComponent;
 
 UCLASS()
@@ -18,20 +19,23 @@ public:
 
 	void InitPlayerProjectile();
 
+	void SetHomingMode(const ACharacter* TargetCha);
+
 	virtual void Tick(float DeltaTime) override;
 
 protected:
 	
 	virtual void BeginPlay() override;
 
-	void ProjectileLineTrace();
+	UFUNCTION()
+	void OnImpact(const FHitResult& HitResult);
 
-	void ProcessHitEvent(const FHitResult& LTResult);
+	void ProcessHitEvent(const FHitResult& HitResult);
 
 private:
 
-	UPROPERTY()
-	USceneComponent* RootComp;
+	UPROPERTY(EditAnywhere)
+	USphereComponent* CollisionComponent;
 
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* BodyMesh;
@@ -42,11 +46,22 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Projectile | Effects")
 	UParticleSystem* BodyParticle;
 
+	UPROPERTY(EditAnywhere, Category = "Projectile | Effects")
+	UParticleSystem* WorldImpactParticle;
+
+	UPROPERTY(EditAnywhere, Category = "Projectile | Effects")
+	UParticleSystem* CharacterImpactParticle;
+
+	UPROPERTY(EditAnywhere, Category = "Projectile | Effects")
+	UParticleSystem* NoImpactParticle;
+
+	UPROPERTY(EditAnywhere, Category = "Projectile | Effects")
+	UParticleSystem* TrailParticle;
+
 	UPROPERTY(EditAnywhere)
 	UProjectileMovementComponent* ProjectileMovementComponent;
 
 	UPROPERTY(EditAnywhere, Category = "Projectile | Option")
 	float LifeSpan = 5.f;
 
-	ECollisionChannel ProejctileType;
 };

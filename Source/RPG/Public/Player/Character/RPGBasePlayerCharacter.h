@@ -99,11 +99,11 @@ protected:
 
 protected:
 
-	bool bAiming = false;
-
 	ARPGPlayerController* RPGPlayerController;
 
 	URPGAnimInstance* RPGAnimInstance;
+
+	bool bAiming = false;
 
 private:
 
@@ -155,4 +155,6 @@ private:
 protected:
 
 	int32 MaxCombo = 4;
+
+	FHitResult TargetingHitResult;
 };

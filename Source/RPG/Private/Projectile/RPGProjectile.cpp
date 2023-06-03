@@ -3,15 +3,24 @@
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "../RPG.h"
+#include "Components/SphereComponent.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 
 ARPGProjectile::ARPGProjectile()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	RootComp = CreateDefaultSubobject<USceneComponent>(TEXT("Root Comp"));
-	SetRootComponent(RootComp);
+	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Collision Component"));
+	SetRootComponent(CollisionComponent);
+	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	CollisionComponent->SetCollisionObjectType(ECC_EnemyProjectile);
+	CollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_EnemyBody, ECollisionResponse::ECR_Ignore);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECollisionResponse::ECR_Ignore);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body Mesh"));
 	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -24,26 +33,36 @@ ARPGProjectile::ARPGProjectile()
 	ProjectileMovementComponent->ProjectileGravityScale = 0.f;
 	ProjectileMovementComponent->SetAutoActivate(true);
 
-	ProejctileType = ECC_EnemyProjectile;
 	SetLifeSpan(LifeSpan);
-
-	// box component 로 바꾸기
 }
 
 void ARPGProjectile::InitPlayerProjectile()
 {
-	ProejctileType = ECC_PlayerProjectile;
+	CollisionComponent->SetCollisionObjectType(ECC_PlayerProjectile);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_EnemyBody, ECollisionResponse::ECR_Block);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_PlayerBody, ECollisionResponse::ECR_Ignore);
+}
+
+void ARPGProjectile::SetHomingMode(const ACharacter* TargetCha)
+{
+	ProjectileMovementComponent->bIsHomingProjectile = true;
+	ProjectileMovementComponent->InitialSpeed = 100.f;
+	ProjectileMovementComponent->MaxSpeed = 7000.f;
+	ProjectileMovementComponent->HomingTargetComponent = TargetCha->GetRootComponent();
+	ProjectileMovementComponent->HomingAccelerationMagnitude = 1000.f;
 }
 
 void ARPGProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+
+	ProjectileMovementComponent->OnProjectileStop.AddDynamic(this, &ARPGProjectile::OnImpact);
 	
 	if (BodyParticle)
 	{
 		BodyParticleComp = UGameplayStatics::SpawnEmitterAttached(
 			BodyParticle,
-			RootComp,
+			CollisionComponent,
 			FName(),
 			GetActorLocation(),
 			GetActorRotation(),
@@ -56,35 +75,39 @@ void ARPGProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	ProjectileLineTrace();
 }
 
-void ARPGProjectile::ProjectileLineTrace()
+void ARPGProjectile::OnImpact(const FHitResult& HitResult)
 {
-	FHitResult HitResult;
-	GetWorld()->LineTraceSingleByChannel(HitResult, GetActorLocation(), GetActorForwardVector() * 30.f, ProejctileType);
 	if (HitResult.bBlockingHit)
 	{
 		ProcessHitEvent(HitResult);
 	}
 }
 
-void ARPGProjectile::ProcessHitEvent(const FHitResult& LTResult)
+void ARPGProjectile::ProcessHitEvent(const FHitResult& HitResult)
 {
-	if (ProejctileType == ECC_PlayerProjectile)
+	PLOG(TEXT("%s"), *HitResult.GetActor()->GetName());
+	/*ARPGBasePlayerCharacter* Player = Cast<ARPGBasePlayerCharacter>(HitResult.GetActor());
+	if (Player)
 	{
-		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(LTResult.GetActor());
-		if (Enemy == nullptr) return;
 
 	}
 	else
 	{
-		ARPGBasePlayerCharacter* Player = Cast<ARPGBasePlayerCharacter>(LTResult.GetActor());
-		if (Player == nullptr) return;
-	}
+		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(HitResult.GetActor());
+		if (Enemy == nullptr) return;
+	}*/
 	// TODO : ApplyDamage
-	PLOG(TEXT("%s"), *LTResult.GetActor()->GetName());
-	Destroy();
 	// TODO : 이펙트 처리
+	if (BodyParticleComp)
+	{
+		BodyParticleComp->Deactivate();
+	}
+	if (WorldImpactParticle)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WorldImpactParticle, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
+	}
+	Destroy();
 }
 
