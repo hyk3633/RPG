@@ -165,6 +165,8 @@ void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
 {
 	if (RPGAnimInstance == nullptr) return;
+	if (RPGAnimInstance->GetCurrentState() == EPressedKey::EPK_R)
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 	bAiming = false;
 }
 
@@ -272,6 +274,14 @@ void ARPGBasePlayerCharacter::PlayerDie()
 void ARPGBasePlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 
+}
+
+void ARPGBasePlayerCharacter::SpawnParticle(UParticleSystem* Particle, const FVector& SpawnLoc, const FRotator& SpawnRot)
+{
+	if (Particle)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Particle, SpawnLoc, SpawnRot);
+	}
 }
 
 void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

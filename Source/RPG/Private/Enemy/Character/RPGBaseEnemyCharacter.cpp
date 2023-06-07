@@ -69,6 +69,18 @@ void ARPGBaseEnemyCharacter::AnnihilatedByPlayer()
 	MyAnimInst->PlayDeathMontage();
 }
 
+void ARPGBaseEnemyCharacter::ActivateRagdollMode()
+{
+	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	GetMesh()->SetSimulatePhysics(true);
+}
+
+void ARPGBaseEnemyCharacter::DeactivateRagdollMode()
+{
+	GetMesh()->SetSimulatePhysics(false);
+	GetMesh()->SetCollisionProfileName(TEXT("EnemyMesh"));
+}
+
 void ARPGBaseEnemyCharacter::AttackLineTrace()
 {
 	FVector TraceStart = GetActorLocation();

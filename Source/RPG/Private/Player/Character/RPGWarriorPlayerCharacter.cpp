@@ -30,10 +30,10 @@ void ARPGWarriorPlayerCharacter::BeginPlay()
 
 	if (GetRPGAnimInstance())
 	{
-		GetRPGAnimInstance()->DOnAbility_Q_Cast.BindUFunction(this, FName("FindEnemiesInFrontAndDamage"));
-		GetRPGAnimInstance()->DOnAbility_W_Cast.BindUFunction(this, FName("RevealNearbyEnemies"));
-		GetRPGAnimInstance()->DOnAbility_E_Cast.BindUFunction(this, FName("PushawayNearbyEnemies"));
-		GetRPGAnimInstance()->DOnAbility_R_Cast.BindUFunction(this, FName("AnnihilateNearbyEnemies"));
+		//GetRPGAnimInstance()->DOnAbility_Q_Cast.BindUFunction(this, FName("FindEnemiesInFrontAndDamage"));
+		//GetRPGAnimInstance()->DOnAbility_W_Cast.BindUFunction(this, FName("RevealNearbyEnemies"));
+		//GetRPGAnimInstance()->DOnAbility_E_Cast.BindUFunction(this, FName("PushawayNearbyEnemies"));
+		//GetRPGAnimInstance()->DOnAbility_R_Cast.BindUFunction(this, FName("AnnihilateNearbyEnemies"));
 	}
 }
 

@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "Enums/PressedKey.h"
+#include "Enums/NotifyCode.h"
 #include "RPGAnimInstance.generated.h"
 
 /**
@@ -11,7 +12,7 @@
  */
 
 DECLARE_MULTICAST_DELEGATE(FOnAttackInputCheckDelegate);
-DECLARE_DELEGATE(FOnAbility_Cast);
+DECLARE_MULTICAST_DELEGATE_OneParam(FMontageNotifyDelegate, ENotifyCode NotifyCode);
 
 UCLASS()
 class RPG_API URPGAnimInstance : public UAnimInstance
@@ -38,10 +39,7 @@ public:
 
 	FOnAttackInputCheckDelegate DOnAttackInputCheck;
 
-	FOnAbility_Cast DOnAbility_Q_Cast;
-	FOnAbility_Cast DOnAbility_W_Cast;
-	FOnAbility_Cast DOnAbility_E_Cast;
-	FOnAbility_Cast DOnAbility_R_Cast;
+	FMontageNotifyDelegate DMontageNotify;
 
 protected:
 
@@ -49,16 +47,7 @@ protected:
 	void AnimNotify_AttackInputCheck();
 
 	UFUNCTION(BlueprintCallable)
-	void AnimNotify_Ability_Q_Cast();
-
-	UFUNCTION(BlueprintCallable)
-	void AnimNotify_Ability_W_Cast();
-
-	UFUNCTION(BlueprintCallable)
-	void AnimNotify_Ability_E_Cast();
-
-	UFUNCTION(BlueprintCallable)
-	void AnimNotify_Ability_R_Cast();
+	void AnimNotify_MontageNotify(ENotifyCode NotifyCode);
 
 private:
 

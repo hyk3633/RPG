@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Projectile/RPGProjectile.h"
+#include "Enums/NotifyCode.h"
 #include "RPGSorcererPlayerCharacter.generated.h"
 
 /**
@@ -44,16 +45,29 @@ protected:
 	ARPGProjectile* SpawnProjectile(TSubclassOf<ARPGProjectile> ProjClass, const FVector& SpawnLoc, const FRotator& SpawnRot);
 
 	UFUNCTION()
-	void FireRestrictionBall();
+	void FireRestrictionBall(ENotifyCode NotifyCode);
 
 	UFUNCTION()
-	void MeteorFall();
+	void MeteorliteFall(ENotifyCode NotifyCode);
 
 	UFUNCTION()
-	void MeteorShower();
+	void MeteorShower(ENotifyCode NotifyCode);
 
 	UFUNCTION()
-	void SummongBlackhole();
+	void OnMeteorShowerParticleCollide(FName EventName, float EmitterTime, int32 ParticleTime, FVector Location, FVector Velocity, FVector Direction, FVector Normal, FName BoneName, UPhysicalMaterial* PhysMat);
+
+	void SpawnMeteorShowerParticle();
+
+	UFUNCTION()
+	void FloatACharacter(ENotifyCode NotifyCode);
+
+	UFUNCTION()
+	void BlackholeOn(ENotifyCode NotifyCode);
+
+	UFUNCTION()
+	void BlackholeOff(ENotifyCode NotifyCode);
+
+	
 
 protected:
 
@@ -67,27 +81,35 @@ protected:
 	TSubclassOf<ARPGProjectile> RestrictionBallPorjectile;
 
 	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
-	TSubclassOf<ARPGProjectile> MeteorPorjectile;
+	TSubclassOf<ARPGProjectile> MeteorlitePorjectile;
 
 	UPROPERTY(EditAnywhere, Category = "Character | Particle")
 	UParticleSystem* MeteorPortalParticle;
+
+	UPROPERTY()
+	UParticleSystemComponent* MeteorShowerParticleComp;
 
 	UPROPERTY(EditAnywhere, Category = "Character | Particle")
 	UParticleSystem* MeteorShowerParticle;
 
 	UPROPERTY(EditAnywhere, Category = "Character | Particle")
-	UParticleSystem* MeteorFallingParticle;
+	UParticleSystem* MeteorliteFallingParticle;
 
 	UPROPERTY(EditAnywhere, Category = "Character | Particle")
-	UParticleSystem* MeteorExplosionParticle;
+	UParticleSystem* MeteorliteExplosionParticle;
 
 	FTimerHandle MeteorShowerTimer;
-
-	void SpawnMeteorShowerParticle();
 
 	UPROPERTY(EditAnywhere, Category = "Character | Particle")
 	UParticleSystem* BlackholeParticle;
 
+	bool bFloatCharacter = false;
+
+	bool bBlackholeOn = false;
+
+	FTimerHandle FloatingTimer;
+
+	void DeactivateFloatingCharacter();
 
 
 };

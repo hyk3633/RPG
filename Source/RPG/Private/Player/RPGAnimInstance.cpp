@@ -52,24 +52,9 @@ void URPGAnimInstance::AnimNotify_AttackInputCheck()
 	DOnAttackInputCheck.Broadcast();
 }
 
-void URPGAnimInstance::AnimNotify_Ability_Q_Cast()
+void URPGAnimInstance::AnimNotify_MontageNotify(ENotifyCode NotifyCode)
 {
-	DOnAbility_Q_Cast.ExecuteIfBound();
-}
-
-void URPGAnimInstance::AnimNotify_Ability_W_Cast()
-{
-	DOnAbility_W_Cast.ExecuteIfBound();
-}
-
-void URPGAnimInstance::AnimNotify_Ability_E_Cast()
-{
-	DOnAbility_E_Cast.ExecuteIfBound();
-}
-
-void URPGAnimInstance::AnimNotify_Ability_R_Cast()
-{
-	DOnAbility_R_Cast.ExecuteIfBound();
+	DMontageNotify.Broadcast(NotifyCode);
 }
 
 FName URPGAnimInstance::GetAttackMontageSectionName(int32 Section)
