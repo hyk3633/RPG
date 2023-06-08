@@ -33,7 +33,6 @@ ARPGProjectile::ARPGProjectile()
 	ProjectileMovementComponent->ProjectileGravityScale = 0.f;
 	ProjectileMovementComponent->SetAutoActivate(true);
 
-	SetLifeSpan(LifeSpan);
 }
 
 void ARPGProjectile::InitPlayerProjectile()
@@ -43,13 +42,20 @@ void ARPGProjectile::InitPlayerProjectile()
 	CollisionComponent->SetCollisionResponseToChannel(ECC_PlayerBody, ECollisionResponse::ECR_Ignore);
 }
 
-void ARPGProjectile::SetHomingMode(const ACharacter* TargetCha)
+void ARPGProjectile::SetHomingTarget(const ACharacter* TargetCha)
 {
-	ProjectileMovementComponent->bIsHomingProjectile = true;
-	ProjectileMovementComponent->InitialSpeed = 100.f;
+	// TODO : isvalid()
+	bIsHoming = true;
 	ProjectileMovementComponent->MaxSpeed = 7000.f;
 	ProjectileMovementComponent->HomingTargetComponent = TargetCha->GetRootComponent();
 	ProjectileMovementComponent->HomingAccelerationMagnitude = 1000.f;
+}
+
+void ARPGProjectile::SetThrowingMode()
+{
+	ProjectileMovementComponent->InitialSpeed = 1000.f;
+	ProjectileMovementComponent->ProjectileGravityScale = 1.f;
+	VelocityLastFrame = GetVelocity().Size();
 }
 
 void ARPGProjectile::BeginPlay()
@@ -75,6 +81,43 @@ void ARPGProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (bIsHoming && VelocityLastFrame < GetVelocity().Size())
+	{
+		ProjectileMovementComponent->bIsHomingProjectile = true;
+		ProjectileMovementComponent->SetVelocityInLocalSpace(GetActorRotation().Vector() * 1.f);
+		ProjectileMovementComponent->ProjectileGravityScale = 0.f;
+		bIsHoming = false;
+	}
+	else
+	{
+		VelocityLastFrame = GetVelocity().Size();
+	}
+}
+
+void ARPGProjectile::SetExpireTime(float LifeTime)
+{
+	GetWorldTimerManager().SetTimer(ExpireTimer, this, &ARPGProjectile::ExpireProjectile, LifeTime, false);
+}
+
+void ARPGProjectile::ExpireProjectile()
+{
+	DeactivateProjectile();
+	if (NoImpactParticle)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), NoImpactParticle, GetActorLocation(), GetActorRotation());
+	}
+}
+
+void ARPGProjectile::DeactivateProjectile()
+{
+	GetWorldTimerManager().ClearTimer(ExpireTimer);
+	ProjectileMovementComponent->StopMovementImmediately();
+	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (BodyParticleComp)
+	{
+		BodyParticleComp->Deactivate();
+	}
+	SetLifeSpan(1.f);
 }
 
 void ARPGProjectile::OnImpact(const FHitResult& HitResult)
@@ -88,26 +131,22 @@ void ARPGProjectile::OnImpact(const FHitResult& HitResult)
 void ARPGProjectile::ProcessHitEvent(const FHitResult& HitResult)
 {
 	PLOG(TEXT("%s"), *HitResult.GetActor()->GetName());
-	/*ARPGBasePlayerCharacter* Player = Cast<ARPGBasePlayerCharacter>(HitResult.GetActor());
-	if (Player)
+	DeactivateProjectile();
+	ACharacter* Character = Cast<ACharacter>(HitResult.GetActor());
+	if (Character)
 	{
-
+		if (CharacterImpactParticle)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), CharacterImpactParticle, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
+		}
+		// TODO : ApplyDamage
 	}
 	else
 	{
-		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(HitResult.GetActor());
-		if (Enemy == nullptr) return;
-	}*/
-	// TODO : ApplyDamage
-	// TODO : ÀÌÆåÆ® Ã³¸®
-	if (BodyParticleComp)
-	{
-		BodyParticleComp->Deactivate();
+		if (WorldImpactParticle)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WorldImpactParticle, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
+		}
 	}
-	if (WorldImpactParticle)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WorldImpactParticle, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
-	}
-	Destroy();
 }
 

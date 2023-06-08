@@ -19,11 +19,19 @@ public:
 
 	void InitPlayerProjectile();
 
-	void SetHomingMode(const ACharacter* TargetCha);
+	void SetHomingTarget(const ACharacter* TargetCha);
+
+	void SetThrowingMode();
 
 	virtual void Tick(float DeltaTime) override;
 
+	void SetExpireTime(float LifeTime);
+
 protected:
+
+	void ExpireProjectile();
+
+	void DeactivateProjectile();
 	
 	virtual void BeginPlay() override;
 
@@ -61,7 +69,12 @@ private:
 	UPROPERTY(EditAnywhere)
 	UProjectileMovementComponent* ProjectileMovementComponent;
 
+	FTimerHandle ExpireTimer;
+
 	UPROPERTY(EditAnywhere, Category = "Projectile | Option")
-	float LifeSpan = 5.f;
+	float ExpireTime = 1.f;
+
+	bool bIsHoming = false;
+	float VelocityLastFrame;
 
 };

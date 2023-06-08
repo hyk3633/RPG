@@ -44,19 +44,27 @@ protected:
 
 	ARPGProjectile* SpawnProjectile(TSubclassOf<ARPGProjectile> ProjClass, const FVector& SpawnLoc, const FRotator& SpawnRot);
 
+	/** Ability Q */
+
 	UFUNCTION()
 	void FireRestrictionBall(ENotifyCode NotifyCode);
+
+	/** Ability W */
 
 	UFUNCTION()
 	void MeteorliteFall(ENotifyCode NotifyCode);
 
+	/** Ability E */
+
 	UFUNCTION()
 	void MeteorShower(ENotifyCode NotifyCode);
+
+	void SpawnMeteorShowerParticle();
 
 	UFUNCTION()
 	void OnMeteorShowerParticleCollide(FName EventName, float EmitterTime, int32 ParticleTime, FVector Location, FVector Velocity, FVector Direction, FVector Normal, FName BoneName, UPhysicalMaterial* PhysMat);
 
-	void SpawnMeteorShowerParticle();
+	/** Ability R */
 
 	UFUNCTION()
 	void FloatACharacter(ENotifyCode NotifyCode);
@@ -83,24 +91,24 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
 	TSubclassOf<ARPGProjectile> MeteorlitePorjectile;
 
-	UPROPERTY(EditAnywhere, Category = "Character | Particle")
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteor Shower")
 	UParticleSystem* MeteorPortalParticle;
 
 	UPROPERTY()
 	UParticleSystemComponent* MeteorShowerParticleComp;
 
-	UPROPERTY(EditAnywhere, Category = "Character | Particle")
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteor Shower")
 	UParticleSystem* MeteorShowerParticle;
 
-	UPROPERTY(EditAnywhere, Category = "Character | Particle")
-	UParticleSystem* MeteorliteFallingParticle;
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteorlite")
+	UParticleSystem* MeteorliteParticle;
 
-	UPROPERTY(EditAnywhere, Category = "Character | Particle")
-	UParticleSystem* MeteorliteExplosionParticle;
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteorlite")
+	UParticleSystem* MeteorlitePortalParticle;
 
 	FTimerHandle MeteorShowerTimer;
 
-	UPROPERTY(EditAnywhere, Category = "Character | Particle")
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Blackhole")
 	UParticleSystem* BlackholeParticle;
 
 	bool bFloatCharacter = false;
@@ -111,5 +119,6 @@ protected:
 
 	void DeactivateFloatingCharacter();
 
-
+	UPROPERTY(EditAnywhere, Category = "Character | Attack Option")
+	float AttackRange = 900.f;
 };

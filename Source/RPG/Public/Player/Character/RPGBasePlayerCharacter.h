@@ -49,6 +49,7 @@ public:
 
 	FORCEINLINE URPGAnimInstance* GetRPGAnimInstance() const { return RPGAnimInstance; }
 	FORCEINLINE bool GetAiming() const { return bAiming; }
+	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
 
 protected:
 
@@ -70,15 +71,15 @@ protected:
 
 	void NormalAttackPressed();
 
-	void NormalAttackWithCombo(const FVector& AttackPoint);
+	void NormalAttackWithCombo();
 
 	UFUNCTION(Server, Reliable)
-	void NormalAttackWithComboServer(const FVector& AttackPoint);
+	void NormalAttackWithComboServer();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void NormalAttackWithComboMulticast(const FVector& AttackPoint);
+	void NormalAttackWithComboMulticast();
 
-	void TurnTowardAttackPoint(const FVector& AttackPoint);
+	void TurnTowardAttackPoint();
 
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
@@ -159,4 +160,6 @@ protected:
 	int32 MaxCombo = 4;
 
 	FHitResult TargetingHitResult;
+	FHitResult GroundHitResult;
+
 };

@@ -10,7 +10,7 @@
 #include "Kismet/KismetSystemlibrary.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
-#include "Components/DecalComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 #include "DrawDebugHelpers.h"
 
@@ -21,7 +21,7 @@ ARPGSorcererPlayerCharacter::ARPGSorcererPlayerCharacter()
 	AimCursor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	//AimCursor->SetVisibility(false);
 
-	MaxCombo = 3;
+	MaxCombo = 4;
 }
 
 void ARPGSorcererPlayerCharacter::Tick(float DeltaTime)
@@ -55,8 +55,7 @@ void ARPGSorcererPlayerCharacter::Tick(float DeltaTime)
 		d.Z += 300.f;
 		for (AActor* Actor : Enemies)
 		{
-			ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Actor);
-			Enemy->GetMesh()->AddRadialForce(d, 500.f, -2000, ERadialImpulseFalloff::RIF_Constant, true);
+			Actor->SetActorLocation(Actor->GetActorLocation() + (d - Actor->GetActorLocation()).GetSafeNormal() * 5.f);
 		}
 	}
 }
@@ -113,7 +112,6 @@ void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
 
 	// 특정 적을 선택해야 하는 스킬은 커서로 적을 가리키면 적 하이라이트, 다른 부분을 누르면 발동안되게, 다른 좌클로 취소
 	// 범위를 지정해서 시전하는 경우 범위 내 모든 적에게 적용
-	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_PlayerAttack, false, TargetingHitResult);
 	if (TargetingHitResult.bBlockingHit)
 	{
 		RPGAnimInstance->PlayAbilityMontageOfKey(true);
@@ -129,7 +127,28 @@ void ARPGSorcererPlayerCharacter::CastNormalAttack()
 {
 	Super::CastNormalAttack();
 
-	SpawnProjectile(PrimaryPorjectile, GetActorLocation(), GetActorRotation());
+	FVector SpawnPoint;
+	if (GetCurrentCombo() % 2 == 0)
+	{
+		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_R")).GetLocation();
+	}
+	else
+	{
+		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L")).GetLocation();
+	}
+
+	FRotator Direction;
+	ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(TargetingHitResult.GetActor());
+	if (Enemy && GetDistanceTo(Enemy) <= AttackRange)
+	{
+		Direction = (Enemy->GetActorLocation() - SpawnPoint).Rotation();
+	}
+	else
+	{
+		Direction = (FVector(TargetingHitResult.ImpactPoint.X, TargetingHitResult.ImpactPoint.Y, SpawnPoint.Z) - SpawnPoint).Rotation();
+	}
+
+	SpawnProjectile(PrimaryPorjectile, SpawnPoint, Direction)->SetExpireTime(0.7f);
 }
 
 ARPGProjectile* ARPGSorcererPlayerCharacter::SpawnProjectile(TSubclassOf<ARPGProjectile> ProjClass, const FVector& SpawnLoc, const FRotator& SpawnRot)
@@ -151,23 +170,29 @@ void ARPGSorcererPlayerCharacter::FireRestrictionBall(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_S_Q_FireRestrictionBall) return;
 
-	const FVector SpawnPoint = GetActorLocation() + (GetActorForwardVector() * 50.f);
-	const FRotator SpawnDirection = (TargetingHitResult.GetActor()->GetActorLocation() - SpawnPoint).Rotation();
-	ARPGProjectile* TempProj = SpawnProjectile(RestrictionBallPorjectile, SpawnPoint, SpawnDirection);
+	FVector SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L")).GetLocation();
+	FRotator SpawnDirection = (TargetingHitResult.GetActor()->GetActorLocation() - SpawnPoint).Rotation();
+	ARPGProjectile* TempProj = SpawnProjectile(RestrictionBallPorjectile, SpawnPoint, SpawnDirection.Add(60.f, 0.f, 0.f));
 	if (TempProj)
 	{
 		const ACharacter* TempCha = Cast<ACharacter>(TargetingHitResult.GetActor());
-		if (TempCha) TempProj->SetHomingMode(TempCha);
-		else CF();
+		if (TempCha)
+		{
+			TempProj->SetHomingTarget(TempCha);
+			TempProj->SetThrowingMode();
+		}
 	}
 }
 
 void ARPGSorcererPlayerCharacter::MeteorliteFall(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_S_W_MeteorliteFall) return;
-
-	const FVector SpawnPoint = GetActorLocation() + (GetActorUpVector() * 200.f);
+	const FVector SpawnPoint = GetActorLocation() + (GetActorUpVector() * 300.f);
 	const FRotator SpawnDirection = (TargetingHitResult.ImpactPoint - SpawnPoint).Rotation();
+	if (MeteorlitePortalParticle)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorlitePortalParticle, SpawnPoint, SpawnDirection);
+	}
 	SpawnProjectile(MeteorlitePorjectile, SpawnPoint, SpawnDirection);
 }
 
@@ -192,12 +217,7 @@ void ARPGSorcererPlayerCharacter::MeteorShower(ENotifyCode NotifyCode)
 		PSpawnLoc.Z = 500.f;
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorPortalParticle, PSpawnLoc, FRotator::ZeroRotator);
 	}
-	GetWorldTimerManager().SetTimer(MeteorShowerTimer, this, &ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle, 1.5f, false);
-}
-
-void ARPGSorcererPlayerCharacter::OnMeteorShowerParticleCollide(FName EventName, float EmitterTime, int32 ParticleTime, FVector Location, FVector Velocity, FVector Direction, FVector Normal, FName BoneName, UPhysicalMaterial* PhysMat)
-{
-	CF();
+	GetWorldTimerManager().SetTimer(MeteorShowerTimer, this, &ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle, 0.5f, false);
 }
 
 void ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle()
@@ -207,10 +227,11 @@ void ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle()
 	MeteorShowerParticleComp = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorShowerParticle, PSpawnLoc, FRotator::ZeroRotator, false, EPSCPoolMethod::None, false);
 	MeteorShowerParticleComp->OnParticleCollide.AddDynamic(this, &ARPGSorcererPlayerCharacter::OnMeteorShowerParticleCollide);
 	MeteorShowerParticleComp->Activate();
-	//FVector PSpawnLoc = TargetingHitResult.ImpactPoint;
-	//PSpawnLoc.Z = 500.f;
-	//SpawnParticle(MeteorShowerParticle, PSpawnLoc);
-	// TODO : 메테로 타이머
+}
+
+void ARPGSorcererPlayerCharacter::OnMeteorShowerParticleCollide(FName EventName, float EmitterTime, int32 ParticleTime, FVector Location, FVector Velocity, FVector Direction, FVector Normal, FName BoneName, UPhysicalMaterial* PhysMat)
+{
+	CF();
 }
 
 void ARPGSorcererPlayerCharacter::FloatACharacter(ENotifyCode NotifyCode)
@@ -238,10 +259,12 @@ void ARPGSorcererPlayerCharacter::BlackholeOn(ENotifyCode NotifyCode)
 	for (AActor* Actor : Enemies)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Actor);
-		Enemy->ActivateRagdollMode();
+		Enemy->EnableSuckedIn();
 	}
 
-	SpawnParticle(BlackholeParticle, TargetingHitResult.ImpactPoint);
+	FVector d = TargetingHitResult.ImpactPoint;
+	d.Z += 300.f;
+	SpawnParticle(BlackholeParticle, d);
 	bBlackholeOn = true;
 }
 
@@ -262,8 +285,7 @@ void ARPGSorcererPlayerCharacter::BlackholeOff(ENotifyCode NotifyCode)
 	);
 	for (AActor* Actor : Enemies)
 	{
-		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Actor);
-		Enemy->DeactivateRagdollMode();
+		Actor->Destroy();
 	}
 }
 

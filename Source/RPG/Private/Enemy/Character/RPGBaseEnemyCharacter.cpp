@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "DrawDebugHelpers.h"
 
@@ -14,9 +15,11 @@ ARPGBaseEnemyCharacter::ARPGBaseEnemyCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	//GetMesh()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
 	GetMesh()->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECollisionResponse::ECR_Ignore);
 
 	GetCapsuleComponent()->SetCollisionObjectType(ECC_EnemyBody);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Block);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECollisionResponse::ECR_Ignore);
 }
@@ -69,16 +72,10 @@ void ARPGBaseEnemyCharacter::AnnihilatedByPlayer()
 	MyAnimInst->PlayDeathMontage();
 }
 
-void ARPGBaseEnemyCharacter::ActivateRagdollMode()
+void ARPGBaseEnemyCharacter::EnableSuckedIn()
 {
-	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-	GetMesh()->SetSimulatePhysics(true);
-}
-
-void ARPGBaseEnemyCharacter::DeactivateRagdollMode()
-{
-	GetMesh()->SetSimulatePhysics(false);
-	GetMesh()->SetCollisionProfileName(TEXT("EnemyMesh"));
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
+	GetCharacterMovement()->GravityScale = 0.f;
 }
 
 void ARPGBaseEnemyCharacter::AttackLineTrace()

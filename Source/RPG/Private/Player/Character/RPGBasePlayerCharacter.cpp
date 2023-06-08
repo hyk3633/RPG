@@ -136,24 +136,20 @@ void ARPGBasePlayerCharacter::SetDestinationAndPath()
 
 void ARPGBasePlayerCharacter::DoNormalAttack()
 {
-	FHitResult GroundHit, EnemyHit;
-	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, GroundHit);
-	//GetHitResultUnderCursor(ECC_GroundTrace, false, GroundHit);
-	//GetHitResultUnderCursor(ECC_EnemyTrace, false, EnemyHit);
-
-	if (GroundHit.bBlockingHit)
+	// TODO : ¹Ù´Ú, Àû ±¸ºÐ
+	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, TargetingHitResult);
+	if (TargetingHitResult.bBlockingHit)
 	{
 		if (HasAuthority())
 		{
-			NormalAttackWithCombo(GroundHit.ImpactPoint);
+			NormalAttackWithCombo();
 		}
 		else
 		{
-			NormalAttackWithComboServer(GroundHit.ImpactPoint);
+			NormalAttackWithComboServer();
 		}
-
-		SpawnClickParticle(GroundHit.ImpactPoint);
 	}
+	SpawnClickParticle(TargetingHitResult.ImpactPoint);
 }
 
 void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
@@ -167,6 +163,7 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
 	if (RPGAnimInstance == nullptr) return;
 	if (RPGAnimInstance->GetCurrentState() == EPressedKey::EPK_R)
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, TargetingHitResult);
 	bAiming = false;
 }
 
@@ -215,19 +212,19 @@ void ARPGBasePlayerCharacter::OnRep_PathX()
 	InitDestAndDir();
 }
 
-void ARPGBasePlayerCharacter::NormalAttackWithComboServer_Implementation(const FVector& AttackPoint)
+void ARPGBasePlayerCharacter::NormalAttackWithComboServer_Implementation()
 {
-	NormalAttackWithComboMulticast(AttackPoint);
+	NormalAttackWithComboMulticast();
 }
 
-void ARPGBasePlayerCharacter::NormalAttackWithComboMulticast_Implementation(const FVector& AttackPoint)
+void ARPGBasePlayerCharacter::NormalAttackWithComboMulticast_Implementation()
 {
-	NormalAttackWithCombo(AttackPoint);
+	NormalAttackWithCombo();
 }
 
-void ARPGBasePlayerCharacter::NormalAttackWithCombo(const FVector& AttackPoint)
+void ARPGBasePlayerCharacter::NormalAttackWithCombo()
 {
-	TurnTowardAttackPoint(AttackPoint);
+	TurnTowardAttackPoint();
 
 	if (bIsAttacking) return;
 	if (bCanNextCombo)
@@ -241,9 +238,9 @@ void ARPGBasePlayerCharacter::NormalAttackWithCombo(const FVector& AttackPoint)
 	bIsAttacking = true;
 }
 
-void ARPGBasePlayerCharacter::TurnTowardAttackPoint(const FVector& AttackPoint)
+void ARPGBasePlayerCharacter::TurnTowardAttackPoint()
 {
-	const FVector LookAtPoint(AttackPoint.X, AttackPoint.Y, GetActorLocation().Z);
+	const FVector LookAtPoint(TargetingHitResult.ImpactPoint.X, TargetingHitResult.ImpactPoint.Y, GetActorLocation().Z);
 	SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), LookAtPoint));
 	GetCharacterMovement()->FlushServerMoves();
 }

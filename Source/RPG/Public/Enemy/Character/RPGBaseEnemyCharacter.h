@@ -41,8 +41,7 @@ public:
 
 	void AnnihilatedByPlayer();
 
-	void ActivateRagdollMode();
-	void DeactivateRagdollMode();
+	void EnableSuckedIn();
 
 protected:
 
