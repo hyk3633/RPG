@@ -3,7 +3,6 @@
 
 #include "CoreMinimal.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
-#include "Projectile/RPGProjectile.h"
 #include "Enums/NotifyCode.h"
 #include "RPGSorcererPlayerCharacter.generated.h"
 
@@ -11,7 +10,9 @@
  * 
  */
 
-class ARPGProjectile;
+class ARPGBaseProjectile;
+class ARPGSpeedDownProjectile;
+class ARPGBlackhole;
 
 UCLASS()
 class RPG_API ARPGSorcererPlayerCharacter : public ARPGBasePlayerCharacter
@@ -42,12 +43,10 @@ protected:
 
 	virtual void CastNormalAttack() override;
 
-	ARPGProjectile* SpawnProjectile(TSubclassOf<ARPGProjectile> ProjClass, const FVector& SpawnLoc, const FRotator& SpawnRot);
-
 	/** Ability Q */
 
 	UFUNCTION()
-	void FireRestrictionBall(ENotifyCode NotifyCode);
+	void FireSpeedDownBall(ENotifyCode NotifyCode);
 
 	/** Ability W */
 
@@ -69,13 +68,10 @@ protected:
 	UFUNCTION()
 	void FloatACharacter(ENotifyCode NotifyCode);
 
-	UFUNCTION()
-	void BlackholeOn(ENotifyCode NotifyCode);
+	void DeactivateFloatingCharacter();
 
 	UFUNCTION()
-	void BlackholeOff(ENotifyCode NotifyCode);
-
-	
+	void SummonBlackhole(ENotifyCode NotifyCode);
 
 protected:
 
@@ -83,13 +79,16 @@ protected:
 	UStaticMeshComponent* AimCursor;
 
 	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
-	TSubclassOf<ARPGProjectile> PrimaryPorjectile;
+	TSubclassOf<ARPGBaseProjectile> PrimaryPorjectile;
 
 	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
-	TSubclassOf<ARPGProjectile> RestrictionBallPorjectile;
+	TSubclassOf<ARPGSpeedDownProjectile> SpeedDownPorjectile;
 
 	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
-	TSubclassOf<ARPGProjectile> MeteorlitePorjectile;
+	TSubclassOf<ARPGBaseProjectile> MeteorlitePorjectile;
+
+	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
+	TSubclassOf<ARPGBlackhole> BlackholeClass;
 
 	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteor Shower")
 	UParticleSystem* MeteorPortalParticle;
@@ -108,16 +107,9 @@ protected:
 
 	FTimerHandle MeteorShowerTimer;
 
-	UPROPERTY(EditAnywhere, Category = "Character | Particle | Blackhole")
-	UParticleSystem* BlackholeParticle;
-
 	bool bFloatCharacter = false;
 
-	bool bBlackholeOn = false;
-
 	FTimerHandle FloatingTimer;
-
-	void DeactivateFloatingCharacter();
 
 	UPROPERTY(EditAnywhere, Category = "Character | Attack Option")
 	float AttackRange = 900.f;

@@ -3,6 +3,9 @@
 #include "Player/Character/RPGSorcererPlayerCharacter.h"
 #include "Player/RPGAnimInstance.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
+#include "Projectile/RPGBaseProjectile.h"
+#include "Projectile/RPGSpeedDownProjectile.h"
+#include "Player/CharacterAbility/RPGBlackhole.h"
 #include "../RPG.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -39,25 +42,6 @@ void ARPGSorcererPlayerCharacter::Tick(float DeltaTime)
 		Loc.Z += 1.6f;
 		SetActorLocation(Loc);
 	}
-	if (bBlackholeOn)
-	{
-		TArray<AActor*> Enemies;
-		UKismetSystemLibrary::SphereOverlapActors(
-			this,
-			TargetingHitResult.ImpactPoint,
-			500.f,
-			TArray<TEnumAsByte<EObjectTypeQuery>>(),
-			ARPGBaseEnemyCharacter::StaticClass(),
-			TArray<AActor*>(),
-			Enemies
-		);
-		FVector d = TargetingHitResult.ImpactPoint;
-		d.Z += 300.f;
-		for (AActor* Actor : Enemies)
-		{
-			Actor->SetActorLocation(Actor->GetActorLocation() + (d - Actor->GetActorLocation()).GetSafeNormal() * 5.f);
-		}
-	}
 }
 
 void ARPGSorcererPlayerCharacter::DrawTargetingCursor()
@@ -82,12 +66,11 @@ void ARPGSorcererPlayerCharacter::BeginPlay()
 
 	if (GetRPGAnimInstance())
 	{
-		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("FireRestrictionBall"));
+		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("FireSpeedDownBall"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("MeteorliteFall"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("MeteorShower"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("FloatACharacter"));
-		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("BlackholeOn"));
-		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("BlackholeOff"));
+		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("SummonBlackhole"));
 	}
 	if (MeteorShowerParticleComp)
 		MeteorShowerParticleComp->Deactivate();
@@ -137,63 +120,57 @@ void ARPGSorcererPlayerCharacter::CastNormalAttack()
 		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L")).GetLocation();
 	}
 
-	FRotator Direction;
+	FRotator SpawnDirection;
 	ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(TargetingHitResult.GetActor());
 	if (Enemy && GetDistanceTo(Enemy) <= AttackRange)
 	{
-		Direction = (Enemy->GetActorLocation() - SpawnPoint).Rotation();
+		SpawnDirection = (Enemy->GetActorLocation() - SpawnPoint).Rotation();
 	}
 	else
 	{
-		Direction = (FVector(TargetingHitResult.ImpactPoint.X, TargetingHitResult.ImpactPoint.Y, SpawnPoint.Z) - SpawnPoint).Rotation();
+		SpawnDirection = (FVector(TargetingHitResult.ImpactPoint.X, TargetingHitResult.ImpactPoint.Y, SpawnPoint.Z) - SpawnPoint).Rotation();
 	}
 
-	SpawnProjectile(PrimaryPorjectile, SpawnPoint, Direction)->SetExpireTime(0.7f);
-}
-
-ARPGProjectile* ARPGSorcererPlayerCharacter::SpawnProjectile(TSubclassOf<ARPGProjectile> ProjClass, const FVector& SpawnLoc, const FRotator& SpawnRot)
-{
-	if (ProjClass)
+	ARPGBaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGBaseProjectile>(PrimaryPorjectile, FTransform(SpawnDirection, SpawnPoint), this, this);
+	if (Projectile)
 	{
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = this;
-		SpawnParams.Instigator = this;
-
-		ARPGProjectile* Projectile = GetWorld()->SpawnActor<ARPGProjectile>(ProjClass, SpawnLoc, SpawnRot, SpawnParams);
-		Projectile->InitPlayerProjectile();
-		return Projectile;
+		Projectile->SetProjectileData(FProjectileData(true, 50, 1, 1000, 32));
+		Projectile->FinishSpawning(FTransform(SpawnDirection, SpawnPoint));
 	}
-	return nullptr;
 }
 
-void ARPGSorcererPlayerCharacter::FireRestrictionBall(ENotifyCode NotifyCode)
+void ARPGSorcererPlayerCharacter::FireSpeedDownBall(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_S_Q_FireRestrictionBall) return;
 
 	FVector SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L")).GetLocation();
 	FRotator SpawnDirection = (TargetingHitResult.GetActor()->GetActorLocation() - SpawnPoint).Rotation();
-	ARPGProjectile* TempProj = SpawnProjectile(RestrictionBallPorjectile, SpawnPoint, SpawnDirection.Add(60.f, 0.f, 0.f));
-	if (TempProj)
+	ARPGSpeedDownProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGSpeedDownProjectile>(SpeedDownPorjectile, FTransform(SpawnDirection.Add(60.f, 0.f, 0.f), SpawnPoint), this, this);
+	if (Projectile)
 	{
-		const ACharacter* TempCha = Cast<ACharacter>(TargetingHitResult.GetActor());
-		if (TempCha)
-		{
-			TempProj->SetHomingTarget(TempCha);
-			TempProj->SetThrowingMode();
-		}
+		Projectile->SetProjectileData(FProjectileData(true, 30, 2, 1000, 32, true, 300));
+		ACharacter* TargetCha = Cast<ACharacter>(TargetingHitResult.GetActor());
+		if (TargetCha) Projectile->SetHomingTarget(TargetCha);
+		Projectile->FinishSpawning(FTransform(SpawnDirection, SpawnPoint));
 	}
 }
 
 void ARPGSorcererPlayerCharacter::MeteorliteFall(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_S_W_MeteorliteFall) return;
+
 	const FVector SpawnPoint = GetActorLocation() + (GetActorUpVector() * 300.f);
-	const FRotator SpawnDirection = (TargetingHitResult.ImpactPoint - SpawnPoint).Rotation();
+	const FTransform SpanwTransform((TargetingHitResult.ImpactPoint - SpawnPoint).Rotation(), SpawnPoint);
 	if (MeteorlitePortalParticle)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorlitePortalParticle, SpawnPoint, SpawnDirection);
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorlitePortalParticle, SpanwTransform);
 	}
-	SpawnProjectile(MeteorlitePorjectile, SpawnPoint, SpawnDirection);
+	ARPGBaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGBaseProjectile>(MeteorlitePorjectile, SpanwTransform, this, this);
+	if (Projectile)
+	{
+		Projectile->SetProjectileData(FProjectileData(true, 600, 1, 1000, 70, true, 600));
+		Projectile->FinishSpawning(SpanwTransform);
+	}
 }
 
 void ARPGSorcererPlayerCharacter::MeteorShower(ENotifyCode NotifyCode)
@@ -231,6 +208,7 @@ void ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle()
 
 void ARPGSorcererPlayerCharacter::OnMeteorShowerParticleCollide(FName EventName, float EmitterTime, int32 ParticleTime, FVector Location, FVector Velocity, FVector Direction, FVector Normal, FName BoneName, UPhysicalMaterial* PhysMat)
 {
+	// TODO : Radial Damage
 	CF();
 }
 
@@ -242,54 +220,19 @@ void ARPGSorcererPlayerCharacter::FloatACharacter(ENotifyCode NotifyCode)
 	GetWorldTimerManager().SetTimer(FloatingTimer, this, &ARPGSorcererPlayerCharacter::DeactivateFloatingCharacter, 2.f, false);
 }
 
-void ARPGSorcererPlayerCharacter::BlackholeOn(ENotifyCode NotifyCode)
-{
-	if (NotifyCode != ENotifyCode::ENC_S_R_BlackholeOn) return;
-
-	TArray<AActor*> Enemies;
-	UKismetSystemLibrary::SphereOverlapActors(
-		this,
-		TargetingHitResult.ImpactPoint,
-		500.f,
-		TArray<TEnumAsByte<EObjectTypeQuery>>(),
-		ARPGBaseEnemyCharacter::StaticClass(),
-		TArray<AActor*>(),
-		Enemies
-	);
-	for (AActor* Actor : Enemies)
-	{
-		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Actor);
-		Enemy->EnableSuckedIn();
-	}
-
-	FVector d = TargetingHitResult.ImpactPoint;
-	d.Z += 300.f;
-	SpawnParticle(BlackholeParticle, d);
-	bBlackholeOn = true;
-}
-
-void ARPGSorcererPlayerCharacter::BlackholeOff(ENotifyCode NotifyCode)
-{
-	if (NotifyCode != ENotifyCode::ENC_S_R_BlackholeOff) return;
-	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-	bBlackholeOn = false;
-	TArray<AActor*> Enemies;
-	UKismetSystemLibrary::SphereOverlapActors(
-		this,
-		TargetingHitResult.ImpactPoint,
-		500.f,
-		TArray<TEnumAsByte<EObjectTypeQuery>>(),
-		ARPGBaseEnemyCharacter::StaticClass(),
-		TArray<AActor*>(),
-		Enemies
-	);
-	for (AActor* Actor : Enemies)
-	{
-		Actor->Destroy();
-	}
-}
-
 void ARPGSorcererPlayerCharacter::DeactivateFloatingCharacter()
 {
 	bFloatCharacter = false;
+}
+
+void ARPGSorcererPlayerCharacter::SummonBlackhole(ENotifyCode NotifyCode)
+{
+	if (NotifyCode != ENotifyCode::ENC_S_R_BlackholeOn) return;
+
+	if (BlackholeClass)
+	{
+		FVector SpawnLocation = TargetingHitResult.ImpactPoint;
+		SpawnLocation.Z += 300.f;
+		GetWorld()->SpawnActor<ARPGBlackhole>(BlackholeClass, SpawnLocation, FRotator::ZeroRotator);
+	}
 }

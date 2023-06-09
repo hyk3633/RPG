@@ -1,5 +1,5 @@
 
-#include "Projectile/RPGProjectile.h"
+#include "Projectile/RPGBaseProjectile.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "../RPG.h"
@@ -7,18 +7,15 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "DrawDebugHelpers.h"
 
-ARPGProjectile::ARPGProjectile()
+ARPGBaseProjectile::ARPGBaseProjectile()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Collision Component"));
 	SetRootComponent(CollisionComponent);
 	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	CollisionComponent->SetCollisionObjectType(ECC_EnemyProjectile);
 	CollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_EnemyBody, ECollisionResponse::ECR_Ignore);
 	CollisionComponent->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECollisionResponse::ECR_Ignore);
 	CollisionComponent->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 
@@ -28,42 +25,38 @@ ARPGProjectile::ARPGProjectile()
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
-	ProjectileMovementComponent->InitialSpeed = 7000.f;
 	ProjectileMovementComponent->MaxSpeed = 7000.f;
 	ProjectileMovementComponent->ProjectileGravityScale = 0.f;
 	ProjectileMovementComponent->SetAutoActivate(true);
 
 }
 
-void ARPGProjectile::InitPlayerProjectile()
+void ARPGBaseProjectile::SetProjectileData(const FProjectileData& ProjData)
 {
-	CollisionComponent->SetCollisionObjectType(ECC_PlayerProjectile);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_EnemyBody, ECollisionResponse::ECR_Block);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_PlayerBody, ECollisionResponse::ECR_Ignore);
+	if (ProjData.bIsPlayers)
+	{
+		CollisionComponent->SetCollisionObjectType(ECC_PlayerProjectile);
+		CollisionComponent->SetCollisionResponseToChannel(ECC_PlayerBody, ECollisionResponse::ECR_Ignore);
+	}
+	else
+	{
+		CollisionComponent->SetCollisionObjectType(ECC_EnemyProjectile);
+		CollisionComponent->SetCollisionResponseToChannel(ECC_EnemyBody, ECollisionResponse::ECR_Ignore);
+	}
+	Damage = ProjData.Damage;
+	ExpireTime = ProjData.ExpireTime;
+	ProjectileMovementComponent->InitialSpeed = ProjData.InitialSpeed;
+	CollisionComponent->SetSphereRadius(ProjData.CollisionRadius);
+	bIsExplosive = ProjData.bIsExplosive;
+	ExplosionRadius = ProjData.ExplosionRadius;
 }
 
-void ARPGProjectile::SetHomingTarget(const ACharacter* TargetCha)
-{
-	// TODO : isvalid()
-	bIsHoming = true;
-	ProjectileMovementComponent->MaxSpeed = 7000.f;
-	ProjectileMovementComponent->HomingTargetComponent = TargetCha->GetRootComponent();
-	ProjectileMovementComponent->HomingAccelerationMagnitude = 1000.f;
-}
-
-void ARPGProjectile::SetThrowingMode()
-{
-	ProjectileMovementComponent->InitialSpeed = 1000.f;
-	ProjectileMovementComponent->ProjectileGravityScale = 1.f;
-	VelocityLastFrame = GetVelocity().Size();
-}
-
-void ARPGProjectile::BeginPlay()
+void ARPGBaseProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ProjectileMovementComponent->OnProjectileStop.AddDynamic(this, &ARPGProjectile::OnImpact);
-	
+	ProjectileMovementComponent->OnProjectileStop.AddDynamic(this, &ARPGBaseProjectile::OnImpact);
+
 	if (BodyParticle)
 	{
 		BodyParticleComp = UGameplayStatics::SpawnEmitterAttached(
@@ -75,31 +68,17 @@ void ARPGProjectile::BeginPlay()
 			EAttachLocation::KeepWorldPosition
 		);
 	}
+
+	GetWorldTimerManager().SetTimer(ExpireTimer, this, &ARPGBaseProjectile::ExpireProjectile, ExpireTime, false);
 }
 
-void ARPGProjectile::Tick(float DeltaTime)
+void ARPGBaseProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bIsHoming && VelocityLastFrame < GetVelocity().Size())
-	{
-		ProjectileMovementComponent->bIsHomingProjectile = true;
-		ProjectileMovementComponent->SetVelocityInLocalSpace(GetActorRotation().Vector() * 1.f);
-		ProjectileMovementComponent->ProjectileGravityScale = 0.f;
-		bIsHoming = false;
-	}
-	else
-	{
-		VelocityLastFrame = GetVelocity().Size();
-	}
 }
 
-void ARPGProjectile::SetExpireTime(float LifeTime)
-{
-	GetWorldTimerManager().SetTimer(ExpireTimer, this, &ARPGProjectile::ExpireProjectile, LifeTime, false);
-}
-
-void ARPGProjectile::ExpireProjectile()
+void ARPGBaseProjectile::ExpireProjectile()
 {
 	DeactivateProjectile();
 	if (NoImpactParticle)
@@ -108,7 +87,7 @@ void ARPGProjectile::ExpireProjectile()
 	}
 }
 
-void ARPGProjectile::DeactivateProjectile()
+void ARPGBaseProjectile::DeactivateProjectile()
 {
 	GetWorldTimerManager().ClearTimer(ExpireTimer);
 	ProjectileMovementComponent->StopMovementImmediately();
@@ -120,7 +99,7 @@ void ARPGProjectile::DeactivateProjectile()
 	SetLifeSpan(1.f);
 }
 
-void ARPGProjectile::OnImpact(const FHitResult& HitResult)
+void ARPGBaseProjectile::OnImpact(const FHitResult& HitResult)
 {
 	if (HitResult.bBlockingHit)
 	{
@@ -128,7 +107,7 @@ void ARPGProjectile::OnImpact(const FHitResult& HitResult)
 	}
 }
 
-void ARPGProjectile::ProcessHitEvent(const FHitResult& HitResult)
+void ARPGBaseProjectile::ProcessHitEvent(const FHitResult& HitResult)
 {
 	PLOG(TEXT("%s"), *HitResult.GetActor()->GetName());
 	DeactivateProjectile();
@@ -139,7 +118,14 @@ void ARPGProjectile::ProcessHitEvent(const FHitResult& HitResult)
 		{
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), CharacterImpactParticle, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
 		}
-		// TODO : ApplyDamage
+		if (bIsExplosive)
+		{
+			UGameplayStatics::ApplyRadialDamage(this, Damage, GetActorLocation(), ExplosionRadius, UDamageType::StaticClass(), TArray<AActor*>(), GetOwner(), GetInstigatorController());
+		}
+		else
+		{
+			UGameplayStatics::ApplyDamage(Character, Damage, GetInstigatorController(), GetOwner(), UDamageType::StaticClass());
+		}
 	}
 	else
 	{
@@ -149,4 +135,6 @@ void ARPGProjectile::ProcessHitEvent(const FHitResult& HitResult)
 		}
 	}
 }
+
+
 
