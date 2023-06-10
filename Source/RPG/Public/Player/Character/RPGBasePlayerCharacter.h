@@ -45,6 +45,22 @@ public:
 
 	virtual void CastAbilityByKey(EPressedKey KeyType);
 
+	UFUNCTION(Server, Reliable)
+	void CABKServer(EPressedKey KeyType);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void CABKMulticast(EPressedKey KeyType);
+
+	void CABK(EPressedKey KeyType);
+
+	void CAAT();
+
+	UFUNCTION(Server, Reliable)
+	void CAATServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void CAATMulticast();
+
 	virtual void CastAbilityAfterTargeting();
 
 	FORCEINLINE URPGAnimInstance* GetRPGAnimInstance() const { return RPGAnimInstance; }
@@ -52,6 +68,8 @@ public:
 	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
 
 protected:
+
+	void DrawTargetingCursor();
 
 	void SpawnClickParticle(const FVector& EmitLocation);
 
@@ -105,6 +123,9 @@ protected:
 	ARPGPlayerController* RPGPlayerController;
 
 	URPGAnimInstance* RPGAnimInstance;
+
+	UPROPERTY(EditAnywhere)
+	UStaticMeshComponent* AimCursor;
 
 	bool bAiming = false;
 

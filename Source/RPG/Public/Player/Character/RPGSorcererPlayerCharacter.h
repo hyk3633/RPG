@@ -25,8 +25,6 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	void DrawTargetingCursor();
-
 protected:
 
 	virtual void PostInitializeComponents() override;
@@ -74,9 +72,6 @@ protected:
 	void SummonBlackhole(ENotifyCode NotifyCode);
 
 protected:
-
-	UPROPERTY(EditAnywhere)
-	UStaticMeshComponent* AimCursor;
 
 	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
 	TSubclassOf<ARPGBaseProjectile> PrimaryPorjectile;

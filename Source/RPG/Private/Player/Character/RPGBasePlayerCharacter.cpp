@@ -45,6 +45,14 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
 
+	AimCursor = CreateDefaultSubobject<UStaticMeshComponent>("Aim Cursor");
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> StaticMeshAsset(TEXT("StaticMesh'/Engine/BasicShapes/Plane.Plane'"));
+	if (StaticMeshAsset.Succeeded()) { AimCursor->SetStaticMesh(StaticMeshAsset.Object); }
+	AimCursor->SetupAttachment(RootComponent);
+	AimCursor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AimCursor->SetCastShadow(false);
+	AimCursor->SetVisibility(false);
+
 	AttackEndComboState();
 }
 
@@ -93,6 +101,21 @@ void ARPGBasePlayerCharacter::Tick(float DeltaTime)
 	{
 		UpdateMovement();
 	}
+	// 바닥에만 붙어 있도록
+	if (bAiming)
+	{
+		DrawTargetingCursor();
+	}
+}
+
+void ARPGBasePlayerCharacter::DrawTargetingCursor()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC == nullptr) return;
+	FHitResult TraceHitResult;
+	PC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
+	TraceHitResult.Location.Z += 5.f;
+	AimCursor->SetWorldLocation(TraceHitResult.Location);
 }
 
 void ARPGBasePlayerCharacter::StopMove()
@@ -155,7 +178,52 @@ void ARPGBasePlayerCharacter::DoNormalAttack()
 void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 {
 	if (RPGAnimInstance == nullptr) return;
+	if (HasAuthority())
+	{
+		CABK(KeyType);
+	}
+	else
+	{
+		CABKServer(KeyType);
+	}
+}
+
+void ARPGBasePlayerCharacter::CABKServer_Implementation(EPressedKey KeyType)
+{
+	CABKMulticast(KeyType);
+}
+
+void ARPGBasePlayerCharacter::CABKMulticast_Implementation(EPressedKey KeyType)
+{
+	CABK(KeyType);
+}
+
+void ARPGBasePlayerCharacter::CABK(EPressedKey KeyType)
+{
+	if (RPGAnimInstance == nullptr) return;
 	RPGAnimInstance->SetCurrentState(KeyType);
+}
+
+void ARPGBasePlayerCharacter::CAAT()
+{
+	if (HasAuthority())
+	{
+		CastAbilityAfterTargeting();
+	}
+	else
+	{
+		CAATServer();
+	}
+}
+
+void ARPGBasePlayerCharacter::CAATServer_Implementation()
+{
+	CAATMulticast();
+}
+
+void ARPGBasePlayerCharacter::CAATMulticast_Implementation()
+{
+	CastAbilityAfterTargeting();
 }
 
 void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
@@ -165,6 +233,7 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, TargetingHitResult);
 	bAiming = false;
+	AimCursor->SetVisibility(false);
 }
 
 void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)

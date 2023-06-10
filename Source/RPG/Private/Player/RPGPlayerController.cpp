@@ -106,7 +106,8 @@ void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 
 	if (MyCharacter->GetAiming())
 	{
-		MyCharacter->CastAbilityAfterTargeting();
+		//MyCharacter->CastAbilityAfterTargeting();
+		MyCharacter->CAAT();
 	}
 	else
 	{

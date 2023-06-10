@@ -34,21 +34,49 @@ public:
 protected:
 
 	/** Q 스킬 함수 */
+
 	UFUNCTION()
-	void FindEnemiesInFrontAndDamage();
+	void Wield(ENotifyCode NotifyCode);
 
 	bool IsActorInRange(const AActor* Target);
 
 	/** W 스킬 함수 */
 	UFUNCTION()
-	void RevealNearbyEnemies();
+	void RevealEnemies(ENotifyCode NotifyCode);
+
+	void DeactivateEnforceParticle();
 	
 	/** E 스킬 함수 */
+
 	UFUNCTION()
-	void PushawayNearbyEnemies();
+	void SmashDown(ENotifyCode NotifyCode);
 
 	/** R 스킬 함수 */
 	UFUNCTION()
-	void AnnihilateNearbyEnemies();
+	void Rebirth(ENotifyCode NotifyCode);
+
+	UFUNCTION(Server,Reliable)
+	void RebirthServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void RebirthMulticast();
+
+	void RebirthReal();
+
+private:
+
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Wield")
+	UParticleSystem* WieldImpactParticle;
+
+	UPROPERTY()
+	UParticleSystemComponent* EnforceParticleComp;
+
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | RevealEnemies")
+	UParticleSystem* EnforceParticle;
+
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | RevealEnemies")
+	UParticleSystem* EnforceEndParticle;
+
+	FTimerHandle EnforceParticleTimer;
 
 };

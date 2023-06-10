@@ -14,15 +14,12 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "EngineUtils.h"
 
 #include "DrawDebugHelpers.h"
 
 ARPGSorcererPlayerCharacter::ARPGSorcererPlayerCharacter()
 {
-	AimCursor = CreateDefaultSubobject<UStaticMeshComponent>("Aim Cursor");
-	AimCursor->SetupAttachment(RootComponent);
-	AimCursor->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//AimCursor->SetVisibility(false);
 
 	MaxCombo = 4;
 }
@@ -31,27 +28,12 @@ void ARPGSorcererPlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// 바닥에만 붙어 있도록
-	if (bAiming)
-	{
-		DrawTargetingCursor();
-	}
 	if (bFloatCharacter)
 	{
 		FVector Loc = GetActorLocation();
 		Loc.Z += 1.6f;
 		SetActorLocation(Loc);
 	}
-}
-
-void ARPGSorcererPlayerCharacter::DrawTargetingCursor()
-{
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (PC == nullptr) return;
-	FHitResult TraceHitResult;
-	PC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
-	TraceHitResult.Location.Z += 5.f;
-	AimCursor->SetWorldLocation(TraceHitResult.Location);
 }
 
 void ARPGSorcererPlayerCharacter::PostInitializeComponents()
@@ -87,6 +69,7 @@ void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	}
 	RPGAnimInstance->AimingPoseOn();
 	bAiming = true;
+	AimCursor->SetVisibility(true);
 }
 
 void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
@@ -208,8 +191,10 @@ void ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle()
 
 void ARPGSorcererPlayerCharacter::OnMeteorShowerParticleCollide(FName EventName, float EmitterTime, int32 ParticleTime, FVector Location, FVector Velocity, FVector Direction, FVector Normal, FName BoneName, UPhysicalMaterial* PhysMat)
 {
-	// TODO : Radial Damage
-	CF();
+	TArray<AActor*> IgnoreActors;
+	for (AActor* Actor : TActorRange<ARPGBasePlayerCharacter>(GetWorld()))
+		IgnoreActors.Add(Actor);
+	UGameplayStatics::ApplyRadialDamage(this, 150.f, Location, 150.f, UDamageType::StaticClass(), IgnoreActors, this, GetController());
 }
 
 void ARPGSorcererPlayerCharacter::FloatACharacter(ENotifyCode NotifyCode)

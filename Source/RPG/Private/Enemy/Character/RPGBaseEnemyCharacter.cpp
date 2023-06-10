@@ -48,7 +48,7 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
-	PLOG(TEXT("Enemy damaged : %f"), Damage);
+	PLOG(TEXT("%s Enemy damaged : %f"), *DamagedActor->GetName(), Damage);
 }
 
 void ARPGBaseEnemyCharacter::BTTask_Attack()
