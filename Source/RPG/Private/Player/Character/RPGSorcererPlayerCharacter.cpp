@@ -69,7 +69,8 @@ void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	}
 	RPGAnimInstance->AimingPoseOn();
 	bAiming = true;
-	AimCursor->SetVisibility(true);
+	if (IsLocallyControlled())
+		AimCursor->SetVisibility(true);
 }
 
 void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()

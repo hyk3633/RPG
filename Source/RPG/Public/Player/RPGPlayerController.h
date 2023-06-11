@@ -79,6 +79,4 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* Ability_R_PressedAction;
-
-	
 };

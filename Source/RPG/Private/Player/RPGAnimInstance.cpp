@@ -17,15 +17,6 @@ void URPGAnimInstance::JumpToAttackMontageSection(int32 NewSection)
 
 void URPGAnimInstance::PlayAbilityMontageOfKey(bool bJumpToSection)
 {
-	if (GetOwningActor()->HasAuthority())
-	{
-		PLOG(TEXT("authority : %d"), CurrentKeyState);
-	}
-	else
-	{
-		PLOG(TEXT("no authority : %d"), CurrentKeyState);
-	}
-
 	switch (CurrentKeyState)
 	{
 	case EPressedKey::EPK_Q:

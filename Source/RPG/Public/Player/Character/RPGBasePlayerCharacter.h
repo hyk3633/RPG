@@ -37,37 +37,56 @@ protected:
 
 public:	
 
+	/** 이동 */
+
 	void StopMove();
 
 	void SetDestinationAndPath();
 
+	/** 일반 공격 */
+
 	void DoNormalAttack();
 
-	virtual void CastAbilityByKey(EPressedKey KeyType);
+	UFUNCTION(Client, Reliable)
+	void GetHitCursorClient();
 
 	UFUNCTION(Server, Reliable)
-	void CABKServer(EPressedKey KeyType);
+	void GetHitCursorServer(FHitResult Hit);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void CABKMulticast(EPressedKey KeyType);
+	void GetHitCursorMulticast(FHitResult Hit);
 
-	void CABK(EPressedKey KeyType);
-
-	void CAAT();
+	/** 스킬 사용 준비 */
 
 	UFUNCTION(Server, Reliable)
-	void CAATServer();
+	void CastAbilityByKeyServer(EPressedKey KeyType);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void CAATMulticast();
+	/** 타게팅 후 스킬 사용 */
 
-	virtual void CastAbilityAfterTargeting();
+	void CastAbilityAfterTargeting_WithAuthority();
 
 	FORCEINLINE URPGAnimInstance* GetRPGAnimInstance() const { return RPGAnimInstance; }
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
 
 protected:
+
+	/** 스킬 사용 준비 */
+
+	UFUNCTION(NetMulticast, Reliable)
+	void CastAbilityByKeyMulticast(EPressedKey KeyType);
+
+	virtual void CastAbilityByKey(EPressedKey KeyType);
+
+	/** 타게팅 후 스킬 사용 */
+
+	UFUNCTION(Server, Reliable)
+	void CastAbilityAfterTargetingServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void CastAbilityAfterTargetingMulticast();
+
+	virtual void CastAbilityAfterTargeting();
 
 	void DrawTargetingCursor();
 
@@ -180,7 +199,9 @@ protected:
 
 	int32 MaxCombo = 4;
 
+	UPROPERTY(Replicated)
 	FHitResult TargetingHitResult;
+
 	FHitResult GroundHitResult;
 
 };

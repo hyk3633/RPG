@@ -25,13 +25,9 @@ protected:
 
 	virtual void BeginPlay() override;
 
-public:
-
 	virtual void CastAbilityByKey(EPressedKey KeyType) override;
 
 	virtual void CastAbilityAfterTargeting() override;
-
-protected:
 
 	/** Q 스킬 함수 */
 
@@ -54,14 +50,6 @@ protected:
 	/** R 스킬 함수 */
 	UFUNCTION()
 	void Rebirth(ENotifyCode NotifyCode);
-
-	UFUNCTION(Server,Reliable)
-	void RebirthServer();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void RebirthMulticast();
-
-	void RebirthReal();
 
 private:
 

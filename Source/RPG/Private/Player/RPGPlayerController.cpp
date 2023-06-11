@@ -107,7 +107,7 @@ void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 	if (MyCharacter->GetAiming())
 	{
 		//MyCharacter->CastAbilityAfterTargeting();
-		MyCharacter->CAAT();
+		MyCharacter->CastAbilityAfterTargeting_WithAuthority();
 	}
 	else
 	{
@@ -118,25 +118,25 @@ void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 void ARPGPlayerController::Ability_Q_PressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->CastAbilityByKey(EPressedKey::EPK_Q);
+	MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_Q);
 }
 
 void ARPGPlayerController::Ability_W_PressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->CastAbilityByKey(EPressedKey::EPK_W);
+	MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_W);
 }
 
 void ARPGPlayerController::Ability_E_PressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->CastAbilityByKey(EPressedKey::EPK_E);
+	MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_E);
 }
 
 void ARPGPlayerController::Ability_R_PressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->CastAbilityByKey(EPressedKey::EPK_R);
+	MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_R);
 }
 
 void ARPGPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

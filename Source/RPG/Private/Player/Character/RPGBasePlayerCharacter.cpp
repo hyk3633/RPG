@@ -102,7 +102,7 @@ void ARPGBasePlayerCharacter::Tick(float DeltaTime)
 		UpdateMovement();
 	}
 	// 바닥에만 붙어 있도록
-	if (bAiming)
+	if (bAiming && IsLocallyControlled())
 	{
 		DrawTargetingCursor();
 	}
@@ -116,6 +116,10 @@ void ARPGBasePlayerCharacter::DrawTargetingCursor()
 	PC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
 	TraceHitResult.Location.Z += 5.f;
 	AimCursor->SetWorldLocation(TraceHitResult.Location);
+	if (GetLocalRole() != ENetRole::ROLE_AutonomousProxy)
+	{
+		CF();
+	}
 }
 
 void ARPGBasePlayerCharacter::StopMove()
@@ -157,71 +161,69 @@ void ARPGBasePlayerCharacter::SetDestinationAndPath()
 	}*/
 }
 
+/** 일반 공격 */
+
 void ARPGBasePlayerCharacter::DoNormalAttack()
 {
 	// TODO : 바닥, 적 구분
-	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, TargetingHitResult);
-	if (TargetingHitResult.bBlockingHit)
-	{
-		if (HasAuthority())
-		{
-			NormalAttackWithCombo();
-		}
-		else
-		{
-			NormalAttackWithComboServer();
-		}
-	}
+	GetHitCursorClient();
+	NormalAttackWithComboServer();
 	SpawnClickParticle(TargetingHitResult.ImpactPoint);
+}
+
+void ARPGBasePlayerCharacter::GetHitCursorClient_Implementation()
+{
+	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, TargetingHitResult);
+	GetHitCursorServer(TargetingHitResult);
+}
+
+void ARPGBasePlayerCharacter::GetHitCursorServer_Implementation(FHitResult Hit)
+{
+	GetHitCursorMulticast(Hit);
+}
+
+void ARPGBasePlayerCharacter::GetHitCursorMulticast_Implementation(FHitResult Hit)
+{
+	TargetingHitResult = Hit;
+}
+
+/** 스킬 사용 준비 */
+
+void ARPGBasePlayerCharacter::CastAbilityByKeyServer_Implementation(EPressedKey KeyType)
+{
+	if (RPGAnimInstance == nullptr) return;
+	CastAbilityByKeyMulticast(KeyType);
+}
+
+void ARPGBasePlayerCharacter::CastAbilityByKeyMulticast_Implementation(EPressedKey KeyType)
+{
+	CastAbilityByKey(KeyType);
 }
 
 void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 {
 	if (RPGAnimInstance == nullptr) return;
-	if (HasAuthority())
-	{
-		CABK(KeyType);
-	}
-	else
-	{
-		CABKServer(KeyType);
-	}
-}
-
-void ARPGBasePlayerCharacter::CABKServer_Implementation(EPressedKey KeyType)
-{
-	CABKMulticast(KeyType);
-}
-
-void ARPGBasePlayerCharacter::CABKMulticast_Implementation(EPressedKey KeyType)
-{
-	CABK(KeyType);
-}
-
-void ARPGBasePlayerCharacter::CABK(EPressedKey KeyType)
-{
-	if (RPGAnimInstance == nullptr) return;
 	RPGAnimInstance->SetCurrentState(KeyType);
 }
 
-void ARPGBasePlayerCharacter::CAAT()
+/** 타게팅 후 스킬 사용 */
+
+void ARPGBasePlayerCharacter::CastAbilityAfterTargeting_WithAuthority()
 {
-	if (HasAuthority())
-	{
-		CastAbilityAfterTargeting();
-	}
-	else
-	{
-		CAATServer();
-	}
+	if (RPGAnimInstance == nullptr) return;
+	
+	GetHitCursorClient();
+	CastAbilityAfterTargetingServer();
+	if (IsLocallyControlled())
+		AimCursor->SetVisibility(false);
 }
 
-void ARPGBasePlayerCharacter::CAATServer_Implementation()
+void ARPGBasePlayerCharacter::CastAbilityAfterTargetingServer_Implementation()
 {
-	CAATMulticast();
+	CastAbilityAfterTargetingMulticast();
 }
 
-void ARPGBasePlayerCharacter::CAATMulticast_Implementation()
+void ARPGBasePlayerCharacter::CastAbilityAfterTargetingMulticast_Implementation()
 {
 	CastAbilityAfterTargeting();
 }
@@ -231,9 +233,7 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
 	if (RPGAnimInstance == nullptr) return;
 	if (RPGAnimInstance->GetCurrentState() == EPressedKey::EPK_R)
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
-	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, TargetingHitResult);
 	bAiming = false;
-	AimCursor->SetVisibility(false);
 }
 
 void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)
@@ -358,4 +358,5 @@ void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ARPGBasePlayerCharacter, PathY);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Health);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Mana);
+	DOREPLIFETIME(ARPGBasePlayerCharacter, TargetingHitResult);
 }

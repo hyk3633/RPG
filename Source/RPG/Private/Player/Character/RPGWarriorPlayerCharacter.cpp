@@ -56,7 +56,8 @@ void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	else
 	{
 		bAiming = true;
-		AimCursor->SetVisibility(true);
+		if(IsLocallyControlled())
+			AimCursor->SetVisibility(true);
 	}
 }
 
@@ -152,28 +153,6 @@ void ARPGWarriorPlayerCharacter::Rebirth(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_W_R_Rebirth) return;
 	
-	if (HasAuthority())
-	{
-		RebirthReal();
-	}
-	else
-	{
-		RebirthServer();
-	}
-}
-
-void ARPGWarriorPlayerCharacter::RebirthServer_Implementation()
-{
-	RebirthMulticast();
-}
-
-void ARPGWarriorPlayerCharacter::RebirthMulticast_Implementation()
-{
-	RebirthReal();
-}
-
-void ARPGWarriorPlayerCharacter::RebirthReal()
-{
 	// TODO : 데미지 주기
 	for (ARPGBaseEnemyCharacter* Enemy : TActorRange<ARPGBaseEnemyCharacter>(GetWorld()))
 	{
