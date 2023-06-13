@@ -1,6 +1,6 @@
 
 
-#include "Enemy/AI/BTTask_Attack.h"
+#include "AI/BTTask_Attack.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "AIController.h"

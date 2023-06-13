@@ -1,6 +1,7 @@
 
 
 #include "Enemy/RPGEnemyAIController.h"
+#include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "../RPG.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
@@ -14,6 +15,9 @@ ARPGEnemyAIController::ARPGEnemyAIController()
 void ARPGEnemyAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
+
+	ARPGBaseEnemyCharacter* MyPawn = Cast<ARPGBaseEnemyCharacter>(InPawn);
+	if (MyPawn) MyPawn->SetAIController(this);
 
 	if (BBAsset)
 	{

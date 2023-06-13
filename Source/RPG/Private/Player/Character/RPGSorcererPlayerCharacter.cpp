@@ -94,6 +94,8 @@ void ARPGSorcererPlayerCharacter::CastNormalAttack()
 {
 	Super::CastNormalAttack();
 
+	if (PrimaryPorjectile == nullptr) return;
+
 	FVector SpawnPoint;
 	if (GetCurrentCombo() % 2 == 0)
 	{

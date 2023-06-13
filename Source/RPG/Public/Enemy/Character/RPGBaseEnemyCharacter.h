@@ -10,7 +10,7 @@ class URPGEnemyAnimInstance;
 
 DECLARE_MULTICAST_DELEGATE(FDelegateOnAttackEnd);
 
-UCLASS()
+UCLASS(Abstract)
 class RPG_API ARPGBaseEnemyCharacter : public ACharacter
 {
 	GENERATED_BODY()
@@ -23,6 +23,8 @@ public:
 
 	FDelegateOnAttackEnd DOnAttackEnd;
 
+	FORCEINLINE void SetAIController(ARPGEnemyAIController* AICont) { MyController = AICont; }
+
 protected:
 
 	virtual void PostInitializeComponents() override;
@@ -34,7 +36,7 @@ protected:
 
 public:
 
-	virtual void BTTask_Attack();
+	void BTTask_Attack();
 
 	void OnRenderCustomDepthEffect() const;
 	void OffRenderCustomDepthEffect() const;
@@ -45,15 +47,23 @@ public:
 
 protected:
 
+	ARPGEnemyAIController* MyController;
+
+	UFUNCTION(Server, Reliable)
+	void AttackServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void AttackMulticast();
+
+	void PlayAttackMontage();
+
 	UFUNCTION()
-	virtual void AttackLineTrace();
+	virtual void Attack() PURE_VIRTUAL(ARPGBaseEnemyCharacter::Attack, );
 
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 private:
-
-	ARPGEnemyAIController* MyController;
 
 	URPGEnemyAnimInstance* MyAnimInst;
 

@@ -34,9 +34,11 @@ void ARPGBaseEnemyCharacter::PostInitializeComponents()
 void ARPGBaseEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+
 	
 	MyAnimInst = Cast<URPGEnemyAnimInstance>(GetMesh()->GetAnimInstance());
-	MyAnimInst->DOnAttackTrace.AddUFunction(this, FName("AttackLineTrace"));
+	MyAnimInst->DOnAttack.AddUFunction(this, FName("Attack"));
 	MyAnimInst->OnMontageEnded.AddDynamic(this, &ARPGBaseEnemyCharacter::OnAttackMontageEnded);
 }
 
@@ -53,7 +55,7 @@ void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, c
 
 void ARPGBaseEnemyCharacter::BTTask_Attack()
 {
-	MyAnimInst->PlayAttackMontage();
+	AttackServer();
 }
 
 void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffect() const
@@ -78,19 +80,20 @@ void ARPGBaseEnemyCharacter::EnableSuckedIn()
 	GetCharacterMovement()->GravityScale = 0.f;
 }
 
-void ARPGBaseEnemyCharacter::AttackLineTrace()
+void ARPGBaseEnemyCharacter::AttackServer_Implementation()
 {
-	FVector TraceStart = GetActorLocation();
-	TraceStart.Z += 50.f;
+	AttackMulticast();
+}
 
-	FHitResult HitResult;
-	GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceStart + GetActorForwardVector() * 150.f, ECC_EnemyAttack);
-	DrawDebugLine(GetWorld(), TraceStart, TraceStart + GetActorForwardVector() * 200.f, FColor::Red, false, 3.f, 0U, 2.f);
+void ARPGBaseEnemyCharacter::AttackMulticast_Implementation()
+{
+	PlayAttackMontage();
+}
 
-	if (HitResult.bBlockingHit)
-	{
-		UGameplayStatics::ApplyDamage(HitResult.GetActor(), 50.f, Controller, this, UDamageType::StaticClass());
-	}
+void ARPGBaseEnemyCharacter::PlayAttackMontage()
+{
+	if (MyAnimInst == nullptr) return;
+	MyAnimInst->PlayAttackMontage();
 }
 
 void ARPGBaseEnemyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)

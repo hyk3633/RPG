@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -6,7 +5,7 @@
 #include "Animation/AnimInstance.h"
 #include "RPGEnemyAnimInstance.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnAttackTraceDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnAttackDelegate);
 
 /**
  * 
@@ -22,12 +21,12 @@ public:
 
 	void PlayDeathMontage();
 
-	FOnAttackTraceDelegate DOnAttackTrace;
+	FOnAttackDelegate DOnAttack;
 
 protected:
 
 	UFUNCTION(BlueprintCallable)
-	void AnimNotify_AttackTrace();
+	void AnimNotify_Attack();
 
 private:
 

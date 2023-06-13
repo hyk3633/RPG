@@ -17,7 +17,7 @@ void URPGEnemyAnimInstance::PlayDeathMontage()
 	Montage_Play(DeathMontage);
 }
 
-void URPGEnemyAnimInstance::AnimNotify_AttackTrace()
+void URPGEnemyAnimInstance::AnimNotify_Attack()
 {
-	DOnAttackTrace.Broadcast();
+	DOnAttack.Broadcast();
 }
