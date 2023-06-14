@@ -27,6 +27,7 @@ void ARPGEnemyAIController::OnPossess(APawn* InPawn)
 	if (MyCharacter)
 	{
 		MyCharacter->SetAIController(this);
+		MyCharacter->DOnDeath.AddUFunction(this, FName("CharacterDead"));
 	}
 
 	if (BBAsset)
@@ -85,5 +86,13 @@ APawn* ARPGEnemyAIController::GetTarget() const
 		return Cast<APawn>(BBComp->GetValueAsObject(FName("Target")));
 	}
 	return nullptr;
+}
+
+void ARPGEnemyAIController::CharacterDead()
+{
+	if (BBComp)
+	{
+		BBComp->SetValueAsBool(FName("IsDead"), true);
+	}
 }
 

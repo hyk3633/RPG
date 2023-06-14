@@ -1,6 +1,7 @@
 
 #include "Enemy/Character/RPGRangedEnemyCharacter.h"
 #include "Enemy/RPGEnemyAIController.h"
+#include "Enemy/RPGEnemyAnimInstance.h"
 #include "Projectile/RPGBaseProjectile.h"
 #include "../RPG.h"
 #include "Engine/SkeletalMeshSocket.h"

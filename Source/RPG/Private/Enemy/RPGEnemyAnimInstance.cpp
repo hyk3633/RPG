@@ -1,6 +1,7 @@
 
 
 #include "Enemy/RPGEnemyAnimInstance.h"
+#include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "../RPG.h"
 
 void URPGEnemyAnimInstance::PlayAttackMontage()
@@ -20,4 +21,9 @@ void URPGEnemyAnimInstance::PlayDeathMontage()
 void URPGEnemyAnimInstance::AnimNotify_Attack()
 {
 	DOnAttack.Broadcast();
+}
+
+void URPGEnemyAnimInstance::AnimNotify_Death()
+{
+	DOnDeath.Broadcast();
 }

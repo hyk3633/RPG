@@ -11,6 +11,7 @@ class UWidgetComponent;
 class URPGEnemyHealthBarWidget;
 
 DECLARE_MULTICAST_DELEGATE(FDelegateOnAttackEnd);
+DECLARE_MULTICAST_DELEGATE(FOnDeathDelegate);
 DECLARE_MULTICAST_DELEGATE_OneParam(FDelegateOnHealthChanged, float HealthPercentage);
 
 UCLASS(Abstract)
@@ -24,10 +25,11 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	FORCEINLINE URPGEnemyAnimInstance* GetEnemyAnimInstance() const { return MyAnimInst; }
 	FORCEINLINE void SetAIController(ARPGEnemyAIController* AICont) { MyController = AICont; }
+	bool GetIsInAir() const;
 
 	FDelegateOnAttackEnd DOnAttackEnd;
+	FOnDeathDelegate DOnDeath;
 	FDelegateOnHealthChanged DOnHealthChanged;
 
 protected:
@@ -35,9 +37,6 @@ protected:
 	virtual void PostInitializeComponents() override;
 
 	virtual void BeginPlay() override;
-
-	UFUNCTION()
-	void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 
 public:
 
@@ -52,6 +51,7 @@ public:
 
 protected:
 
+	UPROPERTY()
 	ARPGEnemyAIController* MyController;
 
 	UFUNCTION(Server, Reliable)
@@ -68,9 +68,25 @@ protected:
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
+	UFUNCTION()
+	void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
+
 	void OnHealthChanged();
 
 	void HealthBarVisibilityOff();
+
+	UFUNCTION(Server, Reliable)
+	void DeathServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void DeathMulticast();
+
+	void PlayDeathMontage();
+
+	UFUNCTION()
+	void ProcessDeath();
+
+	void DestroySelf();
 
 private:
 
@@ -88,4 +104,6 @@ private:
 	float Health = 300.f;
 
 	float MaxHealth = 300.f;
+
+	FTimerHandle DestroyTimer;
 };

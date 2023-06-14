@@ -42,6 +42,9 @@ public:
 
 protected:
 
+	UFUNCTION()
+	void CharacterDead();
+
 private:
 
 	UPROPERTY()

@@ -52,6 +52,7 @@ void ARPGBaseEnemyCharacter::BeginPlay()
 
 	MyAnimInst = Cast<URPGEnemyAnimInstance>(GetMesh()->GetAnimInstance());
 	MyAnimInst->DOnAttack.AddUFunction(this, FName("Attack"));
+	MyAnimInst->DOnDeath.AddUFunction(this, FName("ProcessDeath"));
 	MyAnimInst->OnMontageEnded.AddDynamic(this, &ARPGBaseEnemyCharacter::OnAttackMontageEnded);
 }
 
@@ -59,14 +60,16 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (MyAnimInst)
+	{
+		MyAnimInst->Speed = GetVelocity().Length();
+		MyAnimInst->bIsInAir = GetMovementComponent()->IsFalling();
+	}
 }
 
-void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
+bool ARPGBaseEnemyCharacter::GetIsInAir() const
 {
-	PLOG(TEXT("%s Enemy damaged : %f"), *DamagedActor->GetName(), Damage);
-
-	Health = FMath::Clamp(Health - Damage, 0, MaxHealth);
-	OnHealthChanged();
+	return GetMovementComponent()->IsFalling();
 }
 
 void ARPGBaseEnemyCharacter::BTTask_Attack()
@@ -120,15 +123,59 @@ void ARPGBaseEnemyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bI
 	}
 }
 
+void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
+{
+	PLOG(TEXT("%s Enemy damaged : %f"), *DamagedActor->GetName(), Damage);
+
+	Health = FMath::Clamp(Health - Damage, 0, MaxHealth);
+	OnHealthChanged();
+}
+
 void ARPGBaseEnemyCharacter::OnHealthChanged()
 {
 	if (ProgressBar == nullptr) ProgressBar = Cast<URPGEnemyHealthBarWidget>(HealthBarWidget->GetWidget());
 	else ProgressBar->EnemyHealthProgressBar->SetPercent(Health / MaxHealth);
-	HealthBarWidget->SetVisibility(true);
-	GetWorldTimerManager().SetTimer(HealthBarTimer, this, &ARPGBaseEnemyCharacter::HealthBarVisibilityOff, 60.f);
+
+	if (Health > 0)
+	{
+		HealthBarWidget->SetVisibility(true);
+		GetWorldTimerManager().SetTimer(HealthBarTimer, this, &ARPGBaseEnemyCharacter::HealthBarVisibilityOff, 60.f);
+	}
+	else
+	{
+		HealthBarWidget->SetVisibility(false);
+		DeathServer();
+	}
 }
 
 void ARPGBaseEnemyCharacter::HealthBarVisibilityOff()
 {
 	HealthBarWidget->SetVisibility(false);
+}
+
+void ARPGBaseEnemyCharacter::DeathServer_Implementation()
+{
+	DeathMulticast();
+}
+
+void ARPGBaseEnemyCharacter::DeathMulticast_Implementation()
+{
+	PlayDeathMontage();
+}
+
+void ARPGBaseEnemyCharacter::PlayDeathMontage()
+{
+	MyAnimInst->PlayDeathMontage();
+	DOnDeath.Broadcast();
+}
+
+void ARPGBaseEnemyCharacter::ProcessDeath()
+{
+	GetMesh()->bPauseAnims = true;
+	GetWorldTimerManager().SetTimer(DestroyTimer, this, &ARPGBaseEnemyCharacter::DestroySelf, 3.f, false);
+}
+
+void ARPGBaseEnemyCharacter::DestroySelf()
+{
+	Destroy();
 }

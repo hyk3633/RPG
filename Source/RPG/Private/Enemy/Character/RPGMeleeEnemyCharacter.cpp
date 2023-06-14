@@ -1,6 +1,7 @@
 
 
 #include "Enemy/Character/RPGMeleeEnemyCharacter.h"
+#include "Enemy/RPGEnemyAnimInstance.h"
 #include "../RPG.h"
 #include "Kismet/GameplayStatics.h"
 
