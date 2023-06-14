@@ -9,6 +9,7 @@
  * 
  */
 
+class ARPGBaseEnemyCharacter;
 class UBehaviorTreeComponent;
 class UBlackboardComponent;
 
@@ -22,6 +23,8 @@ public:
 	ARPGEnemyAIController();
 
 protected:
+
+	virtual void PostInitializeComponents() override;
 
 	virtual void OnPossess(APawn* InPawn) override;
 
@@ -37,12 +40,17 @@ public:
 	UFUNCTION(BlueprintCallable)
 	APawn* GetTarget() const;
 
+protected:
+
 private:
 
-	UPROPERTY(EditAnywhere, Category = "AI")
+	UPROPERTY()
+	ARPGBaseEnemyCharacter* MyCharacter;
+
+	UPROPERTY(EditAnywhere, Category = "Enemy | AI")
 	UBehaviorTree* BTAsset;
 
-	UPROPERTY(EditAnywhere, Category = "AI")
+	UPROPERTY(EditAnywhere, Category = "Enemy | AI")
 	UBlackboardData* BBAsset;
 
 	UPROPERTY()

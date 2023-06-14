@@ -7,8 +7,11 @@
 
 class ARPGEnemyAIController;
 class URPGEnemyAnimInstance;
+class UWidgetComponent;
+class URPGEnemyHealthBarWidget;
 
 DECLARE_MULTICAST_DELEGATE(FDelegateOnAttackEnd);
+DECLARE_MULTICAST_DELEGATE_OneParam(FDelegateOnHealthChanged, float HealthPercentage);
 
 UCLASS(Abstract)
 class RPG_API ARPGBaseEnemyCharacter : public ACharacter
@@ -21,9 +24,11 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	FDelegateOnAttackEnd DOnAttackEnd;
-
+	FORCEINLINE URPGEnemyAnimInstance* GetEnemyAnimInstance() const { return MyAnimInst; }
 	FORCEINLINE void SetAIController(ARPGEnemyAIController* AICont) { MyController = AICont; }
+
+	FDelegateOnAttackEnd DOnAttackEnd;
+	FDelegateOnHealthChanged DOnHealthChanged;
 
 protected:
 
@@ -63,12 +68,24 @@ protected:
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
+	void OnHealthChanged();
+
+	void HealthBarVisibilityOff();
+
 private:
 
+	UPROPERTY()
 	URPGEnemyAnimInstance* MyAnimInst;
 
-public:
+	UPROPERTY(EditAnywhere)
+	UWidgetComponent* HealthBarWidget;
 
-	FORCEINLINE URPGEnemyAnimInstance* GetEnemyAnimInstance() const { return MyAnimInst; }
+	UPROPERTY()
+	URPGEnemyHealthBarWidget* ProgressBar;
 
+	FTimerHandle HealthBarTimer;
+
+	float Health = 300.f;
+
+	float MaxHealth = 300.f;
 };

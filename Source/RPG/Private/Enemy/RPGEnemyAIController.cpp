@@ -10,29 +10,33 @@
 
 ARPGEnemyAIController::ARPGEnemyAIController()
 {
+	
+}
+
+void ARPGEnemyAIController::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
 }
 
 void ARPGEnemyAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-	ARPGBaseEnemyCharacter* MyPawn = Cast<ARPGBaseEnemyCharacter>(InPawn);
-	if (MyPawn) MyPawn->SetAIController(this);
+	MyCharacter = Cast<ARPGBaseEnemyCharacter>(InPawn);
+	if (MyCharacter)
+	{
+		MyCharacter->SetAIController(this);
+	}
 
 	if (BBAsset)
 	{
-		if (!UseBlackboard(BBAsset, BBComp) || !InPawn)
-		{
-			ELOG(TEXT("Failed Blackboard"));
-		}
+		if (!UseBlackboard(BBAsset, BBComp) || !InPawn) ELOG(TEXT("Failed Blackboard"));
 	}
 
 	if (BTAsset)
 	{
-		if (!RunBehaviorTree(BTAsset))
-		{
-			ELOG(TEXT("Failed Behaviortree"));
-		}
+		if (!RunBehaviorTree(BTAsset)) ELOG(TEXT("Failed Behaviortree"));
 	}
 }
 
@@ -82,3 +86,4 @@ APawn* ARPGEnemyAIController::GetTarget() const
 	}
 	return nullptr;
 }
+
