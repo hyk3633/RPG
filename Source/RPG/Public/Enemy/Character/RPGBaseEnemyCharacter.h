@@ -51,9 +51,6 @@ public:
 
 protected:
 
-	UPROPERTY()
-	ARPGEnemyAIController* MyController;
-
 	UFUNCTION(Server, Reliable)
 	void AttackServer();
 
@@ -87,6 +84,13 @@ protected:
 	void ProcessDeath();
 
 	void DestroySelf();
+
+	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+
+protected:
+
+	UPROPERTY()
+	ARPGEnemyAIController* MyController;
 
 private:
 

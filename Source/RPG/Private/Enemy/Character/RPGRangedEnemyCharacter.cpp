@@ -34,6 +34,16 @@ void ARPGRangedEnemyCharacter::Attack()
 
 void ARPGRangedEnemyCharacter::AnimNotify_LineTraceOnSocket()
 {
+	LineTraceOnSocketServer();
+}
+
+void ARPGRangedEnemyCharacter::LineTraceOnSocketServer_Implementation()
+{
+	LineTraceOnSocket();
+}
+
+void ARPGRangedEnemyCharacter::LineTraceOnSocket()
+{
 	const USkeletalMeshSocket* BowSocket = BowMesh->GetSocketByName(FName("Bow_Root"));
 	if (BowSocket == nullptr) return;
 
@@ -51,13 +61,17 @@ void ARPGRangedEnemyCharacter::AnimNotify_LineTraceOnSocket()
 
 	FHitResult HitResult;
 	GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_EnemyAttack);
-
 	if (HitResult.bBlockingHit)
 	{
 		FRotator FireRotation = (HitResult.ImpactPoint - TraceStart).Rotation();
 		FireRotation.Pitch = 0.f;
-		SpawnProjectile(TraceStart, FireRotation);
+		SpawnProjectileMulticast(TraceStart, FireRotation);
 	}
+}
+
+void ARPGRangedEnemyCharacter::SpawnProjectileMulticast_Implementation(const FVector& SpawnLocation, const FRotator& SpawnRotation)
+{
+	SpawnProjectile(SpawnLocation, SpawnRotation);
 }
 
 void ARPGRangedEnemyCharacter::SpawnProjectile(const FVector& SpawnLocation, const FRotator& SpawnRotation)

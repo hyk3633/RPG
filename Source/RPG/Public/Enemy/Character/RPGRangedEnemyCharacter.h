@@ -30,7 +30,15 @@ protected:
 
 	virtual void Attack() override;
 
-	virtual void AnimNotify_LineTraceOnSocket();
+	void AnimNotify_LineTraceOnSocket();
+
+	UFUNCTION(Server, Reliable)
+	void LineTraceOnSocketServer();
+
+	void LineTraceOnSocket();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SpawnProjectileMulticast(const FVector& SpawnLocation, const FRotator& SpawnRotation);
 
 	void SpawnProjectile(const FVector& SpawnLocation, const FRotator& SpawnRotation);
 

@@ -10,6 +10,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
 
 #include "DrawDebugHelpers.h"
 
@@ -143,6 +144,7 @@ void ARPGBaseEnemyCharacter::OnHealthChanged()
 	}
 	else
 	{
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		HealthBarWidget->SetVisibility(false);
 		DeathServer();
 	}
@@ -178,4 +180,10 @@ void ARPGBaseEnemyCharacter::ProcessDeath()
 void ARPGBaseEnemyCharacter::DestroySelf()
 {
 	Destroy();
+}
+
+void ARPGBaseEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
 }
