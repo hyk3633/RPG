@@ -32,9 +32,6 @@ protected:
 
 	void AnimNotify_LineTraceOnSocket();
 
-	UFUNCTION(Server, Reliable)
-	void LineTraceOnSocketServer();
-
 	void LineTraceOnSocket();
 
 	UFUNCTION(NetMulticast, Reliable)

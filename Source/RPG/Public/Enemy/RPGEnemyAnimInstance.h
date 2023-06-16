@@ -6,7 +6,6 @@
 #include "RPGEnemyAnimInstance.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnAttackDelegate);
-DECLARE_MULTICAST_DELEGATE(FOnDeathDelegate);
 
 /**
  * 
@@ -26,7 +25,6 @@ public:
 	void PlayDeathMontage();
 
 	FOnAttackDelegate DOnAttack;
-	FOnDeathDelegate DOnDeath;
 
 	friend ARPGBaseEnemyCharacter;
 
@@ -34,9 +32,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_Attack();
-
-	UFUNCTION(BlueprintCallable)
-	void AnimNotify_Death();
 
 private:
 

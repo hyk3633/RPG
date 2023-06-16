@@ -22,8 +22,3 @@ void URPGEnemyAnimInstance::AnimNotify_Attack()
 {
 	DOnAttack.Broadcast();
 }
-
-void URPGEnemyAnimInstance::AnimNotify_Death()
-{
-	DOnDeath.Broadcast();
-}

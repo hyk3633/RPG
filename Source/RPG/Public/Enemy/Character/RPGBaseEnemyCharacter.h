@@ -68,20 +68,22 @@ protected:
 	UFUNCTION()
 	void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 
+	UFUNCTION(Server, Reliable)
+	void HealthDecreaseServer(const float& Damage);
+
+	void HealthDecrease(const float& Damage);
+
+	UFUNCTION()
+	void OnRep_Health();
+
 	void OnHealthChanged();
 
 	void HealthBarVisibilityOff();
-
-	UFUNCTION(Server, Reliable)
-	void DeathServer();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void DeathMulticast();
 
 	void PlayDeathMontage();
-
-	UFUNCTION()
-	void ProcessDeath();
 
 	void DestroySelf();
 
@@ -105,6 +107,7 @@ private:
 
 	FTimerHandle HealthBarTimer;
 
+	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleInstanceOnly, Category = "Enemy | Status")
 	float Health = 300.f;
 
 	float MaxHealth = 300.f;

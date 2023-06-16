@@ -35,14 +35,12 @@ ARPGBaseEnemyCharacter::ARPGBaseEnemyCharacter()
 	HealthBarWidget->SetDrawSize(FVector2D(200.f, 25.f));
 	HealthBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidget->SetVisibility(false);
+
 }
 
 void ARPGBaseEnemyCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-
-	ProgressBar = Cast<URPGEnemyHealthBarWidget>(HealthBarWidget->GetWidget());
-	if (ProgressBar) ProgressBar->EnemyHealthProgressBar->SetPercent(1.f);
 
 	OnTakeAnyDamage.AddDynamic(this, &ARPGBaseEnemyCharacter::TakeAnyDamage);
 }
@@ -51,9 +49,11 @@ void ARPGBaseEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	ProgressBar = Cast<URPGEnemyHealthBarWidget>(HealthBarWidget->GetWidget());
+	if (ProgressBar) ProgressBar->EnemyHealthProgressBar->SetPercent(1.f);
+
 	MyAnimInst = Cast<URPGEnemyAnimInstance>(GetMesh()->GetAnimInstance());
 	MyAnimInst->DOnAttack.AddUFunction(this, FName("Attack"));
-	MyAnimInst->DOnDeath.AddUFunction(this, FName("ProcessDeath"));
 	MyAnimInst->OnMontageEnded.AddDynamic(this, &ARPGBaseEnemyCharacter::OnAttackMontageEnded);
 }
 
@@ -126,16 +126,36 @@ void ARPGBaseEnemyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bI
 
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
-	PLOG(TEXT("%s Enemy damaged : %f"), *DamagedActor->GetName(), Damage);
+	//PLOG(TEXT("%s Enemy damaged : %f"), *DamagedActor->GetName(), Damage);
 
+	HealthDecreaseServer(Damage);
+}
+
+void ARPGBaseEnemyCharacter::HealthDecreaseServer_Implementation(const float& Damage)
+{
+	HealthDecrease(Damage);
+}
+
+void ARPGBaseEnemyCharacter::HealthDecrease(const float& Damage)
+{
 	Health = FMath::Clamp(Health - Damage, 0, MaxHealth);
+	if (Health == 0)
+	{
+		DOnDeath.Broadcast();
+		GetWorldTimerManager().SetTimer(DestroyTimer, this, &ARPGBaseEnemyCharacter::DestroySelf, 5.f, false);
+	}
+}
+
+void ARPGBaseEnemyCharacter::OnRep_Health()
+{
 	OnHealthChanged();
 }
 
 void ARPGBaseEnemyCharacter::OnHealthChanged()
 {
-	if (ProgressBar == nullptr) ProgressBar = Cast<URPGEnemyHealthBarWidget>(HealthBarWidget->GetWidget());
-	else ProgressBar->EnemyHealthProgressBar->SetPercent(Health / MaxHealth);
+	if (ProgressBar == nullptr) return;
+
+	ProgressBar->EnemyHealthProgressBar->SetPercent(Health / MaxHealth);
 
 	if (Health > 0)
 	{
@@ -144,20 +164,16 @@ void ARPGBaseEnemyCharacter::OnHealthChanged()
 	}
 	else
 	{
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Ignore);
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 		HealthBarWidget->SetVisibility(false);
-		DeathServer();
+		PlayDeathMontage();
 	}
 }
 
 void ARPGBaseEnemyCharacter::HealthBarVisibilityOff()
 {
 	HealthBarWidget->SetVisibility(false);
-}
-
-void ARPGBaseEnemyCharacter::DeathServer_Implementation()
-{
-	DeathMulticast();
 }
 
 void ARPGBaseEnemyCharacter::DeathMulticast_Implementation()
@@ -168,13 +184,6 @@ void ARPGBaseEnemyCharacter::DeathMulticast_Implementation()
 void ARPGBaseEnemyCharacter::PlayDeathMontage()
 {
 	MyAnimInst->PlayDeathMontage();
-	DOnDeath.Broadcast();
-}
-
-void ARPGBaseEnemyCharacter::ProcessDeath()
-{
-	GetMesh()->bPauseAnims = true;
-	GetWorldTimerManager().SetTimer(DestroyTimer, this, &ARPGBaseEnemyCharacter::DestroySelf, 3.f, false);
 }
 
 void ARPGBaseEnemyCharacter::DestroySelf()
@@ -186,4 +195,5 @@ void ARPGBaseEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(ARPGBaseEnemyCharacter, Health);
 }

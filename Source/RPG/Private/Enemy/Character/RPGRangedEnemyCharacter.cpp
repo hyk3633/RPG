@@ -34,12 +34,7 @@ void ARPGRangedEnemyCharacter::Attack()
 
 void ARPGRangedEnemyCharacter::AnimNotify_LineTraceOnSocket()
 {
-	LineTraceOnSocketServer();
-}
-
-void ARPGRangedEnemyCharacter::LineTraceOnSocketServer_Implementation()
-{
-	LineTraceOnSocket();
+	if(HasAuthority()) LineTraceOnSocket();
 }
 
 void ARPGRangedEnemyCharacter::LineTraceOnSocket()
