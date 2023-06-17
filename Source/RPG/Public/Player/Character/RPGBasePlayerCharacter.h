@@ -37,6 +37,10 @@ protected:
 
 public:	
 
+	/** Ä«¸Þ¶ó ÁÜ ÀÎ ¾Æ¿ô */
+
+	void CameraZoomInOut(int8 Value);
+
 	/** ÀÌµ¿ */
 
 	void StopMove();
@@ -152,6 +156,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraArm;
+
+	int32 NextArmLength = 1200;
+
+	bool bZooming = false;
 
 	UPROPERTY(VisibleAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;

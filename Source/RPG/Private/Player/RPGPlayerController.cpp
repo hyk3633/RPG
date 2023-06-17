@@ -6,6 +6,7 @@
 #include "Enums/PressedKey.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "InputMappingContext.h"
 #include "Net/UnrealNetwork.h"
 
 ARPGPlayerController::ARPGPlayerController()
@@ -14,6 +15,29 @@ ARPGPlayerController::ARPGPlayerController()
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
 
+	static ConstructorHelpers::FObjectFinder<UInputMappingContext> Obj_DefaultContext (TEXT("/Game/_Assets/Input/IMC_DefaulnputMappingContext.IMC_DefaulnputMappingContext"));
+	if (Obj_DefaultContext.Succeeded()) DefaultMappingContext = Obj_DefaultContext.Object;
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_LeftClick (TEXT("/Game/_Assets/Input/IA_LeftClick.IA_LeftClick"));
+	if (Obj_LeftClick.Succeeded()) LeftClickAction = Obj_LeftClick.Object;
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_RightClick (TEXT("/Game/_Assets/Input/IA_RightClick.IA_RightClick"));
+	if (Obj_RightClick.Succeeded()) RightClickAction = Obj_RightClick.Object;
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_Q (TEXT("/Game/_Assets/Input/IA_Q.IA_Q"));
+	if (Obj_Q.Succeeded()) QPressedAction = Obj_Q.Object;
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_W (TEXT("/Game/_Assets/Input/IA_W.IA_W"));
+	if (Obj_W.Succeeded()) WPressedAction = Obj_W.Object;
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_E (TEXT("/Game/_Assets/Input/IA_E.IA_E"));
+	if (Obj_E.Succeeded()) EPressedAction = Obj_E.Object;
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_R (TEXT("/Game/_Assets/Input/IA_R.IA_R"));
+	if (Obj_R.Succeeded()) RPressedAction = Obj_R.Object;
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_MouseWheelScroll (TEXT("/Game/_Assets/Input/IA_ZoomInOut.IA_ZoomInOut"));
+	if (Obj_MouseWheelScroll.Succeeded()) MouseWheelScroll = Obj_MouseWheelScroll.Object;
 }
 
 void ARPGPlayerController::PostInitializeComponents()
@@ -78,23 +102,24 @@ void ARPGPlayerController::SetupInputComponent()
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(InputComponent))
 	{
-		EnhancedInputComponent->BindAction(SetDestinationClickAction, ETriggerEvent::Started, this, &ARPGPlayerController::SetDestinationClick_StopMove);
-		EnhancedInputComponent->BindAction(SetDestinationClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::SetDestinationClick_SetPath);
+		EnhancedInputComponent->BindAction(LeftClickAction, ETriggerEvent::Started, this, &ARPGPlayerController::LeftClickAction_StopMove);
+		EnhancedInputComponent->BindAction(LeftClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::LeftClickAction_SetPath);
 		EnhancedInputComponent->BindAction(RightClickAction, ETriggerEvent::Completed, this, &ARPGPlayerController::RightClick_AttackOrSetAbilityPoint);
-		EnhancedInputComponent->BindAction(Ability_Q_PressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::Ability_Q_PressedAction_Cast);
-		EnhancedInputComponent->BindAction(Ability_W_PressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::Ability_W_PressedAction_Cast);
-		EnhancedInputComponent->BindAction(Ability_E_PressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::Ability_E_PressedAction_Cast);
-		EnhancedInputComponent->BindAction(Ability_R_PressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::Ability_R_PressedAction_Cast);
+		EnhancedInputComponent->BindAction(QPressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::QPressedAction_Cast);
+		EnhancedInputComponent->BindAction(WPressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::WPressedAction_Cast);
+		EnhancedInputComponent->BindAction(EPressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::EPressedAction_Cast);
+		EnhancedInputComponent->BindAction(RPressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::RPressedAction_Cast);
+		EnhancedInputComponent->BindAction(MouseWheelScroll, ETriggerEvent::Triggered, this, &ARPGPlayerController::MouseWheelScroll_ZoomInOut);
 	}
 }
 
-void ARPGPlayerController::SetDestinationClick_StopMove()
+void ARPGPlayerController::LeftClickAction_StopMove()
 {
 	if (MyCharacter == nullptr) return;
 	MyCharacter->StopMove();
 }
 
-void ARPGPlayerController::SetDestinationClick_SetPath()
+void ARPGPlayerController::LeftClickAction_SetPath()
 {
 	if (MyCharacter == nullptr) return;
 	MyCharacter->SetDestinationAndPath();
@@ -115,28 +140,34 @@ void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 	}
 }
 
-void ARPGPlayerController::Ability_Q_PressedAction_Cast()
+void ARPGPlayerController::QPressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
 	MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_Q);
 }
 
-void ARPGPlayerController::Ability_W_PressedAction_Cast()
+void ARPGPlayerController::WPressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
 	MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_W);
 }
 
-void ARPGPlayerController::Ability_E_PressedAction_Cast()
+void ARPGPlayerController::EPressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
 	MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_E);
 }
 
-void ARPGPlayerController::Ability_R_PressedAction_Cast()
+void ARPGPlayerController::RPressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
 	MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_R);
+}
+
+void ARPGPlayerController::MouseWheelScroll_ZoomInOut(const FInputActionValue& Value)
+{
+	if (MyCharacter == nullptr) return;
+	MyCharacter->CameraZoomInOut(-Value.Get<float>());
 }
 
 void ARPGPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

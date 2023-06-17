@@ -109,7 +109,7 @@ void ARPGBaseProjectile::OnImpact(const FHitResult& HitResult)
 
 void ARPGBaseProjectile::ProcessHitEvent(const FHitResult& HitResult)
 {
-	PLOG(TEXT("%s"), *HitResult.GetActor()->GetName());
+	//PLOG(TEXT("%s"), *HitResult.GetActor()->GetName());
 	DeactivateProjectile();
 	ACharacter* Character = Cast<ACharacter>(HitResult.GetActor());
 	if (Character)

@@ -106,6 +106,16 @@ void ARPGBasePlayerCharacter::Tick(float DeltaTime)
 	{
 		DrawTargetingCursor();
 	}
+
+	if (bZooming)
+	{
+		CameraArm->TargetArmLength = (int32) (FMath::FInterpTo(CameraArm->TargetArmLength, NextArmLength, DeltaTime, 10) + 0.5f);
+		if (FMath::Abs(CameraArm->TargetArmLength - NextArmLength) <= 6.f)
+		{
+			CameraArm->TargetArmLength = NextArmLength;
+			bZooming = false;
+		}
+	}
 }
 
 void ARPGBasePlayerCharacter::DrawTargetingCursor()
@@ -116,10 +126,12 @@ void ARPGBasePlayerCharacter::DrawTargetingCursor()
 	PC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
 	TraceHitResult.Location.Z += 5.f;
 	AimCursor->SetWorldLocation(TraceHitResult.Location);
-	if (GetLocalRole() != ENetRole::ROLE_AutonomousProxy)
-	{
-		CF();
-	}
+}
+
+void ARPGBasePlayerCharacter::CameraZoomInOut(int8 Value)
+{
+	NextArmLength = FMath::Clamp(CameraArm->TargetArmLength + Value * 300, 600, 2100);
+	bZooming = true;
 }
 
 void ARPGBasePlayerCharacter::StopMove()
@@ -136,7 +148,7 @@ void ARPGBasePlayerCharacter::SetDestinationAndPath()
 	
 	if (Hit.bBlockingHit == false)
 	{
-		WLOG(TEXT("Nothing Hit"));
+		//WLOG(TEXT("Nothing Hit"));
 		return;
 	}
 

@@ -12,6 +12,7 @@
 class ARPGBasePlayerCharacter;
 class UInputMappingContext;
 class UInputAction;
+struct FInputActionValue;
 
 UCLASS()
 class RPG_API ARPGPlayerController : public APlayerController
@@ -38,19 +39,21 @@ protected:
 
 	virtual void SetupInputComponent() override;
 
-	void SetDestinationClick_StopMove();
+	void LeftClickAction_StopMove();
 
-	void SetDestinationClick_SetPath();
+	void LeftClickAction_SetPath();
 
 	void RightClick_AttackOrSetAbilityPoint();
 
-	void Ability_Q_PressedAction_Cast();
+	void QPressedAction_Cast();
 
-	void Ability_W_PressedAction_Cast();
+	void WPressedAction_Cast();
 
-	void Ability_E_PressedAction_Cast();
+	void EPressedAction_Cast();
 
-	void Ability_R_PressedAction_Cast();
+	void RPressedAction_Cast();
+
+	void MouseWheelScroll_ZoomInOut(const FInputActionValue& Value);
 
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
@@ -59,24 +62,27 @@ private:
 	UPROPERTY(Replicated)
 	ARPGBasePlayerCharacter* MyCharacter;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* SetDestinationClickAction;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* LeftClickAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* RightClickAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* Ability_Q_PressedAction;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* QPressedAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* Ability_W_PressedAction;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* WPressedAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* Ability_E_PressedAction;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* EPressedAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* Ability_R_PressedAction;
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* RPressedAction;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* MouseWheelScroll;
 };
