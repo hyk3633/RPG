@@ -83,6 +83,8 @@ void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
 	{
 		RPGAnimInstance->PlayAbilityMontageOfKey(true);
 		RPGAnimInstance->AimingPoseOff();
+		if (RPGAnimInstance->GetCurrentState() == EPressedKey::EPK_R)
+			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 	}
 	else
 	{

@@ -68,11 +68,9 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	void DeactivateProjectileToAllClients();
+
 protected:
-
-	void ExpireProjectile();
-
-	void DeactivateProjectile();
 
 	virtual void BeginPlay() override;
 
@@ -80,6 +78,13 @@ protected:
 	void OnImpact(const FHitResult& HitResult);
 
 	virtual void ProcessHitEvent(const FHitResult& HitResult);
+
+	void ExpireProjectile();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void DeactivateProjectileMulticast();
+
+	void DeactivateProjectile();
 
 protected:
 

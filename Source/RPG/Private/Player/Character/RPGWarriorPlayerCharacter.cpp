@@ -3,11 +3,14 @@
 #include "Player/Character/RPGWarriorPlayerCharacter.h"
 #include "Player/RPGAnimInstance.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
+#include "Projectile/RPGBaseProjectile.h"
 #include "../RPG.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemlibrary.h"
+#include "Components/CapsuleComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "EngineUtils.h"
+#include "Net/UnrealNetwork.h"
 
 ARPGWarriorPlayerCharacter::ARPGWarriorPlayerCharacter()
 {
@@ -29,6 +32,12 @@ void ARPGWarriorPlayerCharacter::PostInitializeComponents()
 void ARPGWarriorPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (IsLocallyControlled())
+	{
+		GetCapsuleComponent()->SetNotifyRigidBodyCollision(true);
+		GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &ARPGWarriorPlayerCharacter::OnComponentHitEvent);
+	}
 
 	if (GetRPGAnimInstance())
 	{
@@ -56,8 +65,7 @@ void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	else
 	{
 		bAiming = true;
-		if(IsLocallyControlled())
-			AimCursor->SetVisibility(true);
+		if(IsLocallyControlled()) AimCursor->SetVisibility(true);
 	}
 }
 
@@ -65,15 +73,28 @@ void ARPGWarriorPlayerCharacter::CastAbilityAfterTargeting()
 {
 	Super::CastAbilityAfterTargeting();
 
-	RPGAnimInstance->PlayAbilityMontageOfKey();
+	if(HasAuthority() == false) RPGAnimInstance->PlayAbilityMontageOfKey();
+}
+
+void ARPGWarriorPlayerCharacter::OnComponentHitEvent(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+
 }
 
 void ARPGWarriorPlayerCharacter::Wield(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_W_Q_Wield) return;
 	
-	// TODO : 투사체 반사
-	TArray<FHitResult> Hits;
+	if(IsLocallyControlled()) WieldSphereTraceServer();
+}
+
+void ARPGWarriorPlayerCharacter::WieldSphereTraceServer_Implementation()
+{
+	WieldSphereTrace();
+}
+
+void ARPGWarriorPlayerCharacter::WieldSphereTrace()
+{
 	UKismetSystemLibrary::SphereTraceMulti
 	(
 		this,
@@ -83,16 +104,34 @@ void ARPGWarriorPlayerCharacter::Wield(ENotifyCode NotifyCode)
 		UEngineTypes::ConvertToTraceType(ECC_PlayerAttack),
 		false,
 		TArray<AActor*>(),
-		EDrawDebugTrace::Persistent,
-		Hits,
+		EDrawDebugTrace::None,
+		WieldHitResults,
 		true
 	);
-	for (FHitResult Hit : Hits)
+	for (FHitResult Hit : WieldHitResults)
 	{
-		if (Hit.bBlockingHit)
+		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
+		if (Enemy)
 		{
-			UGameplayStatics::ApplyDamage(Hit.GetActor(), 25.f, GetController(), this, UDamageType::StaticClass());
+			UGameplayStatics::ApplyDamage(Enemy, 25.f, GetController(), this, UDamageType::StaticClass());
 		}
+		else
+		{
+			ARPGBaseProjectile* Proj = Cast<ARPGBaseProjectile>(Hit.GetActor());
+			if (Proj)
+			{
+				Proj->DeactivateProjectileToAllClients();
+			}
+			SpawnWieldImpactParticleMulticast(Proj->GetActorLocation());
+		}
+	}
+}
+
+void ARPGWarriorPlayerCharacter::SpawnWieldImpactParticleMulticast_Implementation(const FVector_NetQuantize& SpawnLocation)
+{
+	if (HasAuthority() == false)
+	{
+		SpawnParticle(WieldImpactParticle, SpawnLocation, GetActorRotation());
 	}
 }
 
@@ -114,13 +153,34 @@ void ARPGWarriorPlayerCharacter::RevealEnemies(ENotifyCode NotifyCode)
 	if (NotifyCode != ENotifyCode::ENC_W_W_RevealEnemies) return;
 	// TODO : 같은 맵에 있는 적들만 감지
 	// TODO : 투사체 자동 반사 (다른 함수)
+	
+	if (IsLocallyControlled())
+	{
+		EnemyCustomDepthOn();
+		ActivateEnforceParticleServer();
+	}
+}
+
+void ARPGWarriorPlayerCharacter::EnemyCustomDepthOn()
+{
+	bReflectOn = true;
 	for (ARPGBaseEnemyCharacter* Enemy : TActorRange<ARPGBaseEnemyCharacter>(GetWorld()))
 	{
 		if (GetDistanceTo(Enemy) < 1000.f)
 		{
-			Enemy->OnRenderCustomDepthEffect();
+			Enemy->OnRenderCustomDepthEffectToAllClients();
 		}
 	}
+}
+
+void ARPGWarriorPlayerCharacter::ActivateEnforceParticleServer_Implementation()
+{
+	ActivateEnforceParticleMulticast();
+}
+
+void ARPGWarriorPlayerCharacter::ActivateEnforceParticleMulticast_Implementation()
+{
+	if (HasAuthority()) return;
 	if (EnforceParticleComp)
 	{
 		EnforceParticleComp->Activate();
@@ -130,6 +190,7 @@ void ARPGWarriorPlayerCharacter::RevealEnemies(ENotifyCode NotifyCode)
 
 void ARPGWarriorPlayerCharacter::DeactivateEnforceParticle()
 {
+	bReflectOn = false;
 	EnforceParticleComp->Deactivate();
 	SpawnParticle(EnforceEndParticle, GetActorLocation(), GetActorRotation());
 }
@@ -161,4 +222,10 @@ void ARPGWarriorPlayerCharacter::Rebirth(ENotifyCode NotifyCode)
 			Enemy->AnnihilatedByPlayer();
 		}
 	}
+}
+
+void ARPGWarriorPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
 }

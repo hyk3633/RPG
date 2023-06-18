@@ -21,6 +21,7 @@ ARPGBaseEnemyCharacter::ARPGBaseEnemyCharacter()
 	//GetMesh()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
 	GetMesh()->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECollisionResponse::ECR_Ignore);
+	GetMesh()->CustomDepthStencilValue = 251;
 
 	GetCapsuleComponent()->SetCollisionObjectType(ECC_EnemyBody);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
@@ -35,6 +36,7 @@ ARPGBaseEnemyCharacter::ARPGBaseEnemyCharacter()
 	HealthBarWidget->SetDrawSize(FVector2D(200.f, 25.f));
 	HealthBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidget->SetVisibility(false);
+
 
 }
 
@@ -78,14 +80,14 @@ void ARPGBaseEnemyCharacter::BTTask_Attack()
 	AttackServer();
 }
 
-void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffect() const
+void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffectToAllClients()
 {
-	GetMesh()->SetRenderCustomDepth(true);
+	OnRenderCustomDepthEffectMulticast();
 }
 
-void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffect() const
+void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffectToAllClients()
 {
-	GetMesh()->SetRenderCustomDepth(false);
+	OffRenderCustomDepthEffectMulticast();
 }
 
 void ARPGBaseEnemyCharacter::AnnihilatedByPlayer()
@@ -126,7 +128,7 @@ void ARPGBaseEnemyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bI
 
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
-	//PLOG(TEXT("%s Enemy damaged : %f"), *DamagedActor->GetName(), Damage);
+	PLOG(TEXT("%s Enemy damaged : %f"), *DamagedActor->GetName(), Damage);
 
 	HealthDecreaseServer(Damage);
 }
@@ -189,6 +191,16 @@ void ARPGBaseEnemyCharacter::PlayDeathMontage()
 void ARPGBaseEnemyCharacter::DestroySelf()
 {
 	Destroy();
+}
+
+void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffectMulticast_Implementation()
+{
+	GetMesh()->SetRenderCustomDepth(true);
+}
+
+void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffectMulticast_Implementation()
+{
+	GetMesh()->SetRenderCustomDepth(false);
 }
 
 void ARPGBaseEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

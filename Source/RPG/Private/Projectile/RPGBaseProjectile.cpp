@@ -12,6 +12,8 @@ ARPGBaseProjectile::ARPGBaseProjectile()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	bReplicates = true;
+
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Collision Component"));
 	SetRootComponent(CollisionComponent);
 	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -78,27 +80,6 @@ void ARPGBaseProjectile::Tick(float DeltaTime)
 
 }
 
-void ARPGBaseProjectile::ExpireProjectile()
-{
-	DeactivateProjectile();
-	if (NoImpactParticle)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), NoImpactParticle, GetActorLocation(), GetActorRotation());
-	}
-}
-
-void ARPGBaseProjectile::DeactivateProjectile()
-{
-	GetWorldTimerManager().ClearTimer(ExpireTimer);
-	ProjectileMovementComponent->StopMovementImmediately();
-	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	if (BodyParticleComp)
-	{
-		BodyParticleComp->Deactivate();
-	}
-	SetLifeSpan(1.f);
-}
-
 void ARPGBaseProjectile::OnImpact(const FHitResult& HitResult)
 {
 	if (HitResult.bBlockingHit)
@@ -136,5 +117,36 @@ void ARPGBaseProjectile::ProcessHitEvent(const FHitResult& HitResult)
 	}
 }
 
+void ARPGBaseProjectile::ExpireProjectile()
+{
+	DeactivateProjectile();
+	if (NoImpactParticle)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), NoImpactParticle, GetActorLocation(), GetActorRotation());
+	}
+}
+
+void ARPGBaseProjectile::DeactivateProjectileToAllClients()
+{
+	DeactivateProjectileMulticast();
+}
+
+void ARPGBaseProjectile::DeactivateProjectileMulticast_Implementation()
+{
+	DeactivateProjectile();
+}
+
+void ARPGBaseProjectile::DeactivateProjectile()
+{
+	GetWorldTimerManager().ClearTimer(ExpireTimer);
+	BodyMesh->SetVisibility(false);
+	ProjectileMovementComponent->StopMovementImmediately();
+	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (BodyParticleComp)
+	{
+		BodyParticleComp->Deactivate();
+	}
+	SetLifeSpan(1.f);
+}
 
 

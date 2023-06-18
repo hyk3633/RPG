@@ -60,13 +60,8 @@ void ARPGRangedEnemyCharacter::LineTraceOnSocket()
 	{
 		FRotator FireRotation = (HitResult.ImpactPoint - TraceStart).Rotation();
 		FireRotation.Pitch = 0.f;
-		SpawnProjectileMulticast(TraceStart, FireRotation);
+		SpawnProjectile(TraceStart, FireRotation);
 	}
-}
-
-void ARPGRangedEnemyCharacter::SpawnProjectileMulticast_Implementation(const FVector& SpawnLocation, const FRotator& SpawnRotation)
-{
-	SpawnProjectile(SpawnLocation, SpawnRotation);
 }
 
 void ARPGRangedEnemyCharacter::SpawnProjectile(const FVector& SpawnLocation, const FRotator& SpawnRotation)
@@ -77,7 +72,7 @@ void ARPGRangedEnemyCharacter::SpawnProjectile(const FVector& SpawnLocation, con
 	ARPGBaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGBaseProjectile>(ProjectileClass, SpawnTransform, this, this);
 	if (Projectile)
 	{
-		Projectile->SetProjectileData(FProjectileData(false, 50, 1, 1000, 8));
+		Projectile->SetProjectileData(FProjectileData(false, 50, 3, 1000, 8));
 		Projectile->FinishSpawning(SpawnTransform);
 	}
 }

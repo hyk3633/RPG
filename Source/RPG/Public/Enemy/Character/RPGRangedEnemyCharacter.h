@@ -34,9 +34,6 @@ protected:
 
 	void LineTraceOnSocket();
 
-	UFUNCTION(NetMulticast, Reliable)
-	void SpawnProjectileMulticast(const FVector& SpawnLocation, const FRotator& SpawnRotation);
-
 	void SpawnProjectile(const FVector& SpawnLocation, const FRotator& SpawnRotation);
 
 private:

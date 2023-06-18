@@ -79,7 +79,7 @@ void ARPGBasePlayerCharacter::BeginPlay()
 void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
 	if (Health == 0.f) return;
-
+	CF();
 	Health = FMath::Max(Health - Damage, 0.f);
 	DOnChangeHealthPercentage.Broadcast(Health / MaxHealth);
 
@@ -145,12 +145,7 @@ void ARPGBasePlayerCharacter::SetDestinationAndPath()
 {
 	FHitResult Hit;
 	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
-	
-	if (Hit.bBlockingHit == false)
-	{
-		//WLOG(TEXT("Nothing Hit"));
-		return;
-	}
+	if (Hit.bBlockingHit == false) return;
 
 	SpawnClickParticle(Hit.ImpactPoint);
 
@@ -189,12 +184,13 @@ void ARPGBasePlayerCharacter::GetHitCursorClient_Implementation()
 	GetHitCursorServer(TargetingHitResult);
 }
 
-void ARPGBasePlayerCharacter::GetHitCursorServer_Implementation(FHitResult Hit)
+void ARPGBasePlayerCharacter::GetHitCursorServer_Implementation(const FHitResult& Hit)
 {
+	// 서버에서만?
 	GetHitCursorMulticast(Hit);
 }
 
-void ARPGBasePlayerCharacter::GetHitCursorMulticast_Implementation(FHitResult Hit)
+void ARPGBasePlayerCharacter::GetHitCursorMulticast_Implementation(const FHitResult& Hit)
 {
 	TargetingHitResult = Hit;
 }
@@ -203,7 +199,6 @@ void ARPGBasePlayerCharacter::GetHitCursorMulticast_Implementation(FHitResult Hi
 
 void ARPGBasePlayerCharacter::CastAbilityByKeyServer_Implementation(EPressedKey KeyType)
 {
-	if (RPGAnimInstance == nullptr) return;
 	CastAbilityByKeyMulticast(KeyType);
 }
 
@@ -226,8 +221,7 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargeting_WithAuthority()
 	
 	GetHitCursorClient();
 	CastAbilityAfterTargetingServer();
-	if (IsLocallyControlled())
-		AimCursor->SetVisibility(false);
+	if (IsLocallyControlled()) AimCursor->SetVisibility(false);
 }
 
 void ARPGBasePlayerCharacter::CastAbilityAfterTargetingServer_Implementation()
@@ -243,8 +237,6 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargetingMulticast_Implementation(
 void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
 {
 	if (RPGAnimInstance == nullptr) return;
-	if (RPGAnimInstance->GetCurrentState() == EPressedKey::EPK_R)
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 	bAiming = false;
 }
 

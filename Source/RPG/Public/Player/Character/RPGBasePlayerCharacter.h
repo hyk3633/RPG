@@ -55,10 +55,10 @@ public:
 	void GetHitCursorClient();
 
 	UFUNCTION(Server, Reliable)
-	void GetHitCursorServer(FHitResult Hit);
+	void GetHitCursorServer(const FHitResult& Hit);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void GetHitCursorMulticast(FHitResult Hit);
+	void GetHitCursorMulticast(const FHitResult& Hit);
 
 	/** 스킬 사용 준비 */
 
