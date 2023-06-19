@@ -78,8 +78,8 @@ void ARPGBasePlayerCharacter::BeginPlay()
 
 void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
+	PLOG(TEXT("Player Take Damage : %f"), Damage);
 	if (Health == 0.f) return;
-	CF();
 	Health = FMath::Max(Health - Damage, 0.f);
 	DOnChangeHealthPercentage.Broadcast(Health / MaxHealth);
 

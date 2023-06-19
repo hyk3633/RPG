@@ -80,14 +80,14 @@ void ARPGBaseEnemyCharacter::BTTask_Attack()
 	AttackServer();
 }
 
-void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffectToAllClients()
+void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffect()
 {
-	OnRenderCustomDepthEffectMulticast();
+	GetMesh()->SetRenderCustomDepth(true);
 }
 
-void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffectToAllClients()
+void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffect()
 {
-	OffRenderCustomDepthEffectMulticast();
+	GetMesh()->SetRenderCustomDepth(false);
 }
 
 void ARPGBaseEnemyCharacter::AnnihilatedByPlayer()
@@ -191,16 +191,6 @@ void ARPGBaseEnemyCharacter::PlayDeathMontage()
 void ARPGBaseEnemyCharacter::DestroySelf()
 {
 	Destroy();
-}
-
-void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffectMulticast_Implementation()
-{
-	GetMesh()->SetRenderCustomDepth(true);
-}
-
-void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffectMulticast_Implementation()
-{
-	GetMesh()->SetRenderCustomDepth(false);
 }
 
 void ARPGBaseEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

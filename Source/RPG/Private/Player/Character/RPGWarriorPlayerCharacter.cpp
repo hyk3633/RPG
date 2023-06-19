@@ -33,10 +33,9 @@ void ARPGWarriorPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (IsLocallyControlled())
+	if (HasAuthority())
 	{
-		GetCapsuleComponent()->SetNotifyRigidBodyCollision(true);
-		GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &ARPGWarriorPlayerCharacter::OnComponentHitEvent);
+		GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ARPGWarriorPlayerCharacter::OnComponentBeginOverlap);
 	}
 
 	if (GetRPGAnimInstance())
@@ -50,6 +49,14 @@ void ARPGWarriorPlayerCharacter::BeginPlay()
 	if (EnforceParticle)
 	{
 		EnforceParticleComp = UGameplayStatics::SpawnEmitterAttached(EnforceParticle, GetMesh(), NAME_None, FVector(50.f,0.f,180.f), GetActorRotation(), EAttachLocation::KeepRelativeOffset, false, EPSCPoolMethod::None, false);
+	}
+}
+
+void ARPGWarriorPlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
+{
+	if (bReflectOn == false && HasAuthority())
+	{
+		Super::TakeAnyDamage(DamagedActor, Damage, DamageType, InstigatorController, DamageCauser);
 	}
 }
 
@@ -76,9 +83,15 @@ void ARPGWarriorPlayerCharacter::CastAbilityAfterTargeting()
 	if(HasAuthority() == false) RPGAnimInstance->PlayAbilityMontageOfKey();
 }
 
-void ARPGWarriorPlayerCharacter::OnComponentHitEvent(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+void ARPGWarriorPlayerCharacter::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-
+	if (bReflectOn && HasAuthority())
+	{
+		ARPGBaseProjectile* Proj = Cast<ARPGBaseProjectile>(OtherActor);
+		if (Proj == nullptr) return;
+		Proj->ReflectProjectileFromAllClients();
+		SpawnReflectImpactParticleMulticast(OtherActor->GetActorLocation());
+	}
 }
 
 void ARPGWarriorPlayerCharacter::Wield(ENotifyCode NotifyCode)
@@ -153,46 +166,88 @@ void ARPGWarriorPlayerCharacter::RevealEnemies(ENotifyCode NotifyCode)
 	if (NotifyCode != ENotifyCode::ENC_W_W_RevealEnemies) return;
 	// TODO : 같은 맵에 있는 적들만 감지
 	// TODO : 투사체 자동 반사 (다른 함수)
-	
-	if (IsLocallyControlled())
+	if (HasAuthority())
 	{
-		EnemyCustomDepthOn();
-		ActivateEnforceParticleServer();
+		FindNearbyEnemiesServer();
+		ActivateEnforceParticleMulticast();
 	}
 }
 
-void ARPGWarriorPlayerCharacter::EnemyCustomDepthOn()
+void ARPGWarriorPlayerCharacter::FindNearbyEnemiesServer_Implementation()
 {
-	bReflectOn = true;
+	FindNearbyEnemies();
+}
+
+void ARPGWarriorPlayerCharacter::FindNearbyEnemies()
+{
+	CDepthOnEnemies.Empty();
 	for (ARPGBaseEnemyCharacter* Enemy : TActorRange<ARPGBaseEnemyCharacter>(GetWorld()))
 	{
 		if (GetDistanceTo(Enemy) < 1000.f)
 		{
-			Enemy->OnRenderCustomDepthEffectToAllClients();
+			CDepthOnEnemies.Add(Enemy);
 		}
+	}
+	bReflectOn = true;
+	GetCapsuleComponent()->SetGenerateOverlapEvents(true);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECR_Overlap);
+}
+
+void ARPGWarriorPlayerCharacter::OnRep_bReflectOn()
+{
+	if(bReflectOn) EnemyCustomDepthOn();
+}
+
+void ARPGWarriorPlayerCharacter::EnemyCustomDepthOn()
+{
+	if (CDepthOnEnemies.Num() > 0)
+	{
+		for (ARPGBaseEnemyCharacter* Enemy : CDepthOnEnemies)
+		{
+			Enemy->OnRenderCustomDepthEffect();
+		}
+		GetWorldTimerManager().SetTimer(DeactivateRevealEnemiesTimer, this, &ARPGWarriorPlayerCharacter::DeactivateRevealEnemies, 15.f);
 	}
 }
 
-void ARPGWarriorPlayerCharacter::ActivateEnforceParticleServer_Implementation()
+void ARPGWarriorPlayerCharacter::DeactivateRevealEnemies()
 {
-	ActivateEnforceParticleMulticast();
+	for (ARPGBaseEnemyCharacter* Enemy : CDepthOnEnemies)
+	{
+		Enemy->OffRenderCustomDepthEffect();
+	}
 }
 
 void ARPGWarriorPlayerCharacter::ActivateEnforceParticleMulticast_Implementation()
 {
-	if (HasAuthority()) return;
-	if (EnforceParticleComp)
+	if (HasAuthority() == false)
 	{
-		EnforceParticleComp->Activate();
-		GetWorldTimerManager().SetTimer(EnforceParticleTimer, this, &ARPGWarriorPlayerCharacter::DeactivateEnforceParticle, 15.f);
+		if (EnforceParticleComp) EnforceParticleComp->Activate();
 	}
+	GetWorldTimerManager().SetTimer(EnforceParticleTimer, this, &ARPGWarriorPlayerCharacter::DeactivateEnforceParticle, 15.f);
 }
 
 void ARPGWarriorPlayerCharacter::DeactivateEnforceParticle()
 {
-	bReflectOn = false;
-	EnforceParticleComp->Deactivate();
-	SpawnParticle(EnforceEndParticle, GetActorLocation(), GetActorRotation());
+	if (HasAuthority() == false)
+	{
+		EnforceParticleComp->Deactivate();
+		SpawnParticle(EnforceEndParticle, GetActorLocation(), GetActorRotation());
+	}
+	else
+	{
+		bReflectOn = false;
+		GetCapsuleComponent()->SetGenerateOverlapEvents(false);
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECR_Block);
+	}
+}
+
+void ARPGWarriorPlayerCharacter::SpawnReflectImpactParticleMulticast_Implementation(const FVector_NetQuantize& SpawnLocation)
+{
+	if (HasAuthority() == false)
+	{
+		SpawnParticle(NormalAttackImpactParticle, SpawnLocation, FRotator::ZeroRotator);
+	}
 }
 
 void ARPGWarriorPlayerCharacter::SmashDown(ENotifyCode NotifyCode)
@@ -228,4 +283,6 @@ void ARPGWarriorPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(ARPGWarriorPlayerCharacter, CDepthOnEnemies);
+	DOREPLIFETIME_CONDITION(ARPGWarriorPlayerCharacter, bReflectOn, COND_OwnerOnly);
 }

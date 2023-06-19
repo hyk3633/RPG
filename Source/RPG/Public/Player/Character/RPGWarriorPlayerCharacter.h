@@ -9,6 +9,7 @@
  * 
  */
 
+class ARPGBaseEnemyCharacter;
 class ARPGBaseProjectile;
 
 UCLASS()
@@ -28,12 +29,17 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	virtual void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser) override;
+
 	virtual void CastAbilityByKey(EPressedKey KeyType) override;
 
 	virtual void CastAbilityAfterTargeting() override;
 
 	UFUNCTION()
 	void OnComponentHitEvent(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	
+	UFUNCTION()
+	void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	/** Q 스킬 함수 */
 
@@ -55,15 +61,25 @@ protected:
 	UFUNCTION()
 	void RevealEnemies(ENotifyCode NotifyCode);
 
+	UFUNCTION(Server, Reliable)
+	void FindNearbyEnemiesServer();
+
+	void FindNearbyEnemies();
+
+	UFUNCTION()
+	void OnRep_bReflectOn();
+
 	void EnemyCustomDepthOn();
 
-	UFUNCTION(Server, Reliable)
-	void ActivateEnforceParticleServer();
+	void DeactivateRevealEnemies();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void ActivateEnforceParticleMulticast();
 
 	void DeactivateEnforceParticle();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SpawnReflectImpactParticleMulticast(const FVector_NetQuantize& SpawnLocation);
 	
 	/** E 스킬 함수 */
 
@@ -77,6 +93,11 @@ protected:
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 private:
+
+	/** 일반 공격 */
+
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Normal")
+	UParticleSystem* NormalAttackImpactParticle;
 
 	/** Q 스킬 */
 
@@ -101,7 +122,13 @@ private:
 
 	FTimerHandle EnforceParticleTimer;
 
+	FTimerHandle DeactivateRevealEnemiesTimer;
+
+	UPROPERTY(ReplicatedUsing = OnRep_bReflectOn)
 	bool bReflectOn = false;
+
+	UPROPERTY(Replicated)
+	TArray<ARPGBaseEnemyCharacter*> CDepthOnEnemies;
 
 	/** E 스킬 */
 

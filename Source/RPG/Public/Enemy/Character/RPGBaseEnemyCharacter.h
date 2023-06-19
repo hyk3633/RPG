@@ -42,9 +42,9 @@ public:
 
 	void BTTask_Attack();
 
-	void OnRenderCustomDepthEffectToAllClients();
+	void OnRenderCustomDepthEffect();
 
-	void OffRenderCustomDepthEffectToAllClients();
+	void OffRenderCustomDepthEffect();
 
 	void AnnihilatedByPlayer();
 
@@ -87,12 +87,6 @@ protected:
 	void PlayDeathMontage();
 
 	void DestroySelf();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void OnRenderCustomDepthEffectMulticast();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void OffRenderCustomDepthEffectMulticast();
 
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 

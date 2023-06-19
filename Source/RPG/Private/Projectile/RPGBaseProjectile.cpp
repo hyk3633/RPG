@@ -47,6 +47,7 @@ void ARPGBaseProjectile::SetProjectileData(const FProjectileData& ProjData)
 	}
 	Damage = ProjData.Damage;
 	ExpireTime = ProjData.ExpireTime;
+	InitialSpeed = ProjData.InitialSpeed;
 	ProjectileMovementComponent->InitialSpeed = ProjData.InitialSpeed;
 	CollisionComponent->SetSphereRadius(ProjData.CollisionRadius);
 	bIsExplosive = ProjData.bIsExplosive;
@@ -90,8 +91,8 @@ void ARPGBaseProjectile::OnImpact(const FHitResult& HitResult)
 
 void ARPGBaseProjectile::ProcessHitEvent(const FHitResult& HitResult)
 {
-	//PLOG(TEXT("%s"), *HitResult.GetActor()->GetName());
 	DeactivateProjectile();
+
 	ACharacter* Character = Cast<ACharacter>(HitResult.GetActor());
 	if (Character)
 	{
@@ -149,4 +150,28 @@ void ARPGBaseProjectile::DeactivateProjectile()
 	SetLifeSpan(1.f);
 }
 
+void ARPGBaseProjectile::ReflectProjectileFromAllClients()
+{
+	ReflectProjectileMulticast();
+}
 
+void ARPGBaseProjectile::ReflectProjectileMulticast_Implementation()
+{
+	ReflectProjectile();
+}
+
+void ARPGBaseProjectile::ReflectProjectile()
+{
+	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ProjectileMovementComponent->Deactivate();
+	CollisionComponent->SetCollisionObjectType(ECC_PlayerProjectile);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_PlayerBody, ECollisionResponse::ECR_Ignore);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_EnemyBody, ECollisionResponse::ECR_Block);
+	SetActorRotation((GetOwner()->GetActorLocation() - GetActorLocation()).Rotation());
+	ProjectileMovementComponent->SetUpdatedComponent(RootComponent);
+	ProjectileMovementComponent->SetVelocityInLocalSpace(FVector(1000, 0, 0));
+	ProjectileMovementComponent->Activate();
+	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetWorldTimerManager().ClearTimer(ExpireTimer);
+	GetWorldTimerManager().SetTimer(ExpireTimer, this, &ARPGBaseProjectile::ExpireProjectile, ExpireTime, false);
+}

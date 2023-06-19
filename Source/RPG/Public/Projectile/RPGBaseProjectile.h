@@ -70,6 +70,8 @@ public:
 
 	void DeactivateProjectileToAllClients();
 
+	void ReflectProjectileFromAllClients();
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -85,6 +87,11 @@ protected:
 	void DeactivateProjectileMulticast();
 
 	void DeactivateProjectile();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void ReflectProjectileMulticast();
+
+	void ReflectProjectile();
 
 protected:
 
@@ -121,6 +128,7 @@ private:
 
 	bool bIsExplosive;
 	int32 Damage;
+	int32 InitialSpeed;
 	float ExpireTime;
 	int32 ExplosionRadius;
 };
