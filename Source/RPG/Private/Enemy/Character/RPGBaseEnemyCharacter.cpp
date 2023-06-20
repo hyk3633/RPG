@@ -37,7 +37,6 @@ ARPGBaseEnemyCharacter::ARPGBaseEnemyCharacter()
 	HealthBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidget->SetVisibility(false);
 
-
 }
 
 void ARPGBaseEnemyCharacter::PostInitializeComponents()
@@ -77,7 +76,7 @@ bool ARPGBaseEnemyCharacter::GetIsInAir() const
 
 void ARPGBaseEnemyCharacter::BTTask_Attack()
 {
-	AttackServer();
+	AttackMulticast();
 }
 
 void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffect()
@@ -90,21 +89,25 @@ void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffect()
 	GetMesh()->SetRenderCustomDepth(false);
 }
 
-void ARPGBaseEnemyCharacter::AnnihilatedByPlayer()
+void ARPGBaseEnemyCharacter::FalldownToAllClients()
 {
-	// TODO : ม๏ป็
-	MyAnimInst->PlayDeathMontage();
+	FalldownMulticast();
+}
+
+void ARPGBaseEnemyCharacter::GetupToAllClients()
+{
+	GetupMulticast();
+}
+
+void ARPGBaseEnemyCharacter::InstanceDeath()
+{
+	HealthDecrease(MaxHealth);
 }
 
 void ARPGBaseEnemyCharacter::EnableSuckedIn()
 {
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
 	GetCharacterMovement()->GravityScale = 0.f;
-}
-
-void ARPGBaseEnemyCharacter::AttackServer_Implementation()
-{
-	AttackMulticast();
 }
 
 void ARPGBaseEnemyCharacter::AttackMulticast_Implementation()
@@ -130,11 +133,6 @@ void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, c
 {
 	PLOG(TEXT("%s Enemy damaged : %f"), *DamagedActor->GetName(), Damage);
 
-	HealthDecreaseServer(Damage);
-}
-
-void ARPGBaseEnemyCharacter::HealthDecreaseServer_Implementation(const float& Damage)
-{
 	HealthDecrease(Damage);
 }
 
@@ -166,10 +164,7 @@ void ARPGBaseEnemyCharacter::OnHealthChanged()
 	}
 	else
 	{
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Ignore);
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
-		HealthBarWidget->SetVisibility(false);
-		PlayDeathMontage();
+		EnemyDeath();
 	}
 }
 
@@ -178,19 +173,54 @@ void ARPGBaseEnemyCharacter::HealthBarVisibilityOff()
 	HealthBarWidget->SetVisibility(false);
 }
 
-void ARPGBaseEnemyCharacter::DeathMulticast_Implementation()
+void ARPGBaseEnemyCharacter::EnemyDeath()
 {
-	PlayDeathMontage();
-}
-
-void ARPGBaseEnemyCharacter::PlayDeathMontage()
-{
-	MyAnimInst->PlayDeathMontage();
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
+	HealthBarWidget->SetVisibility(false);
+	if (HasAuthority() == false)
+	{
+		MyAnimInst->PlayDeathMontage();
+	}
 }
 
 void ARPGBaseEnemyCharacter::DestroySelf()
 {
 	Destroy();
+}
+
+void ARPGBaseEnemyCharacter::FalldownMulticast_Implementation()
+{
+	Falldown();
+}
+
+void ARPGBaseEnemyCharacter::Falldown()
+{
+	if (HasAuthority())
+	{
+		MyController->SetIsFalldown(true);
+	}
+	else
+	{
+		MyAnimInst->PlayDeathMontage();
+	}
+}
+
+void ARPGBaseEnemyCharacter::GetupMulticast_Implementation()
+{
+	Getup();
+}
+
+void ARPGBaseEnemyCharacter::Getup()
+{
+	if (HasAuthority())
+	{
+		MyController->SetIsFalldown(false);
+	}
+	else
+	{
+		MyAnimInst->PlayGetupMontage();
+	}
 }
 
 void ARPGBaseEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

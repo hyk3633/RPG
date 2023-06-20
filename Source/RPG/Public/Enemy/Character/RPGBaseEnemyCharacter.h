@@ -46,14 +46,15 @@ public:
 
 	void OffRenderCustomDepthEffect();
 
-	void AnnihilatedByPlayer();
+	void FalldownToAllClients();
+
+	void GetupToAllClients();
+
+	void InstanceDeath();
 
 	void EnableSuckedIn();
 
 protected:
-
-	UFUNCTION(Server, Reliable)
-	void AttackServer();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void AttackMulticast();
@@ -69,9 +70,6 @@ protected:
 	UFUNCTION()
 	void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 
-	UFUNCTION(Server, Reliable)
-	void HealthDecreaseServer(const float& Damage);
-
 	void HealthDecrease(const float& Damage);
 
 	UFUNCTION()
@@ -81,12 +79,19 @@ protected:
 
 	void HealthBarVisibilityOff();
 
-	UFUNCTION(NetMulticast, Reliable)
-	void DeathMulticast();
-
-	void PlayDeathMontage();
+	void EnemyDeath();
 
 	void DestroySelf();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void FalldownMulticast();
+
+	void Falldown();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void GetupMulticast();
+
+	void Getup();
 
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
@@ -114,4 +119,8 @@ private:
 	float MaxHealth = 300.f;
 
 	FTimerHandle DestroyTimer;
+
+	FTimerHandle GetupTimer;
+
+	FTimerHandle GetupTimer2;
 };

@@ -62,6 +62,7 @@ void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 {
 	Super::CastAbilityByKey(KeyType);
 
+	// TODO : R 스킬도 인트로 애니메이션 만들기
 	// R 스킬 제외한 스킬만 인트로 애니메이션 재생
 	if (KeyType != EPressedKey::EPK_R)
 	{
@@ -70,25 +71,23 @@ void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	RPGAnimInstance->AimingPoseOn();
 	bAiming = true;
 	if (IsLocallyControlled())
+	{
 		AimCursor->SetVisibility(true);
+	}
 }
 
 void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
 {
 	Super::CastAbilityAfterTargeting();
 
-	// 특정 적을 선택해야 하는 스킬은 커서로 적을 가리키면 적 하이라이트, 다른 부분을 누르면 발동안되게, 다른 좌클로 취소
-	// 범위를 지정해서 시전하는 경우 범위 내 모든 적에게 적용
-	if (TargetingHitResult.bBlockingHit)
+	if (TargetingHitResult.bBlockingHit == false) return;
+	if (HasAuthority()) return;
+
+	RPGAnimInstance->PlayAbilityMontageOfKey(true);
+	RPGAnimInstance->AimingPoseOff();
+	if (RPGAnimInstance->GetCurrentState() == EPressedKey::EPK_R)
 	{
-		RPGAnimInstance->PlayAbilityMontageOfKey(true);
-		RPGAnimInstance->AimingPoseOff();
-		if (RPGAnimInstance->GetCurrentState() == EPressedKey::EPK_R)
-			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
-	}
-	else
-	{
-		// TODO : 행동 취소
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 	}
 }
 
@@ -96,7 +95,10 @@ void ARPGSorcererPlayerCharacter::CastNormalAttack()
 {
 	Super::CastNormalAttack();
 
-	if (PrimaryPorjectile == nullptr) return;
+	if (IsLocallyControlled() && PrimaryPorjectile)
+	{
+
+	}
 
 	FVector SpawnPoint;
 	if (GetCurrentCombo() % 2 == 0)
@@ -131,6 +133,19 @@ void ARPGSorcererPlayerCharacter::FireSpeedDownBall(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_S_Q_FireRestrictionBall) return;
 
+	if (IsLocallyControlled())
+	{
+		FireSpeedDownBallServer();
+	}
+}
+
+void ARPGSorcererPlayerCharacter::FireSpeedDownBallServer_Implementation()
+{
+	SpawnSpeedDownProjectile();
+}
+
+void ARPGSorcererPlayerCharacter::SpawnSpeedDownProjectile()
+{
 	FVector SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L")).GetLocation();
 	FRotator SpawnDirection = (TargetingHitResult.GetActor()->GetActorLocation() - SpawnPoint).Rotation();
 	ARPGSpeedDownProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGSpeedDownProjectile>(SpeedDownPorjectile, FTransform(SpawnDirection.Add(60.f, 0.f, 0.f), SpawnPoint), this, this);
@@ -147,6 +162,19 @@ void ARPGSorcererPlayerCharacter::MeteorliteFall(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_S_W_MeteorliteFall) return;
 
+	if (IsLocallyControlled())
+	{
+		MeteorliteFallServer();
+	}
+}
+
+void ARPGSorcererPlayerCharacter::MeteorliteFallServer_Implementation()
+{
+	SpawnMeteorProjectile();
+}
+
+void ARPGSorcererPlayerCharacter::SpawnMeteorProjectile()
+{
 	const FVector SpawnPoint = GetActorLocation() + (GetActorUpVector() * 300.f);
 	const FTransform SpanwTransform((TargetingHitResult.ImpactPoint - SpawnPoint).Rotation(), SpawnPoint);
 	if (MeteorlitePortalParticle)
@@ -165,36 +193,62 @@ void ARPGSorcererPlayerCharacter::MeteorShower(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_S_E_MeteorShower) return;
 
-	TArray<AActor*> Enemies;
-	UKismetSystemLibrary::SphereOverlapActors(
-		this,
-		TargetingHitResult.ImpactPoint,
-		300.f,
-		TArray<TEnumAsByte<EObjectTypeQuery>>(),
-		ARPGBaseEnemyCharacter::StaticClass(),
-		TArray<AActor*>(),
-		Enemies
-	);
-	
+	if (IsLocallyControlled())
+	{
+		// TODO : 범위 내 적들에게 확실하게 데미지 주는 방식으로 재설계
+		MeteorShowerServer();
+	}
+}
+
+void ARPGSorcererPlayerCharacter::MeteorShowerServer_Implementation()
+{
+	SpawnMeteorPortalParticleMulticast();
+	GetWorldTimerManager().SetTimer(MeteorShowerTimer, this, &ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle, 0.5f, false);
+}
+
+void ARPGSorcererPlayerCharacter::SpawnMeteorPortalParticleMulticast_Implementation()
+{
+	if (HasAuthority()) return;
 	if (MeteorPortalParticle)
 	{
 		FVector PSpawnLoc = TargetingHitResult.ImpactPoint;
 		PSpawnLoc.Z = 500.f;
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorPortalParticle, PSpawnLoc, FRotator::ZeroRotator);
 	}
-	GetWorldTimerManager().SetTimer(MeteorShowerTimer, this, &ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle, 0.5f, false);
+}
+
+void ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticleMulticast_Implementation()
+{
+	if (MeteorShowerParticle == nullptr) return;
+
+	FVector PSpawnLoc = TargetingHitResult.ImpactPoint;
+	PSpawnLoc.Z = 500.f;
+	if (IsLocallyControlled())
+	{
+		MeteorShowerParticleComp = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorShowerParticle, PSpawnLoc, FRotator::ZeroRotator, false);
+		if (MeteorShowerParticleComp)
+		{
+			MeteorShowerParticleComp->Activate();
+			MeteorShowerParticleComp->OnParticleCollide.AddDynamic(this, &ARPGSorcererPlayerCharacter::OnMeteorShowerParticleCollide);
+		}
+	}
+	else
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorShowerParticle, PSpawnLoc, FRotator::ZeroRotator, false, EPSCPoolMethod::None, false);
+	}
 }
 
 void ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle()
 {
-	FVector PSpawnLoc = TargetingHitResult.ImpactPoint;
-	PSpawnLoc.Z = 500.f;
-	MeteorShowerParticleComp = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorShowerParticle, PSpawnLoc, FRotator::ZeroRotator, false, EPSCPoolMethod::None, false);
-	MeteorShowerParticleComp->OnParticleCollide.AddDynamic(this, &ARPGSorcererPlayerCharacter::OnMeteorShowerParticleCollide);
-	MeteorShowerParticleComp->Activate();
+	SpawnMeteorShowerParticleMulticast();
 }
 
 void ARPGSorcererPlayerCharacter::OnMeteorShowerParticleCollide(FName EventName, float EmitterTime, int32 ParticleTime, FVector Location, FVector Velocity, FVector Direction, FVector Normal, FName BoneName, UPhysicalMaterial* PhysMat)
+{
+	ApplyMeteorRadialDamageServer(Location);
+}
+
+void ARPGSorcererPlayerCharacter::ApplyMeteorRadialDamageServer_Implementation(const FVector_NetQuantize& Location)
 {
 	TArray<AActor*> IgnoreActors;
 	for (AActor* Actor : TActorRange<ARPGBasePlayerCharacter>(GetWorld()))

@@ -40,6 +40,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	APawn* GetTarget() const;
 
+	void SetIsFalldown(const bool bIsFalldown);
+
 protected:
 
 	UFUNCTION()

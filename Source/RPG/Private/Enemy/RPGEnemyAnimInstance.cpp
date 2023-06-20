@@ -18,6 +18,13 @@ void URPGEnemyAnimInstance::PlayDeathMontage()
 	Montage_Play(DeathMontage);
 }
 
+void URPGEnemyAnimInstance::PlayGetupMontage()
+{
+	if (GetupMontage == nullptr) return;
+	if (Montage_IsPlaying(GetupMontage)) return;
+	Montage_Play(GetupMontage);
+}
+
 void URPGEnemyAnimInstance::AnimNotify_Attack()
 {
 	DOnAttack.Broadcast();

@@ -46,20 +46,42 @@ protected:
 	UFUNCTION()
 	void FireSpeedDownBall(ENotifyCode NotifyCode);
 
+	UFUNCTION(Server, Reliable)
+	void FireSpeedDownBallServer();
+
+	void SpawnSpeedDownProjectile();
+
 	/** Ability W */
 
 	UFUNCTION()
 	void MeteorliteFall(ENotifyCode NotifyCode);
+
+	UFUNCTION(Server, Reliable)
+	void MeteorliteFallServer();
+
+	void SpawnMeteorProjectile();
 
 	/** Ability E */
 
 	UFUNCTION()
 	void MeteorShower(ENotifyCode NotifyCode);
 
+	UFUNCTION(Server, Reliable)
+	void MeteorShowerServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SpawnMeteorPortalParticleMulticast();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SpawnMeteorShowerParticleMulticast();
+
 	void SpawnMeteorShowerParticle();
 
 	UFUNCTION()
 	void OnMeteorShowerParticleCollide(FName EventName, float EmitterTime, int32 ParticleTime, FVector Location, FVector Velocity, FVector Direction, FVector Normal, FName BoneName, UPhysicalMaterial* PhysMat);
+
+	UFUNCTION(Server, Reliable)
+	void ApplyMeteorRadialDamageServer(const FVector_NetQuantize& Location);
 
 	/** Ability R */
 
@@ -73,26 +95,20 @@ protected:
 
 protected:
 
+	/** 일반 공격 */
+
 	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
 	TSubclassOf<ARPGBaseProjectile> PrimaryPorjectile;
+
+	/** Q 스킬 */
 
 	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
 	TSubclassOf<ARPGSpeedDownProjectile> SpeedDownPorjectile;
 
+	/** W 스킬 */
+
 	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
 	TSubclassOf<ARPGBaseProjectile> MeteorlitePorjectile;
-
-	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
-	TSubclassOf<ARPGBlackhole> BlackholeClass;
-
-	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteor Shower")
-	UParticleSystem* MeteorPortalParticle;
-
-	UPROPERTY()
-	UParticleSystemComponent* MeteorShowerParticleComp;
-
-	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteor Shower")
-	UParticleSystem* MeteorShowerParticle;
 
 	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteorlite")
 	UParticleSystem* MeteorliteParticle;
@@ -100,7 +116,23 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteorlite")
 	UParticleSystem* MeteorlitePortalParticle;
 
+	/** E 스킬 */
+
+	UPROPERTY()
+	UParticleSystemComponent* MeteorShowerParticleComp;
+
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteor Shower")
+	UParticleSystem* MeteorShowerParticle;
+
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteor Shower")
+	UParticleSystem* MeteorPortalParticle;
+
 	FTimerHandle MeteorShowerTimer;
+
+	/** R 스킬 */
+
+	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
+	TSubclassOf<ARPGBlackhole> BlackholeClass;
 
 	bool bFloatCharacter = false;
 

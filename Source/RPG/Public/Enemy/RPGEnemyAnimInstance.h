@@ -24,6 +24,8 @@ public:
 
 	void PlayDeathMontage();
 
+	void PlayGetupMontage();
+
 	FOnAttackDelegate DOnAttack;
 
 	friend ARPGBaseEnemyCharacter;
@@ -43,6 +45,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
 	UAnimMontage* DeathMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* GetupMontage;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Status", meta = (AllowPrivateAccess = "true"))
 	float Speed;

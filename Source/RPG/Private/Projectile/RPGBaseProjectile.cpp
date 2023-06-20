@@ -13,6 +13,7 @@ ARPGBaseProjectile::ARPGBaseProjectile()
 	PrimaryActorTick.bCanEverTick = true;
 
 	bReplicates = true;
+	SetReplicateMovement(true);
 
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Collision Component"));
 	SetRootComponent(CollisionComponent);
@@ -30,7 +31,6 @@ ARPGBaseProjectile::ARPGBaseProjectile()
 	ProjectileMovementComponent->MaxSpeed = 7000.f;
 	ProjectileMovementComponent->ProjectileGravityScale = 0.f;
 	ProjectileMovementComponent->SetAutoActivate(true);
-
 }
 
 void ARPGBaseProjectile::SetProjectileData(const FProjectileData& ProjData)
@@ -91,7 +91,7 @@ void ARPGBaseProjectile::OnImpact(const FHitResult& HitResult)
 
 void ARPGBaseProjectile::ProcessHitEvent(const FHitResult& HitResult)
 {
-	DeactivateProjectile();
+	DeactivateProjectileMulticast();
 
 	ACharacter* Character = Cast<ACharacter>(HitResult.GetActor());
 	if (Character)

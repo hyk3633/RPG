@@ -34,7 +34,7 @@ void URPGAnimInstance::PlayAbilityMontageOfKey(bool bJumpToSection)
 	}
 }
 
-void URPGAnimInstance::PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJumpToSection = false)
+void URPGAnimInstance::PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJumpToSection)
 {
 	if (AbilityMontage == nullptr) return;
 	if (Montage_IsPlaying(AbilityMontage)) return;
@@ -42,9 +42,36 @@ void URPGAnimInstance::PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJu
 	if (bJumpToSection) Montage_JumpToSection(FName("Cast"), AbilityMontage);
 }
 
+void URPGAnimInstance::PlayReflectMontage()
+{
+	if (Ability_W_Montage == nullptr) return;
+	Montage_Play(Ability_W_Montage);
+	Montage_JumpToSection(FName("Reflect"), Ability_W_Montage);
+}
+
 void URPGAnimInstance::PlayDeathMontage()
 {
 
+}
+
+UAnimMontage* URPGAnimInstance::GetAnimMontageByKey()
+{
+	switch (CurrentKeyState)
+	{
+	case EPressedKey::EPK_Q:
+		if(Ability_Q_Montage) return Ability_Q_Montage;
+		break;
+	case EPressedKey::EPK_W:
+		if (Ability_W_Montage) return Ability_W_Montage;
+		break;
+	case EPressedKey::EPK_E:
+		if (Ability_E_Montage) return Ability_E_Montage;
+		break;
+	case EPressedKey::EPK_R:
+		if (Ability_R_Montage) return Ability_R_Montage;
+		break;
+	}
+	return nullptr;
 }
 
 void URPGAnimInstance::AnimNotify_AttackInputCheck()

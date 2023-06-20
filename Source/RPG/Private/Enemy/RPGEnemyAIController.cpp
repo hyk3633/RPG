@@ -88,6 +88,14 @@ APawn* ARPGEnemyAIController::GetTarget() const
 	return nullptr;
 }
 
+void ARPGEnemyAIController::SetIsFalldown(const bool bIsFalldown)
+{
+	if (BBComp)
+	{
+		BBComp->SetValueAsBool(FName("IsFalldown"), bIsFalldown);
+	}
+}
+
 void ARPGEnemyAIController::CharacterDead()
 {
 	if (BBComp)

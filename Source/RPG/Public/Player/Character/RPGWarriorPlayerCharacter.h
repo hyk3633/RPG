@@ -36,9 +36,6 @@ protected:
 	virtual void CastAbilityAfterTargeting() override;
 
 	UFUNCTION()
-	void OnComponentHitEvent(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-	
-	UFUNCTION()
 	void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	/** Q 스킬 함수 */
@@ -47,14 +44,14 @@ protected:
 	void Wield(ENotifyCode NotifyCode);
 
 	UFUNCTION(Server,Reliable)
-	void WieldSphereTraceServer();
+	void WieldServer();
 
-	void WieldSphereTrace();
+	void SphereTrace(const FVector& Start, const FVector& End, const float& Radius);
+
+	void ApplyWieldEffectToHittedActors();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void SpawnWieldImpactParticleMulticast(const FVector_NetQuantize& SpawnLocation);
-
-	bool IsActorInRange(const AActor* Target);
 
 	/** W 스킬 함수 */
 
@@ -62,9 +59,9 @@ protected:
 	void RevealEnemies(ENotifyCode NotifyCode);
 
 	UFUNCTION(Server, Reliable)
-	void FindNearbyEnemiesServer();
+	void RevealEnemiesServer();
 
-	void FindNearbyEnemies();
+	void ActivateReflect();
 
 	UFUNCTION()
 	void OnRep_bReflectOn();
@@ -79,16 +76,37 @@ protected:
 	void DeactivateEnforceParticle();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void SpawnReflectImpactParticleMulticast(const FVector_NetQuantize& SpawnLocation);
+	void PlayReflectMontageAndParticleMulticast(const FVector_NetQuantize& SpawnLocation);
 	
 	/** E 스킬 함수 */
 
 	UFUNCTION()
 	void SmashDown(ENotifyCode NotifyCode);
 
+	UFUNCTION(Server, Reliable)
+	void SmashDownServer();
+
+	void SmashDownToEnemies();
+
+	void GetupEnemies();
+
 	/** R 스킬 함수 */
 	UFUNCTION()
 	void Rebirth(ENotifyCode NotifyCode);
+
+	UFUNCTION(Server, Reliable)
+	void RebirthServer();
+
+	UFUNCTION()
+	void MoveToTargettedLocation(ENotifyCode NotifyCode);
+
+	UFUNCTION(Server, Reliable)
+	void CharacterMoveToTargettedLocationServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void CharacterMoveToTargettedLocationMulticast();
+
+	void OneShotKill();
 
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
@@ -107,7 +125,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Character | Particle | Wield")
 	UParticleSystem* WieldImpactParticle;
 
-	TArray<FHitResult> WieldHitResults;
+	TArray<FHitResult> HitResults;
 
 	/** W 스킬 */
 
@@ -128,10 +146,14 @@ private:
 	bool bReflectOn = false;
 
 	UPROPERTY(Replicated)
-	TArray<ARPGBaseEnemyCharacter*> CDepthOnEnemies;
+	TArray<ARPGBaseEnemyCharacter*> CDepthEnemies;
 
 	/** E 스킬 */
 
+	UPROPERTY(Replicated)
+	TArray<ARPGBaseEnemyCharacter*> SmashedEnemies;
+
+	FTimerHandle EnemyGetupTimer;
 
 	/** R 스킬 */
 

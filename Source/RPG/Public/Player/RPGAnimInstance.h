@@ -29,6 +29,8 @@ public:
 
 	void PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJumpToSection);
 
+	void PlayReflectMontage();
+
 	void PlayDeathMontage();
 
 	FORCEINLINE void SetCurrentState(EPressedKey KeyType) { CurrentKeyState = KeyType; }
@@ -42,6 +44,8 @@ public:
 	FMontageNotifyDelegate DMontageNotify;
 
 protected:
+
+	UAnimMontage* GetAnimMontageByKey();
 
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_AttackInputCheck();
