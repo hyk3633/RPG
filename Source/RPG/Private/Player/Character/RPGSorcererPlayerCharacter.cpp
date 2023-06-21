@@ -15,12 +15,12 @@
 #include "Particles/ParticleSystem.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "EngineUtils.h"
+#include "Net/UnrealNetwork.h"
 
 #include "DrawDebugHelpers.h"
 
 ARPGSorcererPlayerCharacter::ARPGSorcererPlayerCharacter()
 {
-
 	MaxCombo = 4;
 }
 
@@ -51,11 +51,10 @@ void ARPGSorcererPlayerCharacter::BeginPlay()
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("FireSpeedDownBall"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("MeteorliteFall"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("MeteorShower"));
-		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("FloatACharacter"));
+		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("FloatingCharacter"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("SummonBlackhole"));
+		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("BlackholeEnd"));
 	}
-	if (MeteorShowerParticleComp)
-		MeteorShowerParticleComp->Deactivate();
 }
 
 void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
@@ -85,10 +84,6 @@ void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
 
 	RPGAnimInstance->PlayAbilityMontageOfKey(true);
 	RPGAnimInstance->AimingPoseOff();
-	if (RPGAnimInstance->GetCurrentState() == EPressedKey::EPK_R)
-	{
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
-	}
 }
 
 void ARPGSorcererPlayerCharacter::CastNormalAttack()
@@ -195,15 +190,15 @@ void ARPGSorcererPlayerCharacter::MeteorShower(ENotifyCode NotifyCode)
 
 	if (IsLocallyControlled())
 	{
-		// TODO : 범위 내 적들에게 확실하게 데미지 주는 방식으로 재설계
 		MeteorShowerServer();
 	}
 }
 
 void ARPGSorcererPlayerCharacter::MeteorShowerServer_Implementation()
 {
+	SphereTraceLocation = TargetingHitResult.ImpactPoint;
 	SpawnMeteorPortalParticleMulticast();
-	GetWorldTimerManager().SetTimer(MeteorShowerTimer, this, &ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle, 0.5f, false);
+	GetWorldTimerManager().SetTimer(MeteorShowerTimer, this, &ARPGSorcererPlayerCharacter::MeteorShowerOn, 0.5f, false);
 }
 
 void ARPGSorcererPlayerCharacter::SpawnMeteorPortalParticleMulticast_Implementation()
@@ -217,66 +212,144 @@ void ARPGSorcererPlayerCharacter::SpawnMeteorPortalParticleMulticast_Implementat
 	}
 }
 
+void ARPGSorcererPlayerCharacter::MeteorShowerOn()
+{
+	MeteorDamageCount = 0;
+	GetWorldTimerManager().SetTimer(MeteorDamageTimer, this, &ARPGSorcererPlayerCharacter::ApplyMeteorDamage, 0.3f, true, 0.2f);
+	SpawnMeteorShowerParticleMulticast();
+}
+
+void ARPGSorcererPlayerCharacter::ApplyMeteorDamage()
+{
+	if (MeteorDamageCount == 5)
+	{
+		GetWorldTimerManager().ClearTimer(MeteorDamageTimer);
+	}
+	TArray<FHitResult> Hits;
+	UKismetSystemLibrary::SphereTraceMulti
+	(
+		this,
+		SphereTraceLocation,
+		SphereTraceLocation,
+		500.f,
+		UEngineTypes::ConvertToTraceType(ECC_PlayerAttack),
+		false,
+		TArray<AActor*>(),
+		EDrawDebugTrace::Persistent,
+		Hits,
+		true
+	);
+	for (FHitResult Hit : Hits)
+	{
+		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
+		if (Enemy == nullptr) continue;
+		UGameplayStatics::ApplyDamage(Enemy, 30.f, GetController(), this, UDamageType::StaticClass());
+	}
+	MeteorDamageCount++;
+}
+
 void ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticleMulticast_Implementation()
 {
-	if (MeteorShowerParticle == nullptr) return;
-
-	FVector PSpawnLoc = TargetingHitResult.ImpactPoint;
-	PSpawnLoc.Z = 500.f;
-	if (IsLocallyControlled())
-	{
-		MeteorShowerParticleComp = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorShowerParticle, PSpawnLoc, FRotator::ZeroRotator, false);
-		if (MeteorShowerParticleComp)
-		{
-			MeteorShowerParticleComp->Activate();
-			MeteorShowerParticleComp->OnParticleCollide.AddDynamic(this, &ARPGSorcererPlayerCharacter::OnMeteorShowerParticleCollide);
-		}
-	}
-	else
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorShowerParticle, PSpawnLoc, FRotator::ZeroRotator, false, EPSCPoolMethod::None, false);
-	}
+	SpawnMeteorShowerParticle();
 }
 
 void ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle()
 {
-	SpawnMeteorShowerParticleMulticast();
+	if (HasAuthority()) return;
+	if (MeteorShowerParticle == nullptr) return;
+	FVector PSpawnLoc = SphereTraceLocation;
+	PSpawnLoc.Z = 500.f;
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorShowerParticle, PSpawnLoc, FRotator::ZeroRotator, true);
 }
 
-void ARPGSorcererPlayerCharacter::OnMeteorShowerParticleCollide(FName EventName, float EmitterTime, int32 ParticleTime, FVector Location, FVector Velocity, FVector Direction, FVector Normal, FName BoneName, UPhysicalMaterial* PhysMat)
+void ARPGSorcererPlayerCharacter::FloatingCharacter(ENotifyCode NotifyCode)
 {
-	ApplyMeteorRadialDamageServer(Location);
-}
-
-void ARPGSorcererPlayerCharacter::ApplyMeteorRadialDamageServer_Implementation(const FVector_NetQuantize& Location)
-{
-	TArray<AActor*> IgnoreActors;
-	for (AActor* Actor : TActorRange<ARPGBasePlayerCharacter>(GetWorld()))
-		IgnoreActors.Add(Actor);
-	UGameplayStatics::ApplyRadialDamage(this, 150.f, Location, 150.f, UDamageType::StaticClass(), IgnoreActors, this, GetController());
-}
-
-void ARPGSorcererPlayerCharacter::FloatACharacter(ENotifyCode NotifyCode)
-{
-	if (NotifyCode != ENotifyCode::ENC_S_R_FloatACharacter) return;
+	if (NotifyCode != ENotifyCode::ENC_S_R_FloatingCharacter) return;
 	
-	bFloatCharacter = true;
-	GetWorldTimerManager().SetTimer(FloatingTimer, this, &ARPGSorcererPlayerCharacter::DeactivateFloatingCharacter, 2.f, false);
+	if (IsLocallyControlled())
+	{
+		FloatingCharacterServer();
+	}
 }
 
-void ARPGSorcererPlayerCharacter::DeactivateFloatingCharacter()
+void ARPGSorcererPlayerCharacter::FloatingCharacterServer_Implementation()
+{
+	bFloatCharacter = true;
+	SetMovementModeToFlyMulticast();
+	GetWorldTimerManager().SetTimer(FloatingTimer, this, &ARPGSorcererPlayerCharacter::StopFloatingCharacter, 2.f, false);
+}
+
+void ARPGSorcererPlayerCharacter::SetMovementModeToFlyMulticast_Implementation()
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
+}
+
+void ARPGSorcererPlayerCharacter::StopFloatingCharacter()
 {
 	bFloatCharacter = false;
 }
 
 void ARPGSorcererPlayerCharacter::SummonBlackhole(ENotifyCode NotifyCode)
 {
-	if (NotifyCode != ENotifyCode::ENC_S_R_BlackholeOn) return;
+	if (NotifyCode != ENotifyCode::ENC_S_R_SummonBlackhole) return;
 
-	if (BlackholeClass)
+	if (IsLocallyControlled())
 	{
-		FVector SpawnLocation = TargetingHitResult.ImpactPoint;
-		SpawnLocation.Z += 300.f;
-		GetWorld()->SpawnActor<ARPGBlackhole>(BlackholeClass, SpawnLocation, FRotator::ZeroRotator);
+		SpawnBlackholeServer();
 	}
+}
+
+void ARPGSorcererPlayerCharacter::SpawnBlackholeServer_Implementation()
+{
+	SpawnBlackholeMulticast();
+}
+
+void ARPGSorcererPlayerCharacter::SpawnBlackholeMulticast_Implementation()
+{
+	SpawnBlackhole();
+}
+
+void ARPGSorcererPlayerCharacter::SpawnBlackhole()
+{
+	if (HasAuthority())
+	{
+		if (BlackholeClass == nullptr) return;
+		FVector Location = TargetingHitResult.ImpactPoint;
+		Location.Z += 300.f;
+		GetWorld()->SpawnActor<ARPGBlackhole>(BlackholeClass, Location, FRotator::ZeroRotator);
+	}
+	else
+	{
+		FVector Location = TargetingHitResult.ImpactPoint;
+		Location.Z += 300.f;
+		SpawnParticle(BlackholeParticle, Location);
+	}
+}
+
+void ARPGSorcererPlayerCharacter::BlackholeEnd(ENotifyCode NotifyCode)
+{
+	if (NotifyCode != ENotifyCode::ENC_S_R_BlackholeEnd) return;
+
+	if (IsLocallyControlled())
+	{
+		SetMovementModeToWalkServer();
+	}
+}
+
+void ARPGSorcererPlayerCharacter::SetMovementModeToWalkServer_Implementation()
+{
+	SetMovementModeToWalkMulticast();
+}
+
+void ARPGSorcererPlayerCharacter::SetMovementModeToWalkMulticast_Implementation()
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+}
+
+void ARPGSorcererPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ARPGSorcererPlayerCharacter, SphereTraceLocation);
+	DOREPLIFETIME(ARPGSorcererPlayerCharacter, bFloatCharacter);
 }

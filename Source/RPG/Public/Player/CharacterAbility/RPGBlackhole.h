@@ -33,9 +33,6 @@ private:
 	UPROPERTY(EditAnywhere)
 	USphereComponent* CollisionComponent;
 
-	UPROPERTY(EditAnywhere, Category = "Effects")
-	UParticleSystem* BlackholeParticle;
-
 	TSet<AActor*> OverlappingEnemies;
 
 	FTimerHandle ExpireTimer;

@@ -23,9 +23,8 @@ void ARPGBlackhole::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	InitiateSuckingUpEnemies();
 
-	if(BlackholeParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BlackholeParticle, GetActorTransform());
+	InitiateSuckingUpEnemies();
 
 	GetWorldTimerManager().SetTimer(ExpireTimer, this, &ARPGBlackhole::ExpireBlackhole, ExpireTime);
 }
@@ -37,7 +36,7 @@ void ARPGBlackhole::InitiateSuckingUpEnemies()
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Actor);
 		if (Enemy == nullptr) continue;
-		Enemy->EnableSuckedIn();
+		Enemy->EnableSuckedInToAllClients();
 	}
 }
 

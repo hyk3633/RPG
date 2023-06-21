@@ -7,9 +7,9 @@ enum class ENotifyCode : uint8
 	ENC_S_Q_FireRestrictionBall UMETA(DisplayName = "S_R_FireRestrictionBall"),
 	ENC_S_W_MeteorliteFall UMETA(DisplayName = "S_W_MeteorliteFall"),
 	ENC_S_E_MeteorShower UMETA(DisplayName = "S_E_MeteorShower"),
-	ENC_S_R_FloatACharacter UMETA(DisplayName = "S_R_FloatACharacter"),
-	ENC_S_R_BlackholeOn UMETA(DisplayName = "S_R_BlackholeOn"),
-	ENC_S_R_BlackholeOff UMETA(DisplayName = "S_R_BlackholeOff"),
+	ENC_S_R_FloatingCharacter UMETA(DisplayName = "S_R_FloatingCharacter"),
+	ENC_S_R_SummonBlackhole UMETA(DisplayName = "S_R_SummonBlackhole"),
+	ENC_S_R_BlackholeEnd UMETA(DisplayName = "S_R_BlackholeEnd"),
 
 	/** ¿ö¸®¾î Enum */
 	ENC_W_Q_Wield UMETA(DisplayName = "W_Q_Wield"),

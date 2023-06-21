@@ -52,7 +52,7 @@ public:
 
 	void InstanceDeath();
 
-	void EnableSuckedIn();
+	void EnableSuckedInToAllClients();
 
 protected:
 
@@ -92,6 +92,11 @@ protected:
 	void GetupMulticast();
 
 	void Getup();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void EnableSuckedInMulticast();
+
+	void EnableSuckedIn();
 
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 

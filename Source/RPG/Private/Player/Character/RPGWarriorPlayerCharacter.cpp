@@ -193,7 +193,7 @@ void ARPGWarriorPlayerCharacter::ActivateReflect()
 	for (FHitResult Hit : HitResults)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
-		if (Enemy == nullptr || IsValid(Enemy) == false) return;
+		if (Enemy == nullptr || IsValid(Enemy) == false) continue;
 		CDepthEnemies.Add(Enemy);
 	}
 	GetCapsuleComponent()->SetGenerateOverlapEvents(true);
@@ -284,7 +284,7 @@ void ARPGWarriorPlayerCharacter::SmashDownToEnemies()
 	for (FHitResult Hit : HitResults)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
-		if (Enemy == nullptr || IsValid(Enemy) == false) return;
+		if (Enemy == nullptr || IsValid(Enemy) == false) continue;
 		SmashedEnemies.Add(Enemy);
 
 		Enemy->LaunchCharacter(Enemy->GetActorForwardVector() * -700.f, false, true);

@@ -74,6 +74,8 @@ bool ARPGBaseEnemyCharacter::GetIsInAir() const
 	return GetMovementComponent()->IsFalling();
 }
 
+/** 외부 호출 함수 */
+
 void ARPGBaseEnemyCharacter::BTTask_Attack()
 {
 	AttackMulticast();
@@ -104,11 +106,12 @@ void ARPGBaseEnemyCharacter::InstanceDeath()
 	HealthDecrease(MaxHealth);
 }
 
-void ARPGBaseEnemyCharacter::EnableSuckedIn()
+void ARPGBaseEnemyCharacter::EnableSuckedInToAllClients()
 {
-	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
-	GetCharacterMovement()->GravityScale = 0.f;
+	EnableSuckedInMulticast();
 }
+
+/** 동작 관련 */
 
 void ARPGBaseEnemyCharacter::AttackMulticast_Implementation()
 {
@@ -189,6 +192,8 @@ void ARPGBaseEnemyCharacter::DestroySelf()
 	Destroy();
 }
 
+/** 멀티캐스트 함수 */
+
 void ARPGBaseEnemyCharacter::FalldownMulticast_Implementation()
 {
 	Falldown();
@@ -221,6 +226,17 @@ void ARPGBaseEnemyCharacter::Getup()
 	{
 		MyAnimInst->PlayGetupMontage();
 	}
+}
+
+void ARPGBaseEnemyCharacter::EnableSuckedInMulticast_Implementation()
+{
+	EnableSuckedIn();
+}
+
+void ARPGBaseEnemyCharacter::EnableSuckedIn()
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
+	GetCharacterMovement()->GravityScale = 0.f;
 }
 
 void ARPGBaseEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

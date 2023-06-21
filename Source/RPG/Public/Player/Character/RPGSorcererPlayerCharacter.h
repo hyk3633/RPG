@@ -72,26 +72,49 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void SpawnMeteorPortalParticleMulticast();
 
+	void MeteorShowerOn();
+
+	void ApplyMeteorDamage();
+
 	UFUNCTION(NetMulticast, Reliable)
 	void SpawnMeteorShowerParticleMulticast();
 
 	void SpawnMeteorShowerParticle();
 
-	UFUNCTION()
-	void OnMeteorShowerParticleCollide(FName EventName, float EmitterTime, int32 ParticleTime, FVector Location, FVector Velocity, FVector Direction, FVector Normal, FName BoneName, UPhysicalMaterial* PhysMat);
-
-	UFUNCTION(Server, Reliable)
-	void ApplyMeteorRadialDamageServer(const FVector_NetQuantize& Location);
-
 	/** Ability R */
 
 	UFUNCTION()
-	void FloatACharacter(ENotifyCode NotifyCode);
+	void FloatingCharacter(ENotifyCode NotifyCode);
 
-	void DeactivateFloatingCharacter();
+	UFUNCTION(Server, Reliable)
+	void FloatingCharacterServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SetMovementModeToFlyMulticast();
+
+	void StopFloatingCharacter();
 
 	UFUNCTION()
 	void SummonBlackhole(ENotifyCode NotifyCode);
+
+	UFUNCTION(Server, Reliable)
+	void SpawnBlackholeServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SpawnBlackholeMulticast();
+
+	void SpawnBlackhole();
+
+	UFUNCTION()
+	void BlackholeEnd(ENotifyCode NotifyCode);
+
+	UFUNCTION(Server, Reliable)
+	void SetMovementModeToWalkServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SetMovementModeToWalkMulticast();
+
+	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 protected:
 
@@ -118,9 +141,6 @@ protected:
 
 	/** E 스킬 */
 
-	UPROPERTY()
-	UParticleSystemComponent* MeteorShowerParticleComp;
-
 	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteor Shower")
 	UParticleSystem* MeteorShowerParticle;
 
@@ -129,11 +149,22 @@ protected:
 
 	FTimerHandle MeteorShowerTimer;
 
+	FTimerHandle MeteorDamageTimer;
+
+	UPROPERTY(Replicated)
+	FVector SphereTraceLocation;
+
+	int8 MeteorDamageCount = 0;
+
 	/** R 스킬 */
 
 	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
 	TSubclassOf<ARPGBlackhole> BlackholeClass;
 
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Blackhole")
+	UParticleSystem* BlackholeParticle;
+
+	UPROPERTY(Replicated)
 	bool bFloatCharacter = false;
 
 	FTimerHandle FloatingTimer;
