@@ -78,7 +78,7 @@ void ARPGBasePlayerCharacter::BeginPlay()
 
 void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
-	PLOG(TEXT("Player Take Damage : %f"), Damage);
+	//PLOG(TEXT("Player Take Damage : %f"), Damage);
 	if (Health == 0.f) return;
 	Health = FMath::Max(Health - Damage, 0.f);
 	DOnChangeHealthPercentage.Broadcast(Health / MaxHealth);
@@ -173,12 +173,15 @@ void ARPGBasePlayerCharacter::SetDestinationAndPath()
 void ARPGBasePlayerCharacter::DoNormalAttack()
 {
 	// TODO : 바닥, 적 구분
-	GetHitCursorClient();
-	NormalAttackWithComboServer();
-	SpawnClickParticle(TargetingHitResult.ImpactPoint);
+	if (IsLocallyControlled())
+	{
+		GetHitCursor();
+		NormalAttackWithComboServer();
+		SpawnClickParticle(TargetingHitResult.ImpactPoint);
+	}
 }
 
-void ARPGBasePlayerCharacter::GetHitCursorClient_Implementation()
+void ARPGBasePlayerCharacter::GetHitCursor()
 {
 	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, TargetingHitResult);
 	GetHitCursorServer(TargetingHitResult);
@@ -186,7 +189,6 @@ void ARPGBasePlayerCharacter::GetHitCursorClient_Implementation()
 
 void ARPGBasePlayerCharacter::GetHitCursorServer_Implementation(const FHitResult& Hit)
 {
-	// 서버에서만?
 	GetHitCursorMulticast(Hit);
 }
 
@@ -213,13 +215,35 @@ void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	RPGAnimInstance->SetCurrentState(KeyType);
 }
 
+/** 스킬 사용 취소 */
+
+void ARPGBasePlayerCharacter::CancelAbility()
+{
+	if (IsLocallyControlled())
+	{
+		bAiming = false;
+		AimCursor->SetVisibility(false);
+		CancelAbilityServer();
+	}
+}
+
+void ARPGBasePlayerCharacter::CancelAbilityServer_Implementation()
+{
+	CancelAbilityMulticast();
+}
+
+void ARPGBasePlayerCharacter::CancelAbilityMulticast_Implementation()
+{
+	RPGAnimInstance->AimingPoseOff();
+}
+
 /** 타게팅 후 스킬 사용 */
 
 void ARPGBasePlayerCharacter::CastAbilityAfterTargeting_WithAuthority()
 {
 	if (RPGAnimInstance == nullptr) return;
 	
-	GetHitCursorClient();
+	GetHitCursor();
 	CastAbilityAfterTargetingServer();
 	if (IsLocallyControlled()) AimCursor->SetVisibility(false);
 }
@@ -232,13 +256,21 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargetingServer_Implementation()
 void ARPGBasePlayerCharacter::CastAbilityAfterTargetingMulticast_Implementation()
 {
 	CastAbilityAfterTargeting();
+	TurnTowardAttackPoint();
 }
 
 void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
 {
 	if (RPGAnimInstance == nullptr) return;
-	bAiming = false;
+	if (TargetingHitResult.bBlockingHit == false) return;
+	if (HasAuthority()) return;
+
+	if (IsLocallyControlled()) bAiming = false;
+	RPGAnimInstance->PlayAbilityMontageOfKey(true);
+	RPGAnimInstance->AimingPoseOff();
 }
+
+/** 이동 */
 
 void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)
 {
@@ -285,6 +317,8 @@ void ARPGBasePlayerCharacter::OnRep_PathX()
 	InitDestAndDir();
 }
 
+/** 일반 공격 */
+
 void ARPGBasePlayerCharacter::NormalAttackWithComboServer_Implementation()
 {
 	NormalAttackWithComboMulticast();
@@ -292,7 +326,10 @@ void ARPGBasePlayerCharacter::NormalAttackWithComboServer_Implementation()
 
 void ARPGBasePlayerCharacter::NormalAttackWithComboMulticast_Implementation()
 {
-	NormalAttackWithCombo();
+	if (HasAuthority() == false)
+	{
+		NormalAttackWithCombo();
+	}
 }
 
 void ARPGBasePlayerCharacter::NormalAttackWithCombo()
@@ -305,10 +342,12 @@ void ARPGBasePlayerCharacter::NormalAttackWithCombo()
 		CurrentCombo = (CurrentCombo + 1) % MaxCombo;
 		bCanNextCombo = false;
 	}
-	if (RPGAnimInstance == nullptr) return;
-	RPGAnimInstance->PlayNormalAttackMontage();
-	RPGAnimInstance->JumpToAttackMontageSection(CurrentCombo+1);
-	bIsAttacking = true;
+	if (RPGAnimInstance)
+	{
+		RPGAnimInstance->PlayNormalAttackMontage();
+		RPGAnimInstance->JumpToAttackMontageSection(CurrentCombo + 1);
+		bIsAttacking = true;
+	}
 }
 
 void ARPGBasePlayerCharacter::TurnTowardAttackPoint()
@@ -336,6 +375,8 @@ void ARPGBasePlayerCharacter::CastNormalAttack()
 	bIsAttacking = false;
 }
 
+/** 죽음 */
+ 
 void ARPGBasePlayerCharacter::PlayerDie()
 {
 

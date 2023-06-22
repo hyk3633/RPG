@@ -29,6 +29,8 @@ public:
 
 	void PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJumpToSection);
 
+	/** 워리어 전용 */
+
 	void PlayReflectMontage();
 
 	void PlayDeathMontage();

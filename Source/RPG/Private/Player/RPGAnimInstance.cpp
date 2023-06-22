@@ -6,7 +6,7 @@
 void URPGAnimInstance::PlayNormalAttackMontage()
 {
 	if (NormalAttackMontage == nullptr) return;
-	if (Montage_IsPlaying(NormalAttackMontage)) return;
+	if (IsAnyMontagePlaying()) return;
 	Montage_Play(NormalAttackMontage);
 }
 
@@ -37,7 +37,7 @@ void URPGAnimInstance::PlayAbilityMontageOfKey(bool bJumpToSection)
 void URPGAnimInstance::PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJumpToSection)
 {
 	if (AbilityMontage == nullptr) return;
-	if (Montage_IsPlaying(AbilityMontage)) return;
+	if (IsAnyMontagePlaying()) return;
 	Montage_Play(AbilityMontage);
 	if (bJumpToSection) Montage_JumpToSection(FName("Cast"), AbilityMontage);
 }
@@ -45,6 +45,7 @@ void URPGAnimInstance::PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJu
 void URPGAnimInstance::PlayReflectMontage()
 {
 	if (Ability_W_Montage == nullptr) return;
+	if (IsAnyMontagePlaying()) return;
 	Montage_Play(Ability_W_Montage);
 	Montage_JumpToSection(FName("Reflect"), Ability_W_Montage);
 }

@@ -51,8 +51,7 @@ public:
 
 	void DoNormalAttack();
 
-	UFUNCTION(Client, Reliable)
-	void GetHitCursorClient();
+	void GetHitCursor();
 
 	UFUNCTION(Server, Reliable)
 	void GetHitCursorServer(const FHitResult& Hit);
@@ -64,6 +63,10 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void CastAbilityByKeyServer(EPressedKey KeyType);
+
+	/** 스킬 사용 취소 */
+
+	virtual void CancelAbility();
 
 	/** 타게팅 후 스킬 사용 */
 
@@ -81,6 +84,14 @@ protected:
 	void CastAbilityByKeyMulticast(EPressedKey KeyType);
 
 	virtual void CastAbilityByKey(EPressedKey KeyType);
+
+	/** 스킬 사용 취소 */
+
+	UFUNCTION(Server, Reliable)
+	void CancelAbilityServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void CancelAbilityMulticast();
 
 	/** 타게팅 후 스킬 사용 */
 
@@ -198,9 +209,7 @@ private:
 	/** 일반 공격 */
 
 	bool bIsAttacking = false;
-
 	bool bCanNextCombo = false;
-
 	int32 CurrentCombo = 0;
 
 protected:

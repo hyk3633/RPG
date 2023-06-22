@@ -68,9 +68,9 @@ void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 		RPGAnimInstance->PlayAbilityMontageOfKey();
 	}
 	RPGAnimInstance->AimingPoseOn();
-	bAiming = true;
 	if (IsLocallyControlled())
 	{
+		bAiming = true;
 		AimCursor->SetVisibility(true);
 	}
 }
@@ -79,11 +79,6 @@ void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
 {
 	Super::CastAbilityAfterTargeting();
 
-	if (TargetingHitResult.bBlockingHit == false) return;
-	if (HasAuthority()) return;
-
-	RPGAnimInstance->PlayAbilityMontageOfKey(true);
-	RPGAnimInstance->AimingPoseOff();
 }
 
 void ARPGSorcererPlayerCharacter::CastNormalAttack()
@@ -92,9 +87,17 @@ void ARPGSorcererPlayerCharacter::CastNormalAttack()
 
 	if (IsLocallyControlled() && PrimaryPorjectile)
 	{
-
+		SpawnNormalProjectileServer();
 	}
+}
 
+void ARPGSorcererPlayerCharacter::SpawnNormalProjectileServer_Implementation()
+{
+	SpawnNormalProjectile();
+}
+
+void ARPGSorcererPlayerCharacter::SpawnNormalProjectile()
+{
 	FVector SpawnPoint;
 	if (GetCurrentCombo() % 2 == 0)
 	{

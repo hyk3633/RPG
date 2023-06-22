@@ -39,7 +39,14 @@ public:
 
 protected:
 
+	/** 일반 공격 */
+
 	virtual void CastNormalAttack() override;
+
+	UFUNCTION(Server, Reliable)
+	void SpawnNormalProjectileServer();
+
+	void SpawnNormalProjectile();
 
 	/** Ability Q */
 

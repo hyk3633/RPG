@@ -31,12 +31,26 @@ protected:
 
 	virtual void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser) override;
 
+	UFUNCTION()
+	void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	/** 스킬 사용 준비 */
+
 	virtual void CastAbilityByKey(EPressedKey KeyType) override;
 
 	virtual void CastAbilityAfterTargeting() override;
 
-	UFUNCTION()
-	void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	/** 일반 공격 */
+
+	virtual void CastNormalAttack() override;
+
+	UFUNCTION(Server, Reliable)
+	void NormalAttackLineTraceServer();
+
+	void NormalAttackLineTrace();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SpawnNormalAttackImpactParticleMulticast(const FVector_NetQuantize& SpawnLocation);
 
 	/** Q 스킬 함수 */
 
@@ -117,6 +131,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Character | Particle | Normal")
 	UParticleSystem* NormalAttackImpactParticle;
 
+	TArray<FHitResult> NormalAttackHitResults;
+
 	/** Q 스킬 */
 
 	UPROPERTY(EditAnywhere, Category = "Character | Particle | Wield")
@@ -125,7 +141,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Character | Particle | Wield")
 	UParticleSystem* WieldImpactParticle;
 
-	TArray<FHitResult> HitResults;
+	TArray<FHitResult> AbilityHitResults;
 
 	/** W 스킬 */
 

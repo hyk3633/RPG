@@ -7,21 +7,22 @@
 void URPGEnemyAnimInstance::PlayAttackMontage()
 {
 	if (AttackMontage == nullptr) return;
-	if (Montage_IsPlaying(AttackMontage)) return;
+	if (IsAnyMontagePlaying()) return;
+	
 	Montage_Play(AttackMontage);
 }
 
 void URPGEnemyAnimInstance::PlayDeathMontage()
 {
 	if (DeathMontage == nullptr) return;
-	if (Montage_IsPlaying(DeathMontage)) return;
+	if (IsAnyMontagePlaying()) return;
 	Montage_Play(DeathMontage);
 }
 
 void URPGEnemyAnimInstance::PlayGetupMontage()
 {
 	if (GetupMontage == nullptr) return;
-	if (Montage_IsPlaying(GetupMontage)) return;
+	if (IsAnyMontagePlaying()) return;
 	Montage_Play(GetupMontage);
 }
 

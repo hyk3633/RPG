@@ -61,6 +61,18 @@ void ARPGWarriorPlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damag
 	}
 }
 
+void ARPGWarriorPlayerCharacter::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (bReflectOn && HasAuthority())
+	{
+		ARPGBaseProjectile* Proj = Cast<ARPGBaseProjectile>(OtherActor);
+		if (Proj == nullptr) return;
+
+		Proj->ReflectProjectileFromAllClients();
+		PlayReflectMontageAndParticleMulticast(OtherActor->GetActorLocation());
+	}
+}
+
 void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 {
 	Super::CastAbilityByKey(KeyType);
@@ -77,9 +89,9 @@ void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 			RPGAnimInstance->AimingPoseOn();
 			RPGAnimInstance->PlayAbilityMontageOfKey();
 		}
-		bAiming = true;
 		if (IsLocallyControlled())
 		{
+			bAiming = true;
 			AimCursor->SetVisibility(true);
 		}
 	}
@@ -89,23 +101,48 @@ void ARPGWarriorPlayerCharacter::CastAbilityAfterTargeting()
 {
 	Super::CastAbilityAfterTargeting();
 
-	if (TargetingHitResult.bBlockingHit == false) return;
-	if (HasAuthority()) return;
-	
-	RPGAnimInstance->PlayAbilityMontageOfKey(true);
-	RPGAnimInstance->AimingPoseOff();
 }
 
-void ARPGWarriorPlayerCharacter::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ARPGWarriorPlayerCharacter::CastNormalAttack()
 {
-	if (bReflectOn && HasAuthority())
-	{
-		ARPGBaseProjectile* Proj = Cast<ARPGBaseProjectile>(OtherActor);
-		if (Proj == nullptr) return;
+	Super::CastNormalAttack();
 
-		Proj->ReflectProjectileFromAllClients();
-		PlayReflectMontageAndParticleMulticast(OtherActor->GetActorLocation());
+	if (IsLocallyControlled())
+	{
+		NormalAttackLineTraceServer();
 	}
+}
+
+void ARPGWarriorPlayerCharacter::NormalAttackLineTraceServer_Implementation()
+{
+	NormalAttackLineTrace();
+}
+
+void ARPGWarriorPlayerCharacter::NormalAttackLineTrace()
+{
+	UKismetSystemLibrary::SphereTraceMulti
+	(
+		this,
+		GetActorLocation() + GetActorForwardVector() * 150,
+		GetActorLocation() + GetActorForwardVector() * 150,
+		200,
+		UEngineTypes::ConvertToTraceType(ECC_PlayerAttack),
+		false,
+		TArray<AActor*>(),
+		EDrawDebugTrace::None,
+		NormalAttackHitResults,
+		true
+	);
+	for (FHitResult Hit : NormalAttackHitResults)
+	{
+		UGameplayStatics::ApplyDamage(Hit.GetActor(), 50.f, GetController(), this, UDamageType::StaticClass());
+		SpawnNormalAttackImpactParticleMulticast(Hit.GetActor()->GetActorLocation());
+	}
+}
+
+void ARPGWarriorPlayerCharacter::SpawnNormalAttackImpactParticleMulticast_Implementation(const FVector_NetQuantize& SpawnLocation)
+{
+	SpawnParticle(NormalAttackImpactParticle, SpawnLocation);
 }
 
 void ARPGWarriorPlayerCharacter::Wield(ENotifyCode NotifyCode)
@@ -136,14 +173,14 @@ void ARPGWarriorPlayerCharacter::SphereTrace(const FVector& Start, const FVector
 		false,
 		TArray<AActor*>(),
 		EDrawDebugTrace::None,
-		HitResults,
+		AbilityHitResults,
 		true
 	);
 }
 
 void ARPGWarriorPlayerCharacter::ApplyWieldEffectToHittedActors()
 {
-	for (FHitResult Hit : HitResults)
+	for (FHitResult Hit : AbilityHitResults)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
 		if (Enemy)
@@ -190,7 +227,7 @@ void ARPGWarriorPlayerCharacter::RevealEnemiesServer_Implementation()
 void ARPGWarriorPlayerCharacter::ActivateReflect()
 {
 	CDepthEnemies.Empty();
-	for (FHitResult Hit : HitResults)
+	for (FHitResult Hit : AbilityHitResults)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
 		if (Enemy == nullptr || IsValid(Enemy) == false) continue;
@@ -281,7 +318,7 @@ void ARPGWarriorPlayerCharacter::SmashDownServer_Implementation()
 void ARPGWarriorPlayerCharacter::SmashDownToEnemies()
 {
 	SmashedEnemies.Empty();
-	for (FHitResult Hit : HitResults)
+	for (FHitResult Hit : AbilityHitResults)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
 		if (Enemy == nullptr || IsValid(Enemy) == false) continue;
@@ -348,7 +385,7 @@ void ARPGWarriorPlayerCharacter::CharacterMoveToTargettedLocationMulticast_Imple
 
 void ARPGWarriorPlayerCharacter::OneShotKill()
 {
-	for (FHitResult Hit : HitResults)
+	for (FHitResult Hit : AbilityHitResults)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
 		if (Enemy)

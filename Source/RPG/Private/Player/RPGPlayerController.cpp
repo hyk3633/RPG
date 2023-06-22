@@ -122,7 +122,15 @@ void ARPGPlayerController::LeftClickAction_StopMove()
 void ARPGPlayerController::LeftClickAction_SetPath()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->SetDestinationAndPath();
+
+	if (MyCharacter->GetAiming())
+	{
+		MyCharacter->CancelAbility();
+	}
+	else
+	{
+		MyCharacter->SetDestinationAndPath();
+	}
 }
 
 void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
@@ -142,30 +150,63 @@ void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 void ARPGPlayerController::QPressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_Q);
+
+	if (MyCharacter->GetAiming())
+	{
+		MyCharacter->CancelAbility();
+	}
+	else
+	{
+		MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_Q);
+	}
 }
 
 void ARPGPlayerController::WPressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_W);
+
+	if (MyCharacter->GetAiming())
+	{
+		MyCharacter->CancelAbility();
+	}
+	else
+	{
+		MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_W);
+	}
 }
 
 void ARPGPlayerController::EPressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_E);
+
+	if (MyCharacter->GetAiming())
+	{
+		MyCharacter->CancelAbility();
+	}
+	else
+	{
+		MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_E);
+	}
 }
 
 void ARPGPlayerController::RPressedAction_Cast()
 {
 	if (MyCharacter == nullptr) return;
-	MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_R);
+
+	if (MyCharacter->GetAiming())
+	{
+		MyCharacter->CancelAbility();
+	}
+	else
+	{
+		MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_R);
+	}
 }
 
 void ARPGPlayerController::MouseWheelScroll_ZoomInOut(const FInputActionValue& Value)
 {
 	if (MyCharacter == nullptr) return;
+
 	MyCharacter->CameraZoomInOut(-Value.Get<float>());
 }
 

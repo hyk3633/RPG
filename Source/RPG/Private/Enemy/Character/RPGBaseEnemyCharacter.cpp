@@ -134,7 +134,7 @@ void ARPGBaseEnemyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bI
 
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
-	PLOG(TEXT("%s Enemy damaged : %f"), *DamagedActor->GetName(), Damage);
+	//PLOG(TEXT("%s Enemy damaged : %f"), *DamagedActor->GetName(), Damage);
 
 	HealthDecrease(Damage);
 }
@@ -144,6 +144,8 @@ void ARPGBaseEnemyCharacter::HealthDecrease(const float& Damage)
 	Health = FMath::Clamp(Health - Damage, 0, MaxHealth);
 	if (Health == 0)
 	{
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Ignore);
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 		DOnDeath.Broadcast();
 		GetWorldTimerManager().SetTimer(DestroyTimer, this, &ARPGBaseEnemyCharacter::DestroySelf, 5.f, false);
 	}
@@ -181,10 +183,7 @@ void ARPGBaseEnemyCharacter::EnemyDeath()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 	HealthBarWidget->SetVisibility(false);
-	if (HasAuthority() == false)
-	{
-		MyAnimInst->PlayDeathMontage();
-	}
+	MyAnimInst->PlayDeathMontage();
 }
 
 void ARPGBaseEnemyCharacter::DestroySelf()
