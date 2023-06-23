@@ -77,18 +77,13 @@ void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 {
 	Super::CastAbilityByKey(KeyType);
 
-	// W 스킬만 에이밍 X, R 스킬만 인트로 애니메이션 재생
-	if (KeyType == EPressedKey::EPK_W)
+	// Q, W 스킬만 에이밍 X
+	if (KeyType == EPressedKey::EPK_W || KeyType == EPressedKey::EPK_Q)
 	{
 		RPGAnimInstance->PlayAbilityMontageOfKey();
 	}
 	else
 	{
-		if (KeyType == EPressedKey::EPK_R)
-		{
-			RPGAnimInstance->AimingPoseOn();
-			RPGAnimInstance->PlayAbilityMontageOfKey();
-		}
 		if (IsLocallyControlled())
 		{
 			bAiming = true;
@@ -101,6 +96,7 @@ void ARPGWarriorPlayerCharacter::CastAbilityAfterTargeting()
 {
 	Super::CastAbilityAfterTargeting();
 
+	RPGAnimInstance->PlayAbilityMontageOfKey();
 }
 
 void ARPGWarriorPlayerCharacter::CastNormalAttack()

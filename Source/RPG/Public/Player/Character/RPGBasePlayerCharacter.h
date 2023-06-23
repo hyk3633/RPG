@@ -154,8 +154,6 @@ protected:
 
 protected:
 
-	ARPGPlayerController* RPGPlayerController;
-
 	URPGAnimInstance* RPGAnimInstance;
 
 	UPROPERTY(EditAnywhere)
@@ -177,6 +175,8 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Character | Click")
 	UParticleSystem* ClickParticle;
+
+	FHitResult CursorHitResult;
 
 	/** Ω∫≈» */
 

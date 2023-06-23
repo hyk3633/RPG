@@ -79,6 +79,8 @@ void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
 {
 	Super::CastAbilityAfterTargeting();
 
+	RPGAnimInstance->PlayAbilityMontageOfKey(true);
+	RPGAnimInstance->AimingPoseOff();
 }
 
 void ARPGSorcererPlayerCharacter::CastNormalAttack()

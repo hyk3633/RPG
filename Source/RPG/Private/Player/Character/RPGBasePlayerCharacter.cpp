@@ -1,6 +1,7 @@
 
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Player/RPGAnimInstance.h"
+#include "Player/RPGPlayerController.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Camera/CameraComponent.h"
@@ -122,10 +123,17 @@ void ARPGBasePlayerCharacter::DrawTargetingCursor()
 {
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC == nullptr) return;
-	FHitResult TraceHitResult;
-	PC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
-	TraceHitResult.Location.Z += 5.f;
-	AimCursor->SetWorldLocation(TraceHitResult.Location);
+
+	PC->GetHitResultUnderCursor(ECC_Visibility, true, CursorHitResult);
+	FVector CursorLocation = CursorHitResult.Location;
+	CursorLocation.Z = GetActorLocation().Z;
+	CursorHitResult.Location.Z += 5.f;
+	if (FVector::Dist2D(GetActorLocation(), CursorLocation) >= 800.f)
+	{
+		CursorLocation = GetActorLocation() + (CursorLocation - GetActorLocation()).GetUnsafeNormal() * 800.f;
+	}
+
+	AimCursor->SetWorldLocation(CursorLocation);
 }
 
 void ARPGBasePlayerCharacter::CameraZoomInOut(int8 Value)
@@ -264,10 +272,7 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
 	if (RPGAnimInstance == nullptr) return;
 	if (TargetingHitResult.bBlockingHit == false) return;
 	if (HasAuthority()) return;
-
 	if (IsLocallyControlled()) bAiming = false;
-	RPGAnimInstance->PlayAbilityMontageOfKey(true);
-	RPGAnimInstance->AimingPoseOff();
 }
 
 /** ¿Ãµø */
