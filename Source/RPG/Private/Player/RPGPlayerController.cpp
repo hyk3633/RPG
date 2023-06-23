@@ -127,7 +127,7 @@ void ARPGPlayerController::LeftClickAction_SetPath()
 	{
 		MyCharacter->CancelAbility();
 	}
-	else
+	else if (MyCharacter->GetIsMontagePlaying() == false)
 	{
 		MyCharacter->SetDestinationAndPath();
 	}
@@ -139,7 +139,7 @@ void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 
 	if (MyCharacter->GetAiming())
 	{
-		MyCharacter->CastAbilityAfterTargeting_WithAuthority();
+		MyCharacter->GetCursorHitResultCastAbility();
 	}
 	else
 	{
@@ -157,7 +157,7 @@ void ARPGPlayerController::QPressedAction_Cast()
 	}
 	else
 	{
-		MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_Q);
+		MyCharacter->ReadyToCastAbilityByKey(EPressedKey::EPK_Q);
 	}
 }
 
@@ -171,7 +171,7 @@ void ARPGPlayerController::WPressedAction_Cast()
 	}
 	else
 	{
-		MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_W);
+		MyCharacter->ReadyToCastAbilityByKey(EPressedKey::EPK_W);
 	}
 }
 
@@ -183,9 +183,9 @@ void ARPGPlayerController::EPressedAction_Cast()
 	{
 		MyCharacter->CancelAbility();
 	}
-	else
+	else  if (MyCharacter->GetIsMontagePlaying() == false)
 	{
-		MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_E);
+		MyCharacter->ReadyToCastAbilityByKey(EPressedKey::EPK_E);
 	}
 }
 
@@ -197,9 +197,9 @@ void ARPGPlayerController::RPressedAction_Cast()
 	{
 		MyCharacter->CancelAbility();
 	}
-	else
+	else  if (MyCharacter->GetIsMontagePlaying() == false)
 	{
-		MyCharacter->CastAbilityByKeyServer(EPressedKey::EPK_R);
+		MyCharacter->ReadyToCastAbilityByKey(EPressedKey::EPK_R);
 	}
 }
 

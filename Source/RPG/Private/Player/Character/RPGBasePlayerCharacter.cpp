@@ -142,6 +142,8 @@ void ARPGBasePlayerCharacter::CameraZoomInOut(int8 Value)
 	bZooming = true;
 }
 
+/** --------------------------- 이동 --------------------------- */
+
 void ARPGBasePlayerCharacter::StopMove()
 {
 	GetMovementComponent()->StopMovementImmediately();
@@ -174,113 +176,6 @@ void ARPGBasePlayerCharacter::SetDestinationAndPath()
 			DrawDebugPoint(GetWorld(), FVector(PathX[i], PathY[i], 10.f), 10.f, FColor::Blue, false, 2.f);
 		}
 	}*/
-}
-
-/** 일반 공격 */
-
-void ARPGBasePlayerCharacter::DoNormalAttack()
-{
-	// TODO : 바닥, 적 구분
-	if (IsLocallyControlled())
-	{
-		GetHitCursor();
-		NormalAttackWithComboServer();
-		SpawnClickParticle(TargetingHitResult.ImpactPoint);
-	}
-}
-
-void ARPGBasePlayerCharacter::GetHitCursor()
-{
-	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, TargetingHitResult);
-	GetHitCursorServer(TargetingHitResult);
-}
-
-void ARPGBasePlayerCharacter::GetHitCursorServer_Implementation(const FHitResult& Hit)
-{
-	GetHitCursorMulticast(Hit);
-}
-
-void ARPGBasePlayerCharacter::GetHitCursorMulticast_Implementation(const FHitResult& Hit)
-{
-	TargetingHitResult = Hit;
-}
-
-/** 스킬 사용 준비 */
-
-void ARPGBasePlayerCharacter::CastAbilityByKeyServer_Implementation(EPressedKey KeyType)
-{
-	CastAbilityByKeyMulticast(KeyType);
-}
-
-void ARPGBasePlayerCharacter::CastAbilityByKeyMulticast_Implementation(EPressedKey KeyType)
-{
-	CastAbilityByKey(KeyType);
-}
-
-void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
-{
-	if (RPGAnimInstance == nullptr) return;
-	RPGAnimInstance->SetCurrentState(KeyType);
-}
-
-/** 스킬 사용 취소 */
-
-void ARPGBasePlayerCharacter::CancelAbility()
-{
-	if (IsLocallyControlled())
-	{
-		bAiming = false;
-		AimCursor->SetVisibility(false);
-		CancelAbilityServer();
-	}
-}
-
-void ARPGBasePlayerCharacter::CancelAbilityServer_Implementation()
-{
-	CancelAbilityMulticast();
-}
-
-void ARPGBasePlayerCharacter::CancelAbilityMulticast_Implementation()
-{
-	RPGAnimInstance->AimingPoseOff();
-}
-
-/** 타게팅 후 스킬 사용 */
-
-void ARPGBasePlayerCharacter::CastAbilityAfterTargeting_WithAuthority()
-{
-	if (RPGAnimInstance == nullptr) return;
-	
-	GetHitCursor();
-	CastAbilityAfterTargetingServer();
-	if (IsLocallyControlled()) AimCursor->SetVisibility(false);
-}
-
-void ARPGBasePlayerCharacter::CastAbilityAfterTargetingServer_Implementation()
-{
-	CastAbilityAfterTargetingMulticast();
-}
-
-void ARPGBasePlayerCharacter::CastAbilityAfterTargetingMulticast_Implementation()
-{
-	CastAbilityAfterTargeting();
-	TurnTowardAttackPoint();
-}
-
-void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
-{
-	if (RPGAnimInstance == nullptr) return;
-	if (TargetingHitResult.bBlockingHit == false) return;
-	if (HasAuthority()) return;
-	if (IsLocallyControlled()) bAiming = false;
-}
-
-/** 이동 */
-
-void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)
-{
-	if (ClickParticle == nullptr) return;
-	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ClickParticle, EmitLocation);
 }
 
 void ARPGBasePlayerCharacter::InitDestAndDir()
@@ -322,7 +217,63 @@ void ARPGBasePlayerCharacter::OnRep_PathX()
 	InitDestAndDir();
 }
 
-/** 일반 공격 */
+void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)
+{
+	if (ClickParticle == nullptr) return;
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ClickParticle, EmitLocation);
+}
+
+/** --------------------------- 스킬 사용 준비 --------------------------- */
+
+void ARPGBasePlayerCharacter::ReadyToCastAbilityByKey(EPressedKey KeyType)
+{
+	CastAbilityByKeyServer(KeyType);
+}
+
+void ARPGBasePlayerCharacter::CastAbilityByKeyServer_Implementation(EPressedKey KeyType)
+{
+	CastAbilityByKeyMulticast(KeyType);
+}
+
+void ARPGBasePlayerCharacter::CastAbilityByKeyMulticast_Implementation(EPressedKey KeyType)
+{
+	CastAbilityByKey(KeyType);
+}
+
+void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
+{
+	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->SetCurrentState(KeyType);
+}
+
+/** --------------------------- 일반 공격 --------------------------- */
+
+void ARPGBasePlayerCharacter::DoNormalAttack()
+{
+	// TODO : 바닥, 적 구분
+	if (IsLocallyControlled())
+	{
+		GetHitCursor();
+		NormalAttackWithComboServer();
+		SpawnClickParticle(TargetingHitResult.ImpactPoint);
+	}
+}
+
+void ARPGBasePlayerCharacter::GetHitCursor()
+{
+	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, TargetingHitResult);
+	GetHitCursorServer(TargetingHitResult);
+}
+
+void ARPGBasePlayerCharacter::GetHitCursorServer_Implementation(const FHitResult& Hit)
+{
+	GetHitCursorMulticast(Hit);
+}
+
+void ARPGBasePlayerCharacter::GetHitCursorMulticast_Implementation(const FHitResult& Hit)
+{
+	TargetingHitResult = Hit;
+}
 
 void ARPGBasePlayerCharacter::NormalAttackWithComboServer_Implementation()
 {
@@ -380,6 +331,58 @@ void ARPGBasePlayerCharacter::CastNormalAttack()
 	bIsAttacking = false;
 }
 
+/** --------------------------- 스킬 사용 취소 --------------------------- */
+
+void ARPGBasePlayerCharacter::CancelAbility()
+{
+	if (IsLocallyControlled())
+	{
+		bAiming = false;
+		AimCursor->SetVisibility(false);
+		CancelAbilityServer();
+	}
+}
+
+void ARPGBasePlayerCharacter::CancelAbilityServer_Implementation()
+{
+	CancelAbilityMulticast();
+}
+
+void ARPGBasePlayerCharacter::CancelAbilityMulticast_Implementation()
+{
+	RPGAnimInstance->AimingPoseOff();
+}
+
+/** --------------------------- 타게팅 후 스킬 사용 --------------------------- */
+
+void ARPGBasePlayerCharacter::GetCursorHitResultCastAbility()
+{
+	if (RPGAnimInstance == nullptr) return;
+	
+	GetHitCursor();
+	CastAbilityAfterTargetingServer();
+	if (IsLocallyControlled()) AimCursor->SetVisibility(false);
+}
+
+void ARPGBasePlayerCharacter::CastAbilityAfterTargetingServer_Implementation()
+{
+	CastAbilityAfterTargetingMulticast();
+}
+
+void ARPGBasePlayerCharacter::CastAbilityAfterTargetingMulticast_Implementation()
+{
+	CastAbilityAfterTargeting();
+	TurnTowardAttackPoint();
+}
+
+void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
+{
+	if (RPGAnimInstance == nullptr) return;
+	if (TargetingHitResult.bBlockingHit == false) return;
+	if (HasAuthority()) return;
+	if (IsLocallyControlled()) bAiming = false;
+}
+
 /** 죽음 */
  
 void ARPGBasePlayerCharacter::PlayerDie()
@@ -398,6 +401,12 @@ void ARPGBasePlayerCharacter::SpawnParticle(UParticleSystem* Particle, const FVe
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Particle, SpawnLoc, SpawnRot);
 	}
+}
+
+bool ARPGBasePlayerCharacter::GetIsMontagePlaying() const
+{
+	if (RPGAnimInstance == nullptr) return;
+	return RPGAnimInstance->IsAnyMontagePlaying();
 }
 
 void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

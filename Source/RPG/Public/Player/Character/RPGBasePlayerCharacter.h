@@ -35,79 +35,17 @@ protected:
 	UFUNCTION()
 	virtual void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 
-public:	
-
-	/** 카메라 줌 인 아웃 */
+public:	/** 카메라 줌 인 아웃 */
 
 	void CameraZoomInOut(int8 Value);
 
-	/** 이동 */
+public: /** ---------- 이동 ---------- */
 
 	void StopMove();
 
 	void SetDestinationAndPath();
 
-	/** 일반 공격 */
-
-	void DoNormalAttack();
-
-	void GetHitCursor();
-
-	UFUNCTION(Server, Reliable)
-	void GetHitCursorServer(const FHitResult& Hit);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void GetHitCursorMulticast(const FHitResult& Hit);
-
-	/** 스킬 사용 준비 */
-
-	UFUNCTION(Server, Reliable)
-	void CastAbilityByKeyServer(EPressedKey KeyType);
-
-	/** 스킬 사용 취소 */
-
-	virtual void CancelAbility();
-
-	/** 타게팅 후 스킬 사용 */
-
-	void CastAbilityAfterTargeting_WithAuthority();
-
-	FORCEINLINE URPGAnimInstance* GetRPGAnimInstance() const { return RPGAnimInstance; }
-	FORCEINLINE bool GetAiming() const { return bAiming; }
-	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
-
 protected:
-
-	/** 스킬 사용 준비 */
-
-	UFUNCTION(NetMulticast, Reliable)
-	void CastAbilityByKeyMulticast(EPressedKey KeyType);
-
-	virtual void CastAbilityByKey(EPressedKey KeyType);
-
-	/** 스킬 사용 취소 */
-
-	UFUNCTION(Server, Reliable)
-	void CancelAbilityServer();
-
-	UFUNCTION(NetMulticast, Reliable)
-	virtual void CancelAbilityMulticast();
-
-	/** 타게팅 후 스킬 사용 */
-
-	UFUNCTION(Server, Reliable)
-	void CastAbilityAfterTargetingServer();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void CastAbilityAfterTargetingMulticast();
-
-	virtual void CastAbilityAfterTargeting();
-
-	void DrawTargetingCursor();
-
-	void SpawnClickParticle(const FVector& EmitLocation);
-
-	/** 이동 */
 
 	void InitDestAndDir();
 
@@ -119,17 +57,29 @@ protected:
 	UFUNCTION()
 	void OnRep_PathX();
 
-	/** 일반 공격 */
+	void SpawnClickParticle(const FVector& EmitLocation);
 
-	void NormalAttackPressed();
+public: /** ---------- 일반 공격 ---------- */
 
-	void NormalAttackWithCombo();
+	void DoNormalAttack();
+
+protected:
+
+	void GetHitCursor();
+
+	UFUNCTION(Server, Reliable)
+	void GetHitCursorServer(const FHitResult& Hit);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void GetHitCursorMulticast(const FHitResult& Hit);
 
 	UFUNCTION(Server, Reliable)
 	void NormalAttackWithComboServer();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void NormalAttackWithComboMulticast();
+
+	void NormalAttackWithCombo();
 
 	void TurnTowardAttackPoint();
 
@@ -141,7 +91,51 @@ protected:
 	UFUNCTION()
 	virtual void CastNormalAttack();
 
-	/** 죽음 */
+public:	/** ---------- 스킬 사용 준비 ---------- */
+
+	void ReadyToCastAbilityByKey(EPressedKey KeyType);
+
+protected:
+
+	UFUNCTION(Server, Reliable)
+	void CastAbilityByKeyServer(EPressedKey KeyType);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void CastAbilityByKeyMulticast(EPressedKey KeyType);
+
+	virtual void CastAbilityByKey(EPressedKey KeyType);
+
+	void DrawTargetingCursor();
+
+public:	/** ---------- 스킬 사용 취소 ---------- */
+
+	virtual void CancelAbility();
+
+protected:
+
+	UFUNCTION(Server, Reliable)
+	void CancelAbilityServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void CancelAbilityMulticast();
+
+public:	/** ---------- 타게팅 후 스킬 사용 ---------- */
+
+	void GetCursorHitResultCastAbility();
+
+protected:
+
+	UFUNCTION(Server, Reliable)
+	void CastAbilityAfterTargetingServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void CastAbilityAfterTargetingMulticast();
+
+	virtual void CastAbilityAfterTargeting();
+
+protected:
+
+	/** ---------- 죽음 ---------- */
 
 	void PlayerDie();
 
@@ -152,6 +146,13 @@ protected:
 
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
+public:
+
+	FORCEINLINE URPGAnimInstance* GetRPGAnimInstance() const { return RPGAnimInstance; }
+	FORCEINLINE bool GetAiming() const { return bAiming; }
+	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
+	bool GetIsMontagePlaying() const;
+
 protected:
 
 	URPGAnimInstance* RPGAnimInstance;
@@ -160,6 +161,11 @@ protected:
 	UStaticMeshComponent* AimCursor;
 
 	bool bAiming = false;
+
+	int32 MaxCombo = 4;
+
+	UPROPERTY(Replicated)
+	FHitResult TargetingHitResult;
 
 private:
 
@@ -211,14 +217,5 @@ private:
 	bool bIsAttacking = false;
 	bool bCanNextCombo = false;
 	int32 CurrentCombo = 0;
-
-protected:
-
-	int32 MaxCombo = 4;
-
-	UPROPERTY(Replicated)
-	FHitResult TargetingHitResult;
-
-	FHitResult GroundHitResult;
 
 };
