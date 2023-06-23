@@ -88,6 +88,7 @@ void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 		{
 			bAiming = true;
 			AimCursor->SetVisibility(true);
+			TargetingCompOn();
 		}
 	}
 }
@@ -97,6 +98,10 @@ void ARPGWarriorPlayerCharacter::CastAbilityAfterTargeting()
 	Super::CastAbilityAfterTargeting();
 
 	RPGAnimInstance->PlayAbilityMontageOfKey();
+	if (IsLocallyControlled())
+	{
+		TargetingCompOff();
+	}
 }
 
 void ARPGWarriorPlayerCharacter::CastNormalAttack()

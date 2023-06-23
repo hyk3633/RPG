@@ -6,6 +6,7 @@
 #include "../RPG.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SphereComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -25,14 +26,14 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->bSnapToPlaneAtStart = true;
 
-	CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Camera Arm"));
 	CameraArm->SetupAttachment(RootComponent);
 	CameraArm->SetUsingAbsoluteRotation(true);
 	CameraArm->TargetArmLength = 1200.f;
 	CameraArm->SetRelativeRotation(FRotator(-60.f, 0.f, 0.f));
 	CameraArm->bDoCollisionTest = false;
 
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Follow Camera"));
 	FollowCamera->SetupAttachment(CameraArm, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
@@ -45,6 +46,13 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyAttack, ECollisionResponse::ECR_Block);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
+
+	TargetingComp = CreateDefaultSubobject<USphereComponent>(TEXT("Targeting Component"));
+	TargetingComp->SetCollisionObjectType(ECC_PlayerAttack);
+	TargetingComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	TargetingComp->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	TargetingComp->SetCollisionResponseToChannel(ECC_EnemyBody, ECollisionResponse::ECR_Overlap);
+	TargetingComp->SetSphereRadius(300.f);
 
 	AimCursor = CreateDefaultSubobject<UStaticMeshComponent>("Aim Cursor");
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> StaticMeshAsset(TEXT("StaticMesh'/Engine/BasicShapes/Plane.Plane'"));
@@ -68,6 +76,11 @@ void ARPGBasePlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (IsLocallyControlled())
+	{
+		TargetingComp->OnComponentBeginOverlap.AddDynamic(this, &ARPGBasePlayerCharacter::OnTargetingComponentBeginOverlap);
+		TargetingComp->OnComponentEndOverlap.AddDynamic(this, &ARPGBasePlayerCharacter::OnTargetingComponentEndOverlap);
+	}
 	RPGAnimInstance = Cast<URPGAnimInstance>(GetMesh()->GetAnimInstance());
 	if (RPGAnimInstance)
 	{
@@ -91,6 +104,27 @@ void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, 
 	else
 	{
 		// TODO : 이펙트 재생
+	}
+}
+
+void ARPGBasePlayerCharacter::OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	ACharacter* Enemy = Cast<ACharacter>(OtherActor);
+	if (Enemy)
+	{
+		Enemy->GetMesh()->SetRenderCustomDepth(true);
+		Enemy->GetMesh()->SetCustomDepthStencilValue(126);
+		OutlinedEnemies.Add(Enemy);
+	}
+}
+
+void ARPGBasePlayerCharacter::OnTargetingComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	ACharacter* Enemy = Cast<ACharacter>(OtherActor);
+	if (Enemy)
+	{
+		Enemy->GetMesh()->SetRenderCustomDepth(false);
+		OutlinedEnemies.Remove(Enemy);
 	}
 }
 
@@ -134,6 +168,7 @@ void ARPGBasePlayerCharacter::DrawTargetingCursor()
 	}
 
 	AimCursor->SetWorldLocation(CursorLocation);
+	TargetingComp->SetRelativeLocation(CursorLocation);
 }
 
 void ARPGBasePlayerCharacter::CameraZoomInOut(int8 Value)
@@ -223,29 +258,6 @@ void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ClickParticle, EmitLocation);
 }
 
-/** --------------------------- 스킬 사용 준비 --------------------------- */
-
-void ARPGBasePlayerCharacter::ReadyToCastAbilityByKey(EPressedKey KeyType)
-{
-	CastAbilityByKeyServer(KeyType);
-}
-
-void ARPGBasePlayerCharacter::CastAbilityByKeyServer_Implementation(EPressedKey KeyType)
-{
-	CastAbilityByKeyMulticast(KeyType);
-}
-
-void ARPGBasePlayerCharacter::CastAbilityByKeyMulticast_Implementation(EPressedKey KeyType)
-{
-	CastAbilityByKey(KeyType);
-}
-
-void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
-{
-	if (RPGAnimInstance == nullptr) return;
-	RPGAnimInstance->SetCurrentState(KeyType);
-}
-
 /** --------------------------- 일반 공격 --------------------------- */
 
 void ARPGBasePlayerCharacter::DoNormalAttack()
@@ -331,6 +343,44 @@ void ARPGBasePlayerCharacter::CastNormalAttack()
 	bIsAttacking = false;
 }
 
+/** --------------------------- 스킬 사용 준비 --------------------------- */
+
+void ARPGBasePlayerCharacter::ReadyToCastAbilityByKey(EPressedKey KeyType)
+{
+	CastAbilityByKeyServer(KeyType);
+}
+
+void ARPGBasePlayerCharacter::CastAbilityByKeyServer_Implementation(EPressedKey KeyType)
+{
+	CastAbilityByKeyMulticast(KeyType);
+}
+
+void ARPGBasePlayerCharacter::CastAbilityByKeyMulticast_Implementation(EPressedKey KeyType)
+{
+	CastAbilityByKey(KeyType);
+}
+
+void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
+{
+	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->SetCurrentState(KeyType);
+}
+
+void ARPGBasePlayerCharacter::TargetingCompOn()
+{
+	TargetingComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+}
+
+void ARPGBasePlayerCharacter::TargetingCompOff()
+{
+	TargetingComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	for (ACharacter* Enemy : OutlinedEnemies)
+	{
+		Enemy->GetMesh()->SetRenderCustomDepth(false);
+	}
+	OutlinedEnemies.Empty();
+}
+
 /** --------------------------- 스킬 사용 취소 --------------------------- */
 
 void ARPGBasePlayerCharacter::CancelAbility()
@@ -362,6 +412,10 @@ void ARPGBasePlayerCharacter::GetCursorHitResultCastAbility()
 	GetHitCursor();
 	CastAbilityAfterTargetingServer();
 	if (IsLocallyControlled()) AimCursor->SetVisibility(false);
+	if (bUpdateMovement)
+	{
+		StopMove();
+	}
 }
 
 void ARPGBasePlayerCharacter::CastAbilityAfterTargetingServer_Implementation()
@@ -405,7 +459,7 @@ void ARPGBasePlayerCharacter::SpawnParticle(UParticleSystem* Particle, const FVe
 
 bool ARPGBasePlayerCharacter::GetIsMontagePlaying() const
 {
-	if (RPGAnimInstance == nullptr) return;
+	if (RPGAnimInstance == nullptr) return false;
 	return RPGAnimInstance->IsAnyMontagePlaying();
 }
 

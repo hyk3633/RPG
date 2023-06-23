@@ -72,6 +72,7 @@ void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	{
 		bAiming = true;
 		AimCursor->SetVisibility(true);
+		TargetingCompOn();
 	}
 }
 
@@ -81,6 +82,10 @@ void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
 
 	RPGAnimInstance->PlayAbilityMontageOfKey(true);
 	RPGAnimInstance->AimingPoseOff();
+	if (IsLocallyControlled())
+	{
+		TargetingCompOff();
+	}
 }
 
 void ARPGSorcererPlayerCharacter::CastNormalAttack()

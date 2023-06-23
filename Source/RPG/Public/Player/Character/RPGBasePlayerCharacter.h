@@ -10,6 +10,7 @@ class ARPGPlayerController;
 class URPGAnimInstance;
 class USpringArmComponent;
 class UCameraComponent;
+class USphereComponent;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnChangeHealthPercentageDelegate, float Percentage);
 
@@ -34,6 +35,12 @@ protected:
 
 	UFUNCTION()
 	virtual void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
+
+	UFUNCTION()
+	void OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnTargetingComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 public:	/** Ä«¸Þ¶ó ÁÜ ÀÎ ¾Æ¿ô */
 
@@ -107,6 +114,10 @@ protected:
 
 	void DrawTargetingCursor();
 
+	void TargetingCompOn();
+
+	void TargetingCompOff();
+
 public:	/** ---------- ½ºÅ³ »ç¿ë Ãë¼Ò ---------- */
 
 	virtual void CancelAbility();
@@ -169,6 +180,9 @@ protected:
 
 private:
 
+	UPROPERTY(EditAnywhere)
+	USphereComponent* TargetingComp;
+
 	UPROPERTY(VisibleAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraArm;
 
@@ -183,6 +197,9 @@ private:
 	UParticleSystem* ClickParticle;
 
 	FHitResult CursorHitResult;
+
+	UPROPERTY()
+	TArray<ACharacter*> OutlinedEnemies;
 
 	/** ½ºÅÈ */
 
