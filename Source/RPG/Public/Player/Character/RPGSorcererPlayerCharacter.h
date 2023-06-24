@@ -113,6 +113,17 @@ protected:
 	void SpawnBlackhole();
 
 	UFUNCTION()
+	void BlackholeBeamOn(ENotifyCode NotifyCode);
+
+	UFUNCTION(Server, Reliable)
+	void ActivateBlackholwBeamServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void ActivateBlackholwBeamMulticast();
+
+	void ActivateBlackholwBeam();
+
+	UFUNCTION()
 	void BlackholeEnd(ENotifyCode NotifyCode);
 
 	UFUNCTION(Server, Reliable)
@@ -170,6 +181,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Character | Particle | Blackhole")
 	UParticleSystem* BlackholeParticle;
+
+	UPROPERTY()
+	UParticleSystemComponent* BlackholeBeamParticleComp;
+
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Blackhole")
+	UParticleSystem* BlackholeBeamParticle;
 
 	UPROPERTY(Replicated)
 	bool bFloatCharacter = false;

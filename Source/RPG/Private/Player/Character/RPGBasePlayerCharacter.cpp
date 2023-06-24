@@ -114,7 +114,7 @@ void ARPGBasePlayerCharacter::OnRep_Health()
 	}
 	if (Health == 0.f)
 	{
-		PlayerDie();
+		//PlayerDie();
 	}
 }
 
@@ -305,10 +305,7 @@ void ARPGBasePlayerCharacter::NormalAttackWithComboServer_Implementation()
 
 void ARPGBasePlayerCharacter::NormalAttackWithComboMulticast_Implementation()
 {
-	if (HasAuthority() == false)
-	{
-		NormalAttackWithCombo();
-	}
+	NormalAttackWithCombo();
 }
 
 void ARPGBasePlayerCharacter::NormalAttackWithCombo()

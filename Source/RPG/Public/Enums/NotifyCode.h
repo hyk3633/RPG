@@ -10,6 +10,7 @@ enum class ENotifyCode : uint8
 	ENC_S_R_FloatingCharacter UMETA(DisplayName = "S_R_FloatingCharacter"),
 	ENC_S_R_SummonBlackhole UMETA(DisplayName = "S_R_SummonBlackhole"),
 	ENC_S_R_BlackholeEnd UMETA(DisplayName = "S_R_BlackholeEnd"),
+	ENC_S_R_BlackholeBeam UMETA(DisplayName = "S_R_BlackholeBeam"),
 
 	/** ¿ö¸®¾î Enum */
 	ENC_W_Q_Wield UMETA(DisplayName = "W_Q_Wield"),

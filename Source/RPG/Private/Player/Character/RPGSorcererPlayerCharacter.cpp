@@ -54,6 +54,7 @@ void ARPGSorcererPlayerCharacter::BeginPlay()
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("FloatingCharacter"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("SummonBlackhole"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("BlackholeEnd"));
+		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("BlackholeBeamOn"));
 	}
 }
 
@@ -108,11 +109,11 @@ void ARPGSorcererPlayerCharacter::SpawnNormalProjectile()
 	FVector SpawnPoint;
 	if (GetCurrentCombo() % 2 == 0)
 	{
-		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_R")).GetLocation();
+		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L2")).GetLocation();
 	}
 	else
 	{
-		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L")).GetLocation();
+		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_R2")).GetLocation();
 	}
 
 	FRotator SpawnDirection;
@@ -336,6 +337,44 @@ void ARPGSorcererPlayerCharacter::SpawnBlackhole()
 	}
 }
 
+void ARPGSorcererPlayerCharacter::BlackholeBeamOn(ENotifyCode NotifyCode)
+{
+	if (NotifyCode != ENotifyCode::ENC_S_R_BlackholeBeam) return;
+
+	if (IsLocallyControlled())
+	{
+		ActivateBlackholwBeamServer();
+	}
+}
+
+void ARPGSorcererPlayerCharacter::ActivateBlackholwBeamServer_Implementation()
+{
+	ActivateBlackholwBeamMulticast();
+}
+
+void ARPGSorcererPlayerCharacter::ActivateBlackholwBeamMulticast_Implementation()
+{
+	ActivateBlackholwBeam();
+}
+
+void ARPGSorcererPlayerCharacter::ActivateBlackholwBeam()
+{
+	if (HasAuthority()) return;
+	if (BlackholeBeamParticle)
+	{
+		const USkeletalMeshSocket* StartSocket = GetMesh()->GetSocketByName("FX_Beam");
+		const FTransform SocketTransform = StartSocket->GetSocketTransform(GetMesh());
+		BlackholeBeamParticleComp = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BlackholeBeamParticle, SocketTransform);
+		if (BlackholeBeamParticleComp)
+		{
+			FVector Location = TargetingHitResult.ImpactPoint;
+			Location.Z += 300.f;
+			BlackholeBeamParticleComp->SetVectorParameter(FName("Target"), Location);
+		}
+	}
+
+}
+
 void ARPGSorcererPlayerCharacter::BlackholeEnd(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_S_R_BlackholeEnd) return;
@@ -354,6 +393,10 @@ void ARPGSorcererPlayerCharacter::SetMovementModeToWalkServer_Implementation()
 void ARPGSorcererPlayerCharacter::SetMovementModeToWalkMulticast_Implementation()
 {
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	if (BlackholeBeamParticleComp)
+	{
+		BlackholeBeamParticleComp->Deactivate();
+	}
 }
 
 void ARPGSorcererPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
