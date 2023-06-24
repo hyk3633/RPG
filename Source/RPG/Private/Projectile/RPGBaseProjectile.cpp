@@ -152,15 +152,15 @@ void ARPGBaseProjectile::DeactivateProjectile()
 
 void ARPGBaseProjectile::ReflectProjectileFromAllClients()
 {
-	ReflectProjectileMulticast();
+	ReflectedProjectileMulticast();
 }
 
-void ARPGBaseProjectile::ReflectProjectileMulticast_Implementation()
+void ARPGBaseProjectile::ReflectedProjectileMulticast_Implementation()
 {
-	ReflectProjectile();
+	ReflectedProjectile();
 }
 
-void ARPGBaseProjectile::ReflectProjectile()
+void ARPGBaseProjectile::ReflectedProjectile()
 {
 	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ProjectileMovementComponent->Deactivate();

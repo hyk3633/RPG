@@ -42,6 +42,8 @@ public:
 
 	void SetIsFalldown(const bool bIsFalldown);
 
+	void SetIsRestrained(const bool bIsRestrained);
+
 protected:
 
 	UFUNCTION()

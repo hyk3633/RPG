@@ -111,6 +111,11 @@ void ARPGBaseEnemyCharacter::EnableSuckedInToAllClients()
 	EnableSuckedInMulticast();
 }
 
+void ARPGBaseEnemyCharacter::StopActionToAllClients()
+{
+	StopActionMulticast();
+}
+
 /** 동작 관련 */
 
 void ARPGBaseEnemyCharacter::AttackMulticast_Implementation()
@@ -236,6 +241,41 @@ void ARPGBaseEnemyCharacter::EnableSuckedIn()
 {
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
 	GetCharacterMovement()->GravityScale = 0.f;
+}
+
+void ARPGBaseEnemyCharacter::StopActionMulticast_Implementation()
+{
+	StopAction();
+}
+
+void ARPGBaseEnemyCharacter::StopAction()
+{
+	if (HasAuthority())
+	{
+		MyController->SetIsRestrained(true);
+		GetWorldTimerManager().SetTimer(RestrictionTimer, this, &ARPGBaseEnemyCharacter::ResumeActionMulticast, 5.f);
+	}
+	else
+	{
+		GetMesh()->bPauseAnims = true;
+	}
+}
+
+void ARPGBaseEnemyCharacter::ResumeActionMulticast_Implementation()
+{
+	ResumeAction();
+}
+
+void ARPGBaseEnemyCharacter::ResumeAction()
+{
+	if (HasAuthority())
+	{
+		MyController->SetIsRestrained(false);
+	}
+	else
+	{
+		GetMesh()->bPauseAnims = false;
+	}
 }
 
 void ARPGBaseEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -3,19 +3,19 @@
 
 #include "CoreMinimal.h"
 #include "Projectile/RPGBaseProjectile.h"
-#include "RPGSpeedDownProjectile.generated.h"
+#include "RPGRestrictionProjectile.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class RPG_API ARPGSpeedDownProjectile : public ARPGBaseProjectile
+class RPG_API ARPGRestrictionProjectile : public ARPGBaseProjectile
 {
 	GENERATED_BODY()
-
+	
 public:
 
-	ARPGSpeedDownProjectile();
+	ARPGRestrictionProjectile();
 
 	virtual void Tick(float DeltaTime) override;
 
@@ -26,7 +26,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void ProcessHitEvent(const FHitResult& HitResult) override;
-	
+
 	float VelocityLastFrame;
 
 };

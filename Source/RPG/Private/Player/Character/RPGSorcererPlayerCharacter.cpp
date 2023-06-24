@@ -4,7 +4,7 @@
 #include "Player/RPGAnimInstance.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "Projectile/RPGBaseProjectile.h"
-#include "Projectile/RPGSpeedDownProjectile.h"
+#include "Projectile/RPGRestrictionProjectile.h"
 #include "Player/CharacterAbility/RPGBlackhole.h"
 #include "../RPG.h"
 #include "GameFramework/PlayerController.h"
@@ -48,7 +48,7 @@ void ARPGSorcererPlayerCharacter::BeginPlay()
 
 	if (GetRPGAnimInstance())
 	{
-		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("FireSpeedDownBall"));
+		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("FireRestrictionBall"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("MeteorliteFall"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("MeteorShower"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("FloatingCharacter"));
@@ -134,26 +134,26 @@ void ARPGSorcererPlayerCharacter::SpawnNormalProjectile()
 	}
 }
 
-void ARPGSorcererPlayerCharacter::FireSpeedDownBall(ENotifyCode NotifyCode)
+void ARPGSorcererPlayerCharacter::FireRestrictionBall(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_S_Q_FireRestrictionBall) return;
 
 	if (IsLocallyControlled())
 	{
-		FireSpeedDownBallServer();
+		FireRestrictionBallServer();
 	}
 }
 
-void ARPGSorcererPlayerCharacter::FireSpeedDownBallServer_Implementation()
+void ARPGSorcererPlayerCharacter::FireRestrictionBallServer_Implementation()
 {
-	SpawnSpeedDownProjectile();
+	SpawnRestrictionProjectile();
 }
 
-void ARPGSorcererPlayerCharacter::SpawnSpeedDownProjectile()
+void ARPGSorcererPlayerCharacter::SpawnRestrictionProjectile()
 {
 	FVector SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L")).GetLocation();
 	FRotator SpawnDirection = (TargetingHitResult.GetActor()->GetActorLocation() - SpawnPoint).Rotation();
-	ARPGSpeedDownProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGSpeedDownProjectile>(SpeedDownPorjectile, FTransform(SpawnDirection.Add(60.f, 0.f, 0.f), SpawnPoint), this, this);
+	ARPGRestrictionProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGRestrictionProjectile>(RestrictionPorjectile, FTransform(SpawnDirection.Add(60.f, 0.f, 0.f), SpawnPoint), this, this);
 	if (Projectile)
 	{
 		Projectile->SetProjectileData(FProjectileData(true, 30, 2, 1000, 32, true, 300));

@@ -89,9 +89,9 @@ protected:
 	void DeactivateProjectile();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void ReflectProjectileMulticast();
+	void ReflectedProjectileMulticast();
 
-	void ReflectProjectile();
+	void ReflectedProjectile();
 
 protected:
 

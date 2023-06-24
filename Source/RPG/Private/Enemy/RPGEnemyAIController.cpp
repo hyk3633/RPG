@@ -96,6 +96,14 @@ void ARPGEnemyAIController::SetIsFalldown(const bool bIsFalldown)
 	}
 }
 
+void ARPGEnemyAIController::SetIsRestrained(const bool bIsRestrained)
+{
+	if (BBComp)
+	{
+		BBComp->SetValueAsBool(FName("IsRestrained"), bIsRestrained);
+	}
+}
+
 void ARPGEnemyAIController::CharacterDead()
 {
 	if (BBComp)

@@ -11,7 +11,7 @@
  */
 
 class ARPGBaseProjectile;
-class ARPGSpeedDownProjectile;
+class ARPGRestrictionProjectile;
 class ARPGBlackhole;
 
 UCLASS()
@@ -51,12 +51,12 @@ protected:
 	/** Ability Q */
 
 	UFUNCTION()
-	void FireSpeedDownBall(ENotifyCode NotifyCode);
+	void FireRestrictionBall(ENotifyCode NotifyCode);
 
 	UFUNCTION(Server, Reliable)
-	void FireSpeedDownBallServer();
+	void FireRestrictionBallServer();
 
-	void SpawnSpeedDownProjectile();
+	void SpawnRestrictionProjectile();
 
 	/** Ability W */
 
@@ -133,7 +133,7 @@ protected:
 	/** Q 스킬 */
 
 	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
-	TSubclassOf<ARPGSpeedDownProjectile> SpeedDownPorjectile;
+	TSubclassOf<ARPGRestrictionProjectile> RestrictionPorjectile;
 
 	/** W 스킬 */
 

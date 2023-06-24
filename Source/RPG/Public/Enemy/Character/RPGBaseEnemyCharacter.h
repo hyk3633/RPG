@@ -54,6 +54,8 @@ public:
 
 	void EnableSuckedInToAllClients();
 
+	void StopActionToAllClients();
+
 protected:
 
 	UFUNCTION(NetMulticast, Reliable)
@@ -98,6 +100,16 @@ protected:
 
 	void EnableSuckedIn();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void StopActionMulticast();
+
+	void StopAction();
+
+	void ResumeAction();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void ResumeActionMulticast();
+
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 protected:
@@ -125,7 +137,5 @@ private:
 
 	FTimerHandle DestroyTimer;
 
-	FTimerHandle GetupTimer;
-
-	FTimerHandle GetupTimer2;
+	FTimerHandle RestrictionTimer;
 };
