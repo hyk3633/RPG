@@ -37,6 +37,9 @@ protected:
 	virtual void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 
 	UFUNCTION()
+	void OnRep_Health();
+
+	UFUNCTION()
 	void OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
@@ -91,7 +94,7 @@ protected:
 	void TurnTowardAttackPoint();
 
 	UFUNCTION()
-	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	void OnAttackMontageEnded();
 
 	void AttackEndComboState();
 
@@ -144,25 +147,27 @@ protected:
 
 	virtual void CastAbilityAfterTargeting();
 
-protected:
-
-	/** ---------- Á×À½ ---------- */
+protected: /** ---------- Á×À½ ---------- */
 
 	void PlayerDie();
 
-	UFUNCTION()
-	void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
-
 	void SpawnParticle(UParticleSystem* Particle, const FVector& SpawnLoc, const FRotator& SpawnRot = FRotator::ZeroRotator);
 
-	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+	UFUNCTION()
+	void AfterDeath();
 
-public:
+public: /** ---------- ¹ÝÈ¯ ¹× ¼³Á¤ ÇÔ¼ö ---------- */
 
 	FORCEINLINE URPGAnimInstance* GetRPGAnimInstance() const { return RPGAnimInstance; }
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
 	bool GetIsMontagePlaying() const;
+
+protected:
+	
+	void GetTargetingCompOverlappingEnemies(TArray<AActor*>& Enemies);
+
+	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 protected:
 
@@ -203,7 +208,7 @@ private:
 
 	/** ½ºÅÈ */
 
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Character | Status")
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, Category = "Character | Status")
 	float Health = 200.f;
 
 	UPROPERTY(VisibleAnywhere, Category = "Character | Status")

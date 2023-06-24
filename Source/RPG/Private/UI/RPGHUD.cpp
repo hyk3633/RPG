@@ -10,12 +10,14 @@
 void ARPGHUD::BeginPlay()
 {
 	if (GetOwningPlayerController())
+	{
 		PlayerPawn = Cast<ARPGBasePlayerCharacter>(GetOwningPlayerController()->GetPawn());
-	else ELOG(TEXT("No Controller"));
+	}
 
 	if (PlayerPawn)
+	{
 		PlayerPawn->DOnChangeHealthPercentage.AddUFunction(this, FName("SetHealthBarPercentage"));
-	else ELOG(TEXT("PlayerPawn Cast Failed!"));
+	}
 
 	DrawOverlay();
 }

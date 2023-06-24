@@ -12,12 +12,18 @@
  */
 
 DECLARE_MULTICAST_DELEGATE(FOnAttackInputCheckDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnAttackEndedDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnDeathEndedDelegate);
 DECLARE_MULTICAST_DELEGATE_OneParam(FMontageNotifyDelegate, ENotifyCode NotifyCode);
 
 UCLASS()
 class RPG_API URPGAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
+
+protected:
+
+	virtual void NativeInitializeAnimation() override;
 	
 public:
 
@@ -43,9 +49,19 @@ public:
 
 	FOnAttackInputCheckDelegate DOnAttackInputCheck;
 
+	FOnAttackEndedDelegate DOnAttackEnded;
+
+	FOnDeathEndedDelegate DOnDeathEnded;
+
 	FMontageNotifyDelegate DMontageNotify;
 
 protected:
+
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
+	void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	UAnimMontage* GetAnimMontageByKey();
 

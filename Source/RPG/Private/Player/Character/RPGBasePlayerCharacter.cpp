@@ -48,11 +48,13 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
 
 	TargetingComp = CreateDefaultSubobject<USphereComponent>(TEXT("Targeting Component"));
+	TargetingComp->SetupAttachment(RootComponent);
 	TargetingComp->SetCollisionObjectType(ECC_PlayerAttack);
 	TargetingComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	TargetingComp->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	TargetingComp->SetCollisionResponseToChannel(ECC_EnemyBody, ECollisionResponse::ECR_Overlap);
 	TargetingComp->SetSphereRadius(300.f);
+	TargetingComp->SetRelativeLocation(FVector::ZeroVector);
 
 	AimCursor = CreateDefaultSubobject<UStaticMeshComponent>("Aim Cursor");
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> StaticMeshAsset(TEXT("StaticMesh'/Engine/BasicShapes/Plane.Plane'"));
@@ -85,7 +87,8 @@ void ARPGBasePlayerCharacter::BeginPlay()
 	if (RPGAnimInstance)
 	{
 		RPGAnimInstance->DOnAttackInputCheck.AddUFunction(this, FName("CastNormalAttack"));
-		RPGAnimInstance->OnMontageEnded.AddDynamic(this, &ARPGBasePlayerCharacter::OnAttackMontageEnded);
+		RPGAnimInstance->DOnAttackEnded.AddUFunction(this, FName("OnAttackMontageEnded"));
+		RPGAnimInstance->DOnDeathEnded.AddUFunction(this, FName("AfterDeath"));
 		RPGAnimInstance->SetMaxCombo(MaxCombo);
 	}
 }
@@ -93,17 +96,25 @@ void ARPGBasePlayerCharacter::BeginPlay()
 void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
 	//PLOG(TEXT("Player Take Damage : %f"), Damage);
-	if (Health == 0.f) return;
-	Health = FMath::Max(Health - Damage, 0.f);
-	DOnChangeHealthPercentage.Broadcast(Health / MaxHealth);
+	if (HasAuthority() && Health)
+	{
+		Health = FMath::Max(Health - Damage, 0.f);
+		if (Health == 0.f)
+		{
+			
+		}
+	}
+}
 
+void ARPGBasePlayerCharacter::OnRep_Health()
+{
+	if (IsLocallyControlled())
+	{
+		DOnChangeHealthPercentage.Broadcast(Health / MaxHealth);
+	}
 	if (Health == 0.f)
 	{
 		PlayerDie();
-	}
-	else
-	{
-		// TODO : ÀÌÆåÆ® Àç»ý
 	}
 }
 
@@ -168,7 +179,7 @@ void ARPGBasePlayerCharacter::DrawTargetingCursor()
 	}
 
 	AimCursor->SetWorldLocation(CursorLocation);
-	TargetingComp->SetRelativeLocation(CursorLocation);
+	TargetingComp->SetWorldLocation(CursorLocation);
 }
 
 void ARPGBasePlayerCharacter::CameraZoomInOut(int8 Value)
@@ -325,7 +336,7 @@ void ARPGBasePlayerCharacter::TurnTowardAttackPoint()
 	GetCharacterMovement()->FlushServerMoves();
 }
 
-void ARPGBasePlayerCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+void ARPGBasePlayerCharacter::OnAttackMontageEnded()
 {
 	bIsAttacking = false;
 	AttackEndComboState();
@@ -374,6 +385,8 @@ void ARPGBasePlayerCharacter::TargetingCompOn()
 void ARPGBasePlayerCharacter::TargetingCompOff()
 {
 	TargetingComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	TargetingComp->SetRelativeLocation(FVector::ZeroVector);
 	for (ACharacter* Enemy : OutlinedEnemies)
 	{
 		Enemy->GetMesh()->SetRenderCustomDepth(false);
@@ -441,12 +454,8 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
  
 void ARPGBasePlayerCharacter::PlayerDie()
 {
-
-}
-
-void ARPGBasePlayerCharacter::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-{
-
+	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->PlayDeathMontage();
 }
 
 void ARPGBasePlayerCharacter::SpawnParticle(UParticleSystem* Particle, const FVector& SpawnLoc, const FRotator& SpawnRot)
@@ -457,10 +466,20 @@ void ARPGBasePlayerCharacter::SpawnParticle(UParticleSystem* Particle, const FVe
 	}
 }
 
+void ARPGBasePlayerCharacter::AfterDeath()
+{
+	GetMovementComponent()->Deactivate();
+}
+
 bool ARPGBasePlayerCharacter::GetIsMontagePlaying() const
 {
 	if (RPGAnimInstance == nullptr) return false;
 	return RPGAnimInstance->IsAnyMontagePlaying();
+}
+
+void ARPGBasePlayerCharacter::GetTargetingCompOverlappingEnemies(TArray<AActor*>& Enemies)
+{
+	TargetingComp->GetOverlappingActors(Enemies);
 }
 
 void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

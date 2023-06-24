@@ -3,6 +3,14 @@
 #include "Player/RPGAnimInstance.h"
 #include "../RPG.h"
 
+void URPGAnimInstance::NativeInitializeAnimation()
+{
+	Super::NativeInitializeAnimation();
+
+	OnMontageEnded.AddDynamic(this, &URPGAnimInstance::OnAttackMontageEnded);
+	OnMontageEnded.AddDynamic(this, &URPGAnimInstance::OnDeathMontageEnded);
+}
+
 void URPGAnimInstance::PlayNormalAttackMontage()
 {
 	if (NormalAttackMontage == nullptr) return;
@@ -52,7 +60,24 @@ void URPGAnimInstance::PlayReflectMontage()
 
 void URPGAnimInstance::PlayDeathMontage()
 {
+	if (DeathMontage == nullptr) return;
+	Montage_Play(DeathMontage);
+}
 
+void URPGAnimInstance::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == NormalAttackMontage)
+	{
+		DOnAttackEnded.Broadcast();
+	}
+}
+
+void URPGAnimInstance::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == DeathMontage)
+	{
+		DOnDeathEnded.Broadcast();
+	}
 }
 
 UAnimMontage* URPGAnimInstance::GetAnimMontageByKey()
