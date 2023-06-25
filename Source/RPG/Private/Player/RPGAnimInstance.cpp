@@ -5,8 +5,6 @@
 
 void URPGAnimInstance::NativeInitializeAnimation()
 {
-	Super::NativeInitializeAnimation();
-
 	OnMontageEnded.AddDynamic(this, &URPGAnimInstance::OnAttackMontageEnded);
 	OnMontageEnded.AddDynamic(this, &URPGAnimInstance::OnDeathMontageEnded);
 }

@@ -106,12 +106,6 @@ protected:
 
 	/** R 스킬 함수 */
 	UFUNCTION()
-	void Rebirth(ENotifyCode NotifyCode);
-
-	UFUNCTION(Server, Reliable)
-	void RebirthServer();
-
-	UFUNCTION()
 	void MoveToTargettedLocation(ENotifyCode NotifyCode);
 
 	UFUNCTION(Server, Reliable)
@@ -119,6 +113,12 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void CharacterMoveToTargettedLocationMulticast();
+
+	UFUNCTION()
+	void Rebirth(ENotifyCode NotifyCode);
+
+	UFUNCTION(Server, Reliable)
+	void RebirthServer();
 
 	void OneShotKill();
 

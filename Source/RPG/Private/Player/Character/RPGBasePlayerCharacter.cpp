@@ -2,6 +2,7 @@
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Player/RPGAnimInstance.h"
 #include "Player/RPGPlayerController.h"
+#include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Camera/CameraComponent.h"
@@ -64,6 +65,9 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	AimCursor->SetCastShadow(false);
 	AimCursor->SetVisibility(false);
 
+	RemainedCooldowntime.Init(0, 4);
+	MaxCooldowntime.Init(0, 4);
+
 	AttackEndComboState();
 }
 
@@ -120,18 +124,17 @@ void ARPGBasePlayerCharacter::OnRep_Health()
 
 void ARPGBasePlayerCharacter::OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	ACharacter* Enemy = Cast<ACharacter>(OtherActor);
+	ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(OtherActor);
 	if (Enemy)
 	{
-		Enemy->GetMesh()->SetRenderCustomDepth(true);
-		Enemy->GetMesh()->SetCustomDepthStencilValue(126);
+		Enemy->OnRenderCustomDepthEffect(126);
 		OutlinedEnemies.Add(Enemy);
 	}
 }
 
 void ARPGBasePlayerCharacter::OnTargetingComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	ACharacter* Enemy = Cast<ACharacter>(OtherActor);
+	ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(OtherActor);
 	if (Enemy)
 	{
 		Enemy->GetMesh()->SetRenderCustomDepth(false);
@@ -147,7 +150,7 @@ void ARPGBasePlayerCharacter::Tick(float DeltaTime)
 	{
 		UpdateMovement();
 	}
-	// 바닥에만 붙어 있도록
+	
 	if (bAiming && IsLocallyControlled())
 	{
 		DrawTargetingCursor();
@@ -160,6 +163,18 @@ void ARPGBasePlayerCharacter::Tick(float DeltaTime)
 		{
 			CameraArm->TargetArmLength = NextArmLength;
 			bZooming = false;
+		}
+	}
+
+	if (HasAuthority() && AbilityBit)
+	{
+		for (int8 idx = 0; idx < 4; idx++)
+		{
+			if (AbilityBit & (1 << idx))
+			{
+				RemainedCooldowntime[idx] = FMath::Clamp(RemainedCooldowntime[idx] - DeltaTime, 0, MaxCooldowntime[idx]);
+				if (RemainedCooldowntime[idx] == 0) AbilityBit &= ~(1 << idx);
+			}
 		}
 	}
 }
@@ -384,9 +399,9 @@ void ARPGBasePlayerCharacter::TargetingCompOff()
 	TargetingComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	TargetingComp->SetRelativeLocation(FVector::ZeroVector);
-	for (ACharacter* Enemy : OutlinedEnemies)
+	for (ARPGBaseEnemyCharacter* Enemy : OutlinedEnemies)
 	{
-		Enemy->GetMesh()->SetRenderCustomDepth(false);
+		Enemy->OffRenderCustomDepthEffect();
 	}
 	OutlinedEnemies.Empty();
 }
@@ -447,6 +462,13 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
 	if (IsLocallyControlled()) bAiming = false;
 }
 
+void ARPGBasePlayerCharacter::AbilityCooldownStart(EPressedKey KeyType)
+{
+	const int8 ShiftNumber = StaticCast<int8>(KeyType);
+	AbilityBit |= (1 << ShiftNumber);
+	RemainedCooldowntime[ShiftNumber] = MaxCooldowntime[ShiftNumber];
+}
+
 /** 죽음 */
  
 void ARPGBasePlayerCharacter::PlayerDie()
@@ -474,6 +496,19 @@ bool ARPGBasePlayerCharacter::GetIsMontagePlaying() const
 	return RPGAnimInstance->IsAnyMontagePlaying();
 }
 
+float ARPGBasePlayerCharacter::GetCooldownPercentage(int8 Bit) const
+{
+	return 1 - (RemainedCooldowntime[Bit] / MaxCooldowntime[Bit]);
+}
+
+void ARPGBasePlayerCharacter::SetAbilityCooldownTime(int8 QTime, int8 WTime, int8 ETime, int8 RTime)
+{
+	MaxCooldowntime[0] = QTime;
+	MaxCooldowntime[1] = WTime;
+	MaxCooldowntime[2] = ETime;
+	MaxCooldowntime[3] = RTime;
+}
+
 void ARPGBasePlayerCharacter::GetTargetingCompOverlappingEnemies(TArray<AActor*>& Enemies)
 {
 	TargetingComp->GetOverlappingActors(Enemies);
@@ -488,4 +523,6 @@ void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Health);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Mana);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, TargetingHitResult);
+	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, AbilityBit, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, RemainedCooldowntime, COND_OwnerOnly);
 }

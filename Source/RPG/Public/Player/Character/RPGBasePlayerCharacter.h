@@ -11,6 +11,7 @@ class URPGAnimInstance;
 class USpringArmComponent;
 class UCameraComponent;
 class USphereComponent;
+class ARPGBaseEnemyCharacter;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnChangeHealthPercentageDelegate, float Percentage);
 
@@ -147,6 +148,8 @@ protected:
 
 	virtual void CastAbilityAfterTargeting();
 
+	void AbilityCooldownStart(EPressedKey KeyType);
+
 protected: /** ---------- Á×À½ ---------- */
 
 	void PlayerDie();
@@ -162,8 +165,12 @@ public: /** ---------- ¹ÝÈ¯ ¹× ¼³Á¤ ÇÔ¼ö ---------- */
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
 	bool GetIsMontagePlaying() const;
+	float GetCooldownPercentage(int8 Bit) const;
+	FORCEINLINE int8 GetAbilityBit() const { return AbilityBit; }
 
 protected:
+
+	void SetAbilityCooldownTime(int8 QTime, int8 WTime, int8 ETime, int8 RTime);
 	
 	void GetTargetingCompOverlappingEnemies(TArray<AActor*>& Enemies);
 
@@ -204,7 +211,7 @@ private:
 	FHitResult CursorHitResult;
 
 	UPROPERTY()
-	TArray<ACharacter*> OutlinedEnemies;
+	TArray<ARPGBaseEnemyCharacter*> OutlinedEnemies;
 
 	/** ½ºÅÈ */
 
@@ -239,5 +246,15 @@ private:
 	bool bIsAttacking = false;
 	bool bCanNextCombo = false;
 	int32 CurrentCombo = 0;
+
+	/** Äð Å¸ÀÓ */
+
+	UPROPERTY(Replicated)
+	int8 AbilityBit = 0;
+
+	UPROPERTY(Replicated)
+	TArray<float> RemainedCooldowntime;
+
+	TArray<float> MaxCooldowntime;
 
 };

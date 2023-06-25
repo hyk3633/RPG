@@ -68,6 +68,9 @@ protected:
 
 	void SpawnMeteorProjectile();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void SpawnMeteorlietPortalParticleMulticast(const FVector_NetQuantize& SpawnLocation, const FRotator& SpawnRotation);
+
 	/** Ability E */
 
 	UFUNCTION()

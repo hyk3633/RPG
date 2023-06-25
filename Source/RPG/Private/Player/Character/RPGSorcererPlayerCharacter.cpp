@@ -40,6 +40,7 @@ void ARPGSorcererPlayerCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
+	SetAbilityCooldownTime(10, 12, 15, 30);
 }
 
 void ARPGSorcererPlayerCharacter::BeginPlay()
@@ -148,6 +149,7 @@ void ARPGSorcererPlayerCharacter::FireRestrictionBall(ENotifyCode NotifyCode)
 void ARPGSorcererPlayerCharacter::FireRestrictionBallServer_Implementation()
 {
 	SpawnRestrictionProjectile();
+	AbilityCooldownStart(EPressedKey::EPK_Q);
 }
 
 void ARPGSorcererPlayerCharacter::SpawnRestrictionProjectile()
@@ -177,21 +179,30 @@ void ARPGSorcererPlayerCharacter::MeteorliteFall(ENotifyCode NotifyCode)
 void ARPGSorcererPlayerCharacter::MeteorliteFallServer_Implementation()
 {
 	SpawnMeteorProjectile();
+	AbilityCooldownStart(EPressedKey::EPK_W);
 }
 
 void ARPGSorcererPlayerCharacter::SpawnMeteorProjectile()
 {
 	const FVector SpawnPoint = GetActorLocation() + (GetActorUpVector() * 300.f);
-	const FTransform SpanwTransform((TargetingHitResult.ImpactPoint - SpawnPoint).Rotation(), SpawnPoint);
-	if (MeteorlitePortalParticle)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorlitePortalParticle, SpanwTransform);
-	}
+	const FRotator SpawnRotation = (TargetingHitResult.ImpactPoint - SpawnPoint).Rotation();
+	const FTransform SpanwTransform(SpawnRotation, SpawnPoint);
+	
+	SpawnMeteorlietPortalParticleMulticast(SpawnPoint, SpawnRotation);
+
 	ARPGBaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGBaseProjectile>(MeteorlitePorjectile, SpanwTransform, this, this);
 	if (Projectile)
 	{
 		Projectile->SetProjectileData(FProjectileData(true, 600, 1, 1000, 70, true, 600));
 		Projectile->FinishSpawning(SpanwTransform);
+	}
+}
+
+void ARPGSorcererPlayerCharacter::SpawnMeteorlietPortalParticleMulticast_Implementation(const FVector_NetQuantize& SpawnLocation, const FRotator& SpawnRotation)
+{
+	if (HasAuthority() == false)
+	{
+		SpawnParticle(MeteorlitePortalParticle, SpawnLocation, SpawnRotation);
 	}
 }
 
@@ -235,6 +246,7 @@ void ARPGSorcererPlayerCharacter::ApplyMeteorDamage()
 	if (MeteorDamageCount == 5)
 	{
 		GetWorldTimerManager().ClearTimer(MeteorDamageTimer);
+		AbilityCooldownStart(EPressedKey::EPK_E);
 	}
 	TArray<FHitResult> Hits;
 	UKismetSystemLibrary::SphereTraceMulti
@@ -388,6 +400,7 @@ void ARPGSorcererPlayerCharacter::BlackholeEnd(ENotifyCode NotifyCode)
 void ARPGSorcererPlayerCharacter::SetMovementModeToWalkServer_Implementation()
 {
 	SetMovementModeToWalkMulticast();
+	AbilityCooldownStart(EPressedKey::EPK_R);
 }
 
 void ARPGSorcererPlayerCharacter::SetMovementModeToWalkMulticast_Implementation()

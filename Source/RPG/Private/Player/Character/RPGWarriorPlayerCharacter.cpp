@@ -27,6 +27,7 @@ void ARPGWarriorPlayerCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
+	SetAbilityCooldownTime(5, 8, 12, 30);
 }
 
 void ARPGWarriorPlayerCharacter::BeginPlay()
@@ -43,8 +44,8 @@ void ARPGWarriorPlayerCharacter::BeginPlay()
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("Wield"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("RevealEnemies"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("SmashDown"));
-		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("Rebirth"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("MoveToTargettedLocation"));
+		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("Rebirth"));
 	}
 
 	if (EnforceParticle)
@@ -160,6 +161,7 @@ void ARPGWarriorPlayerCharacter::WieldServer_Implementation()
 {
 	SphereTrace(GetActorLocation(), GetActorLocation() + GetActorForwardVector() * 150.f, 300.f);
 	ApplyWieldEffectToHittedActors();
+	AbilityCooldownStart(EPressedKey::EPK_Q);
 }
 
 void ARPGWarriorPlayerCharacter::SphereTrace(const FVector& Start, const FVector& End, const float& Radius)
@@ -253,7 +255,7 @@ void ARPGWarriorPlayerCharacter::EnemyCustomDepthOn()
 	{
 		if (IsValid(Enemy))
 		{
-			Enemy->OnRenderCustomDepthEffect();
+			Enemy->OnRenderCustomDepthEffect(10);
 		}
 	}
 	GetWorldTimerManager().SetTimer(DeactivateRevealEnemiesTimer, this, &ARPGWarriorPlayerCharacter::DeactivateRevealEnemies, 15.f);
@@ -288,6 +290,8 @@ void ARPGWarriorPlayerCharacter::DeactivateEnforceParticle()
 		bReflectOn = false;
 		GetCapsuleComponent()->SetGenerateOverlapEvents(false);
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECR_Block);
+		AbilityCooldownStart(EPressedKey::EPK_W);
+		CF();
 	}
 }
 
@@ -314,6 +318,7 @@ void ARPGWarriorPlayerCharacter::SmashDownServer_Implementation()
 {
 	SphereTrace(GetActorLocation(), GetActorLocation(), 600.f);
 	SmashDownToEnemies();
+	AbilityCooldownStart(EPressedKey::EPK_E);
 }
 
 void ARPGWarriorPlayerCharacter::SmashDownToEnemies()
@@ -344,25 +349,6 @@ void ARPGWarriorPlayerCharacter::GetupEnemies()
 	}
 }
 
-void ARPGWarriorPlayerCharacter::Rebirth(ENotifyCode NotifyCode)
-{
-	if (NotifyCode != ENotifyCode::ENC_W_R_Rebirth) return;
-	// TODO : 타게팅 시간 제한 추가
-	// TODO : 타게팅 위치로 캐릭터 이동
-
-	if (IsLocallyControlled())
-	{
-		RebirthServer();
-	}
-}
-
-void ARPGWarriorPlayerCharacter::RebirthServer_Implementation()
-{
-	SphereTrace(GetActorLocation(), GetActorLocation(), 1000.f);
-	CharacterMoveToTargettedLocationMulticast();
-	OneShotKill();
-}
-
 void ARPGWarriorPlayerCharacter::MoveToTargettedLocation(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_W_R_MoveToTargettedLocation) return;
@@ -382,6 +368,25 @@ void ARPGWarriorPlayerCharacter::CharacterMoveToTargettedLocationMulticast_Imple
 {
 	TargetingHitResult.ImpactPoint.Z = GetActorLocation().Z;
 	SetActorLocation(TargetingHitResult.ImpactPoint);
+}
+
+void ARPGWarriorPlayerCharacter::Rebirth(ENotifyCode NotifyCode)
+{
+	if (NotifyCode != ENotifyCode::ENC_W_R_Rebirth) return;
+	// TODO : 타게팅 시간 제한 추가
+	// TODO : 타게팅 위치로 캐릭터 이동
+
+	if (IsLocallyControlled())
+	{
+		RebirthServer();
+	}
+}
+
+void ARPGWarriorPlayerCharacter::RebirthServer_Implementation()
+{
+	SphereTrace(GetActorLocation(), GetActorLocation(), 1000.f);
+	OneShotKill();
+	AbilityCooldownStart(EPressedKey::EPK_R);
 }
 
 void ARPGWarriorPlayerCharacter::OneShotKill()

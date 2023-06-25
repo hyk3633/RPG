@@ -21,7 +21,6 @@ void ARPGRestrictionProjectile::Tick(float DeltaTime)
 		ProjectileMovementComponent->bIsHomingProjectile = true;
 		ProjectileMovementComponent->SetVelocityInLocalSpace(GetActorRotation().Vector() * 1.f);
 		ProjectileMovementComponent->ProjectileGravityScale = 0.f;
-		CF();
 	}
 	else
 	{

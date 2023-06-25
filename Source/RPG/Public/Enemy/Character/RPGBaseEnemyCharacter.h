@@ -42,7 +42,7 @@ public:
 
 	void BTTask_Attack();
 
-	void OnRenderCustomDepthEffect();
+	void OnRenderCustomDepthEffect(int8 StencilValue);
 
 	void OffRenderCustomDepthEffect();
 

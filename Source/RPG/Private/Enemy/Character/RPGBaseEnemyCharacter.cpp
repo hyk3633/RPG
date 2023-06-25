@@ -81,9 +81,10 @@ void ARPGBaseEnemyCharacter::BTTask_Attack()
 	AttackMulticast();
 }
 
-void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffect()
+void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffect(int8 StencilValue)
 {
 	GetMesh()->SetRenderCustomDepth(true);
+	GetMesh()->SetCustomDepthStencilValue(StencilValue);
 }
 
 void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffect()

@@ -16,6 +16,12 @@ UCLASS()
 class RPG_API ARPGHUD : public AHUD
 {
 	GENERATED_BODY()
+
+public:
+
+	ARPGHUD();
+
+	virtual void Tick(float DeltaTime) override;
 	
 protected:
 
@@ -25,11 +31,17 @@ private:
 
 	void DrawOverlay();
 
+	/** 체력, 마나 프로그레스 바 */
+
 	UFUNCTION()
 	void SetHealthBarPercentage(float Percentage);
 
 	UFUNCTION()
 	void SetManaBarPercentage(float Percentage);
+
+	/** 스킬 쿨다운 */
+
+	void UpdateCooldownProgress();
 
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	TSubclassOf<UUserWidget> GameplayInterfaceClass;
@@ -37,5 +49,13 @@ private:
 	UPROPERTY()
 	URPGGameplayInterface* GameplayInterface;
 
+	UPROPERTY()
 	ARPGBasePlayerCharacter* PlayerPawn;
+
+	UPROPERTY(VisibleAnywhere)
+	UMaterialInstance* ClockProgressMatInst;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* ClockProgressMatInstDynamic;
+
 };

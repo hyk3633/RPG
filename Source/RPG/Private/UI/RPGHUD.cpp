@@ -1,14 +1,24 @@
 
-
 #include "UI/RPGHUD.h"
 #include "UI/RPGGameplayInterface.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "../RPG.h"
 #include "Components/ProgressBar.h"
+#include "Components/Image.h"
 #include "Kismet/GameplayStatics.h"
+
+ARPGHUD::ARPGHUD()
+{
+	PrimaryActorTick.bCanEverTick = true;
+
+	static ConstructorHelpers::FObjectFinder<UMaterialInstance> Obj_CooldownProgress(TEXT("/Game/_Assets/Materials/Circular/MI_ClockProgress.MI_ClockProgress"));
+	if (Obj_CooldownProgress.Succeeded()) ClockProgressMatInst = Obj_CooldownProgress.Object;
+}
 
 void ARPGHUD::BeginPlay()
 {
+	Super::BeginPlay();
+
 	if (GetOwningPlayerController())
 	{
 		PlayerPawn = Cast<ARPGBasePlayerCharacter>(GetOwningPlayerController()->GetPawn());
@@ -20,6 +30,13 @@ void ARPGHUD::BeginPlay()
 	}
 
 	DrawOverlay();
+}
+
+void ARPGHUD::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	UpdateCooldownProgress();
 }
 
 void ARPGHUD::DrawOverlay()
@@ -39,4 +56,35 @@ void ARPGHUD::SetHealthBarPercentage(float Percentage)
 void ARPGHUD::SetManaBarPercentage(float Percentage)
 {
 
+}
+
+void ARPGHUD::UpdateCooldownProgress()
+{
+	if (PlayerPawn && PlayerPawn->IsLocallyControlled())
+	{
+		for (int8 idx = 0; idx < 4; idx++)
+		{
+			if (PlayerPawn->GetAbilityBit() & (1 << idx))
+			{
+				ClockProgressMatInstDynamic = UMaterialInstanceDynamic::Create(ClockProgressMatInst, this);
+				ClockProgressMatInstDynamic->SetScalarParameterValue(FName("Percent"), PlayerPawn->GetCooldownPercentage(idx));
+
+				switch (idx)
+				{
+				case 0:
+					GameplayInterface->ClockProgress_Q->SetBrushResourceObject(ClockProgressMatInstDynamic);
+					break;
+				case 1:
+					GameplayInterface->ClockProgress_W->SetBrushResourceObject(ClockProgressMatInstDynamic);
+					break;
+				case 2:
+					GameplayInterface->ClockProgress_E->SetBrushResourceObject(ClockProgressMatInstDynamic);
+					break;
+				case 3:
+					GameplayInterface->ClockProgress_R->SetBrushResourceObject(ClockProgressMatInstDynamic);
+					break;
+				}
+			}
+		}
+	}
 }

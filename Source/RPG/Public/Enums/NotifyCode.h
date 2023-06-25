@@ -16,8 +16,8 @@ enum class ENotifyCode : uint8
 	ENC_W_Q_Wield UMETA(DisplayName = "W_Q_Wield"),
 	ENC_W_W_RevealEnemies UMETA(DisplayName = "W_W_RevealEnemies"),
 	ENC_W_E_SmashDown UMETA(DisplayName = "W_E_SmashDown"),
-	ENC_W_R_Rebirth UMETA(DisplayName = "W_R_Rebirth"),
 	ENC_W_R_MoveToTargettedLocation UMETA(DisplayName = "W_R_MoveToTargettedLocation"),
+	ENC_W_R_Rebirth UMETA(DisplayName = "W_R_Rebirth"),
 
 	ENC_MAX UMETA(DisplayName = "NotifyCode_MAX")
 };
