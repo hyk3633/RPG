@@ -86,8 +86,6 @@ void ARPGPlayerController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 
 	MyCharacter = Cast<ARPGBasePlayerCharacter>(InPawn);
-	if (MyCharacter == nullptr)
-		ELOG(TEXT("Player Pawn Cast Failed!"));
 }
 
 void ARPGPlayerController::Tick(float DeltaTime)
@@ -122,12 +120,13 @@ void ARPGPlayerController::LeftClickAction_StopMove()
 void ARPGPlayerController::LeftClickAction_SetPath()
 {
 	if (MyCharacter == nullptr) return;
+	if (MyCharacter->GetAbilityERMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
 		MyCharacter->CancelAbility();
 	}
-	else if (MyCharacter->GetIsMontagePlaying() == false)
+	else
 	{
 		MyCharacter->SetDestinationAndPath();
 	}
@@ -135,7 +134,7 @@ void ARPGPlayerController::LeftClickAction_SetPath()
 
 void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 {
-	if (MyCharacter == nullptr) return;
+	if (MyCharacter == nullptr && MyCharacter->GetIsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -149,13 +148,13 @@ void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 
 void ARPGPlayerController::QPressedAction_Cast()
 {
-	if (MyCharacter == nullptr) return;
+	if (MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
 		MyCharacter->CancelAbility();
 	}
-	else
+	else if(MyCharacter->IsAbilityAvailable(EPressedKey::EPK_Q))
 	{
 		MyCharacter->ReadyToCastAbilityByKey(EPressedKey::EPK_Q);
 	}
@@ -163,13 +162,13 @@ void ARPGPlayerController::QPressedAction_Cast()
 
 void ARPGPlayerController::WPressedAction_Cast()
 {
-	if (MyCharacter == nullptr) return;
+	if (MyCharacter == nullptr && MyCharacter->GetIsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
 		MyCharacter->CancelAbility();
 	}
-	else
+	else if (MyCharacter->IsAbilityAvailable(EPressedKey::EPK_W))
 	{
 		MyCharacter->ReadyToCastAbilityByKey(EPressedKey::EPK_W);
 	}
@@ -177,13 +176,13 @@ void ARPGPlayerController::WPressedAction_Cast()
 
 void ARPGPlayerController::EPressedAction_Cast()
 {
-	if (MyCharacter == nullptr) return;
+	if (MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
 		MyCharacter->CancelAbility();
 	}
-	else  if (MyCharacter->GetIsMontagePlaying() == false)
+	else if (MyCharacter->IsAbilityAvailable(EPressedKey::EPK_E))
 	{
 		MyCharacter->ReadyToCastAbilityByKey(EPressedKey::EPK_E);
 	}
@@ -191,13 +190,13 @@ void ARPGPlayerController::EPressedAction_Cast()
 
 void ARPGPlayerController::RPressedAction_Cast()
 {
-	if (MyCharacter == nullptr) return;
+	if (MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
 		MyCharacter->CancelAbility();
 	}
-	else  if (MyCharacter->GetIsMontagePlaying() == false)
+	else  if (MyCharacter->IsAbilityAvailable(EPressedKey::EPK_R))
 	{
 		MyCharacter->ReadyToCastAbilityByKey(EPressedKey::EPK_R);
 	}

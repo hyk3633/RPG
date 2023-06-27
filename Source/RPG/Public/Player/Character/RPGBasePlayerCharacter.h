@@ -14,6 +14,7 @@ class USphereComponent;
 class ARPGBaseEnemyCharacter;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnChangeHealthPercentageDelegate, float Percentage);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAbilityCooldownEndDelegate, int8 Bit);
 
 UCLASS()
 class RPG_API ARPGBasePlayerCharacter : public ACharacter
@@ -27,6 +28,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	FOnChangeHealthPercentageDelegate DOnChangeHealthPercentage;
+
+	FOnAbilityCooldownEndDelegate DOnAbilityCooldownEnd;
 
 protected:
 
@@ -148,26 +151,44 @@ protected:
 
 	virtual void CastAbilityAfterTargeting();
 
+	void AbilityActiveBitSet(EPressedKey KeyType);
+
+	UFUNCTION(Client, Reliable)
+	void AbilityActiveBitOffClient(EPressedKey KeyType);
+
+	void AbilityActiveBitOff(EPressedKey KeyType);
+
+	UFUNCTION(Server, Reliable)
+	void AbilityCooldownStartServer(EPressedKey KeyType);
+
 	void AbilityCooldownStart(EPressedKey KeyType);
+
+	UFUNCTION(Client, Reliable)
+	void AbilityCooldownEndClient(int8 Bit);
+
+	UFUNCTION()
+	virtual void OnAbilityEnded(EPressedKey KeyType);
 
 protected: /** ---------- 죽음 ---------- */
 
 	void PlayerDie();
 
-	void SpawnParticle(UParticleSystem* Particle, const FVector& SpawnLoc, const FRotator& SpawnRot = FRotator::ZeroRotator);
-
 	UFUNCTION()
 	void AfterDeath();
+
+	void SpawnParticle(UParticleSystem* Particle, const FVector& SpawnLoc, const FRotator& SpawnRot = FRotator::ZeroRotator);
 
 public: /** ---------- 반환 및 설정 함수 ---------- */
 
 	FORCEINLINE URPGAnimInstance* GetRPGAnimInstance() const { return RPGAnimInstance; }
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
-	bool GetIsMontagePlaying() const;
 	float GetCooldownPercentage(int8 Bit) const;
-	FORCEINLINE int8 GetAbilityBit() const { return AbilityBit; }
-
+	FORCEINLINE int8 GetAbilityCooldownBit() const { return AbilityCooldownBit; }
+	bool IsAbilityAvailable(EPressedKey KeyType);
+	bool GetIsAnyMontagePlaying() const;
+	bool GetAbilityERMontagePlaying();
+	
 protected:
 
 	void SetAbilityCooldownTime(int8 QTime, int8 WTime, int8 ETime, int8 RTime);
@@ -249,12 +270,14 @@ private:
 
 	/** 쿨 타임 */
 
-	UPROPERTY(Replicated)
-	int8 AbilityBit = 0;
+	int8 AbilityActiveBit = 0;
+
+	UPROPERTY(Replicated, VisibleAnywhere)
+	int8 AbilityCooldownBit = 0;
 
 	UPROPERTY(Replicated)
-	TArray<float> RemainedCooldowntime;
+	TArray<float> RemainedCooldownTime;
 
-	TArray<float> MaxCooldowntime;
+	TArray<float> MaxCooldownTime;
 
 };

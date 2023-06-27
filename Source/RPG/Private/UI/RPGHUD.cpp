@@ -27,6 +27,7 @@ void ARPGHUD::BeginPlay()
 	if (PlayerPawn)
 	{
 		PlayerPawn->DOnChangeHealthPercentage.AddUFunction(this, FName("SetHealthBarPercentage"));
+		PlayerPawn->DOnAbilityCooldownEnd.AddUFunction(this, FName("CooldownProgressSetFull"));
 	}
 
 	DrawOverlay();
@@ -60,31 +61,38 @@ void ARPGHUD::SetManaBarPercentage(float Percentage)
 
 void ARPGHUD::UpdateCooldownProgress()
 {
-	if (PlayerPawn && PlayerPawn->IsLocallyControlled())
+	if (PlayerPawn && PlayerPawn->IsLocallyControlled() && PlayerPawn->GetAbilityCooldownBit())
 	{
 		for (int8 idx = 0; idx < 4; idx++)
 		{
-			if (PlayerPawn->GetAbilityBit() & (1 << idx))
-			{
-				ClockProgressMatInstDynamic = UMaterialInstanceDynamic::Create(ClockProgressMatInst, this);
-				ClockProgressMatInstDynamic->SetScalarParameterValue(FName("Percent"), PlayerPawn->GetCooldownPercentage(idx));
-
-				switch (idx)
-				{
-				case 0:
-					GameplayInterface->ClockProgress_Q->SetBrushResourceObject(ClockProgressMatInstDynamic);
-					break;
-				case 1:
-					GameplayInterface->ClockProgress_W->SetBrushResourceObject(ClockProgressMatInstDynamic);
-					break;
-				case 2:
-					GameplayInterface->ClockProgress_E->SetBrushResourceObject(ClockProgressMatInstDynamic);
-					break;
-				case 3:
-					GameplayInterface->ClockProgress_R->SetBrushResourceObject(ClockProgressMatInstDynamic);
-					break;
-				}
-			}
+			SetProgressPercentage(idx, PlayerPawn->GetCooldownPercentage(idx));
 		}
 	}
+}
+
+void ARPGHUD::SetProgressPercentage(const int8 Index, const float Percentage)
+{
+	ClockProgressMatInstDynamic = UMaterialInstanceDynamic::Create(ClockProgressMatInst, this);
+	ClockProgressMatInstDynamic->SetScalarParameterValue(FName("Percent"), Percentage);
+
+	switch (Index)
+	{
+	case 0:
+		GameplayInterface->ClockProgress_Q->SetBrushResourceObject(ClockProgressMatInstDynamic);
+		break;
+	case 1:
+		GameplayInterface->ClockProgress_W->SetBrushResourceObject(ClockProgressMatInstDynamic);
+		break;
+	case 2:
+		GameplayInterface->ClockProgress_E->SetBrushResourceObject(ClockProgressMatInstDynamic);
+		break;
+	case 3:
+		GameplayInterface->ClockProgress_R->SetBrushResourceObject(ClockProgressMatInstDynamic);
+		break;
+	}
+}
+
+void ARPGHUD::CooldownProgressSetFull(uint8 Bit)
+{
+	SetProgressPercentage(Bit, 1);
 }

@@ -39,6 +39,10 @@ public:
 
 protected:
 
+	virtual void OnAbilityEnded(EPressedKey KeyType) override;
+
+protected:
+
 	/** 일반 공격 */
 
 	virtual void CastNormalAttack() override;

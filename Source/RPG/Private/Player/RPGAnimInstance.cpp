@@ -7,6 +7,7 @@ void URPGAnimInstance::NativeInitializeAnimation()
 {
 	OnMontageEnded.AddDynamic(this, &URPGAnimInstance::OnAttackMontageEnded);
 	OnMontageEnded.AddDynamic(this, &URPGAnimInstance::OnDeathMontageEnded);
+	OnMontageEnded.AddDynamic(this, &URPGAnimInstance::OnAbilityMontageEnded);
 }
 
 void URPGAnimInstance::PlayNormalAttackMontage()
@@ -48,6 +49,11 @@ void URPGAnimInstance::PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJu
 	if (bJumpToSection) Montage_JumpToSection(FName("Cast"), AbilityMontage);
 }
 
+bool URPGAnimInstance::GetIsAbilityERMontagePlaying()
+{
+	return Montage_IsPlaying(Ability_E_Montage) || Montage_IsPlaying(Ability_R_Montage);
+}
+
 void URPGAnimInstance::PlayReflectMontage()
 {
 	if (Ability_W_Montage == nullptr) return;
@@ -78,24 +84,24 @@ void URPGAnimInstance::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrup
 	}
 }
 
-UAnimMontage* URPGAnimInstance::GetAnimMontageByKey()
+void URPGAnimInstance::OnAbilityMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	switch (CurrentKeyState)
+	if (Montage == Ability_Q_Montage)
 	{
-	case EPressedKey::EPK_Q:
-		if(Ability_Q_Montage) return Ability_Q_Montage;
-		break;
-	case EPressedKey::EPK_W:
-		if (Ability_W_Montage) return Ability_W_Montage;
-		break;
-	case EPressedKey::EPK_E:
-		if (Ability_E_Montage) return Ability_E_Montage;
-		break;
-	case EPressedKey::EPK_R:
-		if (Ability_R_Montage) return Ability_R_Montage;
-		break;
+		DOnAbilityMontageEnded.Broadcast(EPressedKey::EPK_Q);
 	}
-	return nullptr;
+	else if (Montage == Ability_W_Montage)
+	{
+		DOnAbilityMontageEnded.Broadcast(EPressedKey::EPK_W);
+	}
+	else if (Montage == Ability_E_Montage)
+	{
+		DOnAbilityMontageEnded.Broadcast(EPressedKey::EPK_E);
+	}
+	else if (Montage == Ability_R_Montage)
+	{
+		DOnAbilityMontageEnded.Broadcast(EPressedKey::EPK_R);
+	}
 }
 
 void URPGAnimInstance::AnimNotify_AttackInputCheck()

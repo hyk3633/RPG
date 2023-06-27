@@ -65,8 +65,8 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	AimCursor->SetCastShadow(false);
 	AimCursor->SetVisibility(false);
 
-	RemainedCooldowntime.Init(0, 4);
-	MaxCooldowntime.Init(0, 4);
+	RemainedCooldownTime.Init(0, 4);
+	MaxCooldownTime.Init(0, 4);
 
 	AttackEndComboState();
 }
@@ -93,6 +93,7 @@ void ARPGBasePlayerCharacter::BeginPlay()
 		RPGAnimInstance->DOnAttackInputCheck.AddUFunction(this, FName("CastNormalAttack"));
 		RPGAnimInstance->DOnAttackEnded.AddUFunction(this, FName("OnAttackMontageEnded"));
 		RPGAnimInstance->DOnDeathEnded.AddUFunction(this, FName("AfterDeath"));
+		RPGAnimInstance->DOnAbilityMontageEnded.AddUFunction(this, FName("OnAbilityEnded"));
 		RPGAnimInstance->SetMaxCombo(MaxCombo);
 	}
 }
@@ -166,16 +167,25 @@ void ARPGBasePlayerCharacter::Tick(float DeltaTime)
 		}
 	}
 
-	if (HasAuthority() && AbilityBit)
+	if (HasAuthority() && AbilityCooldownBit)
 	{
 		for (int8 idx = 0; idx < 4; idx++)
 		{
-			if (AbilityBit & (1 << idx))
+			if (AbilityCooldownBit & (1 << idx))
 			{
-				RemainedCooldowntime[idx] = FMath::Clamp(RemainedCooldowntime[idx] - DeltaTime, 0, MaxCooldowntime[idx]);
-				if (RemainedCooldowntime[idx] == 0) AbilityBit &= ~(1 << idx);
+				RemainedCooldownTime[idx] = FMath::Clamp(RemainedCooldownTime[idx] - DeltaTime, 0, MaxCooldownTime[idx]);
+				if (RemainedCooldownTime[idx] == 0)
+				{
+					AbilityCooldownBit &= ~(1 << idx);
+					AbilityCooldownEndClient(idx);
+				}
 			}
 		}
+	}
+
+	if (IsLocallyControlled())
+	{
+		//PLOG(TEXT("%d"),IsAbilityAvailable(EPressedKey::EPK_Q));
 	}
 }
 
@@ -183,7 +193,7 @@ void ARPGBasePlayerCharacter::DrawTargetingCursor()
 {
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC == nullptr) return;
-
+	
 	PC->GetHitResultUnderCursor(ECC_Visibility, true, CursorHitResult);
 	FVector CursorLocation = CursorHitResult.Location;
 	CursorLocation.Z = GetActorLocation().Z;
@@ -386,7 +396,7 @@ void ARPGBasePlayerCharacter::CastAbilityByKeyMulticast_Implementation(EPressedK
 void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 {
 	if (RPGAnimInstance == nullptr) return;
-	RPGAnimInstance->SetCurrentState(KeyType);
+	RPGAnimInstance->SetCurrentKeyState(KeyType);
 }
 
 void ARPGBasePlayerCharacter::TargetingCompOn()
@@ -459,22 +469,60 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
 	if (RPGAnimInstance == nullptr) return;
 	if (TargetingHitResult.bBlockingHit == false) return;
 	if (HasAuthority()) return;
-	if (IsLocallyControlled()) bAiming = false;
+	if (IsLocallyControlled())
+	{
+		bAiming = false;
+	}
+}
+
+void ARPGBasePlayerCharacter::AbilityActiveBitSet(EPressedKey KeyType)
+{
+	AbilityActiveBit |= (1 << StaticCast<int8>(KeyType));
+}
+
+void ARPGBasePlayerCharacter::AbilityActiveBitOffClient_Implementation(EPressedKey KeyType)
+{
+	AbilityActiveBitOff(KeyType);
+}
+
+void ARPGBasePlayerCharacter::AbilityActiveBitOff(EPressedKey KeyType)
+{
+	AbilityActiveBit &= ~(1 << StaticCast<int8>(KeyType));
+}
+
+void ARPGBasePlayerCharacter::AbilityCooldownStartServer_Implementation(EPressedKey KeyType)
+{
+	AbilityCooldownStart(KeyType);
 }
 
 void ARPGBasePlayerCharacter::AbilityCooldownStart(EPressedKey KeyType)
 {
 	const int8 ShiftNumber = StaticCast<int8>(KeyType);
-	AbilityBit |= (1 << ShiftNumber);
-	RemainedCooldowntime[ShiftNumber] = MaxCooldowntime[ShiftNumber];
+	AbilityCooldownBit |= (1 << ShiftNumber);
+	RemainedCooldownTime[ShiftNumber] = MaxCooldownTime[ShiftNumber];
 }
 
-/** Á×À½ */
- 
+void ARPGBasePlayerCharacter::AbilityCooldownEndClient_Implementation(int8 Bit)
+{
+	DOnAbilityCooldownEnd.Broadcast(Bit);
+}
+
+void ARPGBasePlayerCharacter::OnAbilityEnded(EPressedKey KeyType)
+{
+
+}
+
+/** --------------------------- Á×À½ --------------------------- */
+
 void ARPGBasePlayerCharacter::PlayerDie()
 {
 	if (RPGAnimInstance == nullptr) return;
 	RPGAnimInstance->PlayDeathMontage();
+}
+
+void ARPGBasePlayerCharacter::AfterDeath()
+{
+	GetMovementComponent()->Deactivate();
 }
 
 void ARPGBasePlayerCharacter::SpawnParticle(UParticleSystem* Particle, const FVector& SpawnLoc, const FRotator& SpawnRot)
@@ -485,28 +533,36 @@ void ARPGBasePlayerCharacter::SpawnParticle(UParticleSystem* Particle, const FVe
 	}
 }
 
-void ARPGBasePlayerCharacter::AfterDeath()
+float ARPGBasePlayerCharacter::GetCooldownPercentage(int8 Bit) const
 {
-	GetMovementComponent()->Deactivate();
+	return 1 - (RemainedCooldownTime[Bit] / MaxCooldownTime[Bit]);
 }
 
-bool ARPGBasePlayerCharacter::GetIsMontagePlaying() const
+bool ARPGBasePlayerCharacter::IsAbilityAvailable(EPressedKey KeyType)
+{
+	const bool bIsActive = !(AbilityActiveBit & (1 << StaticCast<uint8>(KeyType)));
+	const bool bIsCooldownEnd = !(AbilityCooldownBit & (1 << StaticCast<uint8>(KeyType)));
+	return (bIsActive && bIsCooldownEnd);
+}
+
+bool ARPGBasePlayerCharacter::GetIsAnyMontagePlaying() const
 {
 	if (RPGAnimInstance == nullptr) return false;
 	return RPGAnimInstance->IsAnyMontagePlaying();
 }
 
-float ARPGBasePlayerCharacter::GetCooldownPercentage(int8 Bit) const
+bool ARPGBasePlayerCharacter::GetAbilityERMontagePlaying()
 {
-	return 1 - (RemainedCooldowntime[Bit] / MaxCooldowntime[Bit]);
+	if (RPGAnimInstance == nullptr) return false;
+	return RPGAnimInstance->GetIsAbilityERMontagePlaying();
 }
 
 void ARPGBasePlayerCharacter::SetAbilityCooldownTime(int8 QTime, int8 WTime, int8 ETime, int8 RTime)
 {
-	MaxCooldowntime[0] = QTime;
-	MaxCooldowntime[1] = WTime;
-	MaxCooldowntime[2] = ETime;
-	MaxCooldowntime[3] = RTime;
+	MaxCooldownTime[0] = QTime;
+	MaxCooldownTime[1] = WTime;
+	MaxCooldownTime[2] = ETime;
+	MaxCooldownTime[3] = RTime;
 }
 
 void ARPGBasePlayerCharacter::GetTargetingCompOverlappingEnemies(TArray<AActor*>& Enemies)
@@ -523,6 +579,6 @@ void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Health);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Mana);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, TargetingHitResult);
-	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, AbilityBit, COND_OwnerOnly);
-	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, RemainedCooldowntime, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, AbilityCooldownBit, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, RemainedCooldownTime, COND_OwnerOnly);
 }

@@ -43,6 +43,11 @@ private:
 
 	void UpdateCooldownProgress();
 
+	void SetProgressPercentage(const int8 Index, const float Percentage);
+
+	UFUNCTION()
+	void CooldownProgressSetFull(uint8 Bit);
+
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	TSubclassOf<UUserWidget> GameplayInterfaceClass;
 

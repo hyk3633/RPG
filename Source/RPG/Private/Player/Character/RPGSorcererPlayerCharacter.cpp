@@ -90,6 +90,28 @@ void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
 	}
 }
 
+void ARPGSorcererPlayerCharacter::OnAbilityEnded(EPressedKey KeyType)
+{
+	if (IsLocallyControlled())
+	{
+		switch (KeyType)
+		{
+		case EPressedKey::EPK_Q:
+			AbilityActiveBitOff(EPressedKey::EPK_Q);
+			AbilityCooldownStartServer(EPressedKey::EPK_Q);
+			break;
+		case EPressedKey::EPK_W:
+			AbilityActiveBitOff(EPressedKey::EPK_E);
+			AbilityCooldownStartServer(EPressedKey::EPK_E);
+			break;
+		case EPressedKey::EPK_R:
+			AbilityActiveBitOff(EPressedKey::EPK_R);
+			AbilityCooldownStartServer(EPressedKey::EPK_R);
+			break;
+		}
+	}
+}
+
 void ARPGSorcererPlayerCharacter::CastNormalAttack()
 {
 	Super::CastNormalAttack();
@@ -149,7 +171,6 @@ void ARPGSorcererPlayerCharacter::FireRestrictionBall(ENotifyCode NotifyCode)
 void ARPGSorcererPlayerCharacter::FireRestrictionBallServer_Implementation()
 {
 	SpawnRestrictionProjectile();
-	AbilityCooldownStart(EPressedKey::EPK_Q);
 }
 
 void ARPGSorcererPlayerCharacter::SpawnRestrictionProjectile()
@@ -179,7 +200,6 @@ void ARPGSorcererPlayerCharacter::MeteorliteFall(ENotifyCode NotifyCode)
 void ARPGSorcererPlayerCharacter::MeteorliteFallServer_Implementation()
 {
 	SpawnMeteorProjectile();
-	AbilityCooldownStart(EPressedKey::EPK_W);
 }
 
 void ARPGSorcererPlayerCharacter::SpawnMeteorProjectile()
@@ -246,6 +266,7 @@ void ARPGSorcererPlayerCharacter::ApplyMeteorDamage()
 	if (MeteorDamageCount == 5)
 	{
 		GetWorldTimerManager().ClearTimer(MeteorDamageTimer);
+		AbilityActiveBitOffClient(EPressedKey::EPK_E);
 		AbilityCooldownStart(EPressedKey::EPK_E);
 	}
 	TArray<FHitResult> Hits;
@@ -400,7 +421,6 @@ void ARPGSorcererPlayerCharacter::BlackholeEnd(ENotifyCode NotifyCode)
 void ARPGSorcererPlayerCharacter::SetMovementModeToWalkServer_Implementation()
 {
 	SetMovementModeToWalkMulticast();
-	AbilityCooldownStart(EPressedKey::EPK_R);
 }
 
 void ARPGSorcererPlayerCharacter::SetMovementModeToWalkMulticast_Implementation()

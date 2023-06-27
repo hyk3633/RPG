@@ -15,6 +15,7 @@ DECLARE_MULTICAST_DELEGATE(FOnAttackInputCheckDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnAttackEndedDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnDeathEndedDelegate);
 DECLARE_MULTICAST_DELEGATE_OneParam(FMontageNotifyDelegate, ENotifyCode NotifyCode);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAbilityMontageEndedDelegate, EPressedKey KeyType);
 
 UCLASS()
 class RPG_API URPGAnimInstance : public UAnimInstance
@@ -35,14 +36,16 @@ public:
 
 	void PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJumpToSection);
 
+	bool GetIsAbilityERMontagePlaying();
+
 	/** 워리어 전용 */
 
 	void PlayReflectMontage();
 
 	void PlayDeathMontage();
 
-	FORCEINLINE void SetCurrentState(EPressedKey KeyType) { CurrentKeyState = KeyType; }
-	FORCEINLINE EPressedKey GetCurrentState() const { return CurrentKeyState; }
+	FORCEINLINE void SetCurrentKeyState(EPressedKey KeyType) { CurrentKeyState = KeyType; }
+	FORCEINLINE EPressedKey GetCurrentKeyState() const { return CurrentKeyState; }
 	FORCEINLINE void AimingPoseOn() { bAimingPose = true; };
 	FORCEINLINE void AimingPoseOff() { bAimingPose = false; };
 	FORCEINLINE void SetMaxCombo(const int8 MaxValue) { MaxCombo = MaxValue; }
@@ -55,6 +58,8 @@ public:
 
 	FMontageNotifyDelegate DMontageNotify;
 
+	FOnAbilityMontageEndedDelegate DOnAbilityMontageEnded;
+
 protected:
 
 	UFUNCTION()
@@ -63,7 +68,8 @@ protected:
 	UFUNCTION()
 	void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-	UAnimMontage* GetAnimMontageByKey();
+	UFUNCTION()
+	void OnAbilityMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_AttackInputCheck();

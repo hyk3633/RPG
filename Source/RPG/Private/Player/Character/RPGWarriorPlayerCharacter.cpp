@@ -82,6 +82,10 @@ void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	if (KeyType == EPressedKey::EPK_W || KeyType == EPressedKey::EPK_Q)
 	{
 		RPGAnimInstance->PlayAbilityMontageOfKey();
+		if (IsLocallyControlled())
+		{
+			AbilityActiveBitSet(RPGAnimInstance->GetCurrentKeyState());
+		}
 	}
 	else
 	{
@@ -102,6 +106,28 @@ void ARPGWarriorPlayerCharacter::CastAbilityAfterTargeting()
 	if (IsLocallyControlled())
 	{
 		TargetingCompOff();
+	}
+}
+
+void ARPGWarriorPlayerCharacter::OnAbilityEnded(EPressedKey KeyType)
+{
+	if (IsLocallyControlled())
+	{
+		switch (KeyType)
+		{
+		case EPressedKey::EPK_Q:
+			AbilityActiveBitOff(EPressedKey::EPK_Q);
+			AbilityCooldownStartServer(EPressedKey::EPK_Q);
+			break;
+		case EPressedKey::EPK_E:
+			AbilityActiveBitOff(EPressedKey::EPK_E);
+			AbilityCooldownStartServer(EPressedKey::EPK_E);
+			break;
+		case EPressedKey::EPK_R:
+			AbilityActiveBitOff(EPressedKey::EPK_R);
+			AbilityCooldownStartServer(EPressedKey::EPK_R);
+			break;
+		}
 	}
 }
 
@@ -161,7 +187,6 @@ void ARPGWarriorPlayerCharacter::WieldServer_Implementation()
 {
 	SphereTrace(GetActorLocation(), GetActorLocation() + GetActorForwardVector() * 150.f, 300.f);
 	ApplyWieldEffectToHittedActors();
-	AbilityCooldownStart(EPressedKey::EPK_Q);
 }
 
 void ARPGWarriorPlayerCharacter::SphereTrace(const FVector& Start, const FVector& End, const float& Radius)
@@ -284,6 +309,7 @@ void ARPGWarriorPlayerCharacter::DeactivateEnforceParticle()
 	{
 		EnforceParticleComp->Deactivate();
 		SpawnParticle(EnforceEndParticle, GetActorLocation(), GetActorRotation());
+		if(IsLocallyControlled()) AbilityActiveBitOff(EPressedKey::EPK_W);
 	}
 	else
 	{
@@ -292,6 +318,7 @@ void ARPGWarriorPlayerCharacter::DeactivateEnforceParticle()
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECR_Block);
 		AbilityCooldownStart(EPressedKey::EPK_W);
 		CF();
+		// TODO : 작동하는지 확인
 	}
 }
 
@@ -318,7 +345,6 @@ void ARPGWarriorPlayerCharacter::SmashDownServer_Implementation()
 {
 	SphereTrace(GetActorLocation(), GetActorLocation(), 600.f);
 	SmashDownToEnemies();
-	AbilityCooldownStart(EPressedKey::EPK_E);
 }
 
 void ARPGWarriorPlayerCharacter::SmashDownToEnemies()
@@ -386,7 +412,6 @@ void ARPGWarriorPlayerCharacter::RebirthServer_Implementation()
 {
 	SphereTrace(GetActorLocation(), GetActorLocation(), 1000.f);
 	OneShotKill();
-	AbilityCooldownStart(EPressedKey::EPK_R);
 }
 
 void ARPGWarriorPlayerCharacter::OneShotKill()
@@ -405,7 +430,7 @@ void ARPGWarriorPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME_CONDITION(ARPGWarriorPlayerCharacter, bReflectOn, COND_AutonomousOnly);
-	DOREPLIFETIME_CONDITION(ARPGWarriorPlayerCharacter, CDepthEnemies, COND_AutonomousOnly);
-	DOREPLIFETIME_CONDITION(ARPGWarriorPlayerCharacter, SmashedEnemies, COND_AutonomousOnly);
+	DOREPLIFETIME_CONDITION(ARPGWarriorPlayerCharacter, bReflectOn, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ARPGWarriorPlayerCharacter, CDepthEnemies, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ARPGWarriorPlayerCharacter, SmashedEnemies, COND_OwnerOnly);
 }

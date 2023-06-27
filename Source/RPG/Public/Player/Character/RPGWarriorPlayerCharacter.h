@@ -34,11 +34,13 @@ protected:
 	UFUNCTION()
 	void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	/** 스킬 사용 준비 */
+	/** 스킬 사용 */
 
 	virtual void CastAbilityByKey(EPressedKey KeyType) override;
 
 	virtual void CastAbilityAfterTargeting() override;
+
+	virtual void OnAbilityEnded(EPressedKey KeyType) override;
 
 	/** 일반 공격 */
 
