@@ -129,14 +129,6 @@ public:	/** ---------- 스킬 사용 취소 ---------- */
 
 	virtual void CancelAbility();
 
-protected:
-
-	UFUNCTION(Server, Reliable)
-	void CancelAbilityServer();
-
-	UFUNCTION(NetMulticast, Reliable)
-	virtual void CancelAbilityMulticast();
-
 public:	/** ---------- 타게팅 후 스킬 사용 ---------- */
 
 	void GetCursorHitResultCastAbility();

@@ -1,6 +1,6 @@
 
 #include "Player/Character/RPGBasePlayerCharacter.h"
-#include "Player/RPGAnimInstance.h"
+#include "Player/AnimInstance/RPGAnimInstance.h"
 #include "Player/RPGPlayerController.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "../RPGGameModeBase.h"
@@ -424,18 +424,7 @@ void ARPGBasePlayerCharacter::CancelAbility()
 	{
 		bAiming = false;
 		AimCursor->SetVisibility(false);
-		CancelAbilityServer();
 	}
-}
-
-void ARPGBasePlayerCharacter::CancelAbilityServer_Implementation()
-{
-	CancelAbilityMulticast();
-}
-
-void ARPGBasePlayerCharacter::CancelAbilityMulticast_Implementation()
-{
-	RPGAnimInstance->AimingPoseOff();
 }
 
 /** --------------------------- 타게팅 후 스킬 사용 --------------------------- */

@@ -1,7 +1,8 @@
 
 
 #include "Player/Character/RPGSorcererPlayerCharacter.h"
-#include "Player/RPGAnimInstance.h"
+#include "Player/AnimInstance/RPGAnimInstance.h"
+#include "Player/AnimInstance/RPGSorcererAnimInstance.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "Projectile/RPGBaseProjectile.h"
 #include "Projectile/RPGRestrictionProjectile.h"
@@ -69,7 +70,8 @@ void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	{
 		RPGAnimInstance->PlayAbilityMontageOfKey();
 	}
-	RPGAnimInstance->AimingPoseOn();
+	URPGSorcererAnimInstance* SAnimInstance = Cast<URPGSorcererAnimInstance>(RPGAnimInstance);
+	if (SAnimInstance) SAnimInstance->AimingPoseOn();
 	if (IsLocallyControlled())
 	{
 		bAiming = true;
@@ -83,7 +85,8 @@ void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
 	Super::CastAbilityAfterTargeting();
 
 	RPGAnimInstance->PlayAbilityMontageOfKey(true);
-	RPGAnimInstance->AimingPoseOff();
+	URPGSorcererAnimInstance* SAnimInstance = Cast<URPGSorcererAnimInstance>(RPGAnimInstance);
+	if (SAnimInstance) SAnimInstance->AimingPoseOff();
 	if (IsLocallyControlled())
 	{
 		TargetingCompOff();
@@ -110,6 +113,27 @@ void ARPGSorcererPlayerCharacter::OnAbilityEnded(EPressedKey KeyType)
 			break;
 		}
 	}
+}
+
+void ARPGSorcererPlayerCharacter::CancelAbility()
+{
+	Super::CancelAbility();
+
+	if (IsLocallyControlled())
+	{
+		AimingPoseOffServer();
+	}
+}
+
+void ARPGSorcererPlayerCharacter::AimingPoseOffServer_Implementation()
+{
+	AimingPoseOffMulticast();
+}
+
+void ARPGSorcererPlayerCharacter::AimingPoseOffMulticast_Implementation()
+{
+	URPGSorcererAnimInstance* SAnimInstance = Cast<URPGSorcererAnimInstance>(RPGAnimInstance);
+	if (SAnimInstance) SAnimInstance->AimingPoseOff();
 }
 
 void ARPGSorcererPlayerCharacter::CastNormalAttack()

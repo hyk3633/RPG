@@ -1,6 +1,6 @@
 
 
-#include "Player/RPGAnimInstance.h"
+#include "Player/AnimInstance/RPGAnimInstance.h"
 #include "../RPG.h"
 
 void URPGAnimInstance::NativeInitializeAnimation()
@@ -52,14 +52,6 @@ void URPGAnimInstance::PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJu
 bool URPGAnimInstance::GetIsAbilityERMontagePlaying()
 {
 	return Montage_IsPlaying(Ability_E_Montage) || Montage_IsPlaying(Ability_R_Montage);
-}
-
-void URPGAnimInstance::PlayReflectMontage()
-{
-	if (Ability_W_Montage == nullptr) return;
-	if (IsAnyMontagePlaying()) return;
-	Montage_Play(Ability_W_Montage);
-	Montage_JumpToSection(FName("Reflect"), Ability_W_Montage);
 }
 
 void URPGAnimInstance::PlayDeathMontage()

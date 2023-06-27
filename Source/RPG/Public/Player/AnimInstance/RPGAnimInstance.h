@@ -38,16 +38,10 @@ public:
 
 	bool GetIsAbilityERMontagePlaying();
 
-	/** 워리어 전용 */
-
-	void PlayReflectMontage();
-
 	void PlayDeathMontage();
 
 	FORCEINLINE void SetCurrentKeyState(EPressedKey KeyType) { CurrentKeyState = KeyType; }
 	FORCEINLINE EPressedKey GetCurrentKeyState() const { return CurrentKeyState; }
-	FORCEINLINE void AimingPoseOn() { bAimingPose = true; };
-	FORCEINLINE void AimingPoseOff() { bAimingPose = false; };
 	FORCEINLINE void SetMaxCombo(const int8 MaxValue) { MaxCombo = MaxValue; }
 
 	FOnAttackInputCheckDelegate DOnAttackInputCheck;
@@ -100,9 +94,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
 	UAnimMontage* Ability_R_Montage;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Aiming", meta = (AllowPrivateAccess = "true"))
-	bool bAimingPose = false;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Aiming", meta = (AllowPrivateAccess = "true"))
 	EPressedKey CurrentKeyState = EPressedKey::EPK_None;

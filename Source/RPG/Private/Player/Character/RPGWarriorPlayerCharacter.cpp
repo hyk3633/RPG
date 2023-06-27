@@ -1,7 +1,8 @@
 
 
 #include "Player/Character/RPGWarriorPlayerCharacter.h"
-#include "Player/RPGAnimInstance.h"
+#include "Player/AnimInstance/RPGAnimInstance.h"
+#include "Player/AnimInstance/RPGWarriorAnimInstance.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "Projectile/RPGBaseProjectile.h"
 #include "../RPG.h"
@@ -79,7 +80,7 @@ void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	Super::CastAbilityByKey(KeyType);
 
 	// Q, W 스킬만 에이밍 X
-	if (KeyType == EPressedKey::EPK_W || KeyType == EPressedKey::EPK_Q)
+	if (KeyType == EPressedKey::EPK_Q || KeyType == EPressedKey::EPK_W)
 	{
 		RPGAnimInstance->PlayAbilityMontageOfKey();
 		if (IsLocallyControlled())
@@ -317,8 +318,6 @@ void ARPGWarriorPlayerCharacter::DeactivateEnforceParticle()
 		GetCapsuleComponent()->SetGenerateOverlapEvents(false);
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECR_Block);
 		AbilityCooldownStart(EPressedKey::EPK_W);
-		CF();
-		// TODO : 작동하는지 확인
 	}
 }
 
@@ -326,7 +325,8 @@ void ARPGWarriorPlayerCharacter::PlayReflectMontageAndParticleMulticast_Implemen
 {
 	if (HasAuthority() == false)
 	{
-		RPGAnimInstance->PlayReflectMontage();
+		URPGWarriorAnimInstance* WAnimInstance = Cast<URPGWarriorAnimInstance>(RPGAnimInstance);
+		if(WAnimInstance) WAnimInstance->PlayReflectMontage();
 		SpawnParticle(NormalAttackImpactParticle, SpawnLocation, FRotator::ZeroRotator);
 	}
 }

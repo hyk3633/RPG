@@ -43,6 +43,16 @@ protected:
 
 protected:
 
+	/** 스킬 취소 */
+
+	virtual void CancelAbility() override;
+
+	UFUNCTION(Server, Reliable)
+	void AimingPoseOffServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void AimingPoseOffMulticast();
+
 	/** 일반 공격 */
 
 	virtual void CastNormalAttack() override;
