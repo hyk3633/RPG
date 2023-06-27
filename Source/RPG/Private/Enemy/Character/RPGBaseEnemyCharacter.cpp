@@ -69,81 +69,14 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 	}
 }
 
-bool ARPGBaseEnemyCharacter::GetIsInAir() const
-{
-	return GetMovementComponent()->IsFalling();
-}
-
-/** 외부 호출 함수 */
-
-void ARPGBaseEnemyCharacter::BTTask_Attack()
-{
-	AttackMulticast();
-}
-
-void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffect(int8 StencilValue)
-{
-	GetMesh()->SetRenderCustomDepth(true);
-	GetMesh()->SetCustomDepthStencilValue(StencilValue);
-}
-
-void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffect()
-{
-	GetMesh()->SetRenderCustomDepth(false);
-}
-
-void ARPGBaseEnemyCharacter::FalldownToAllClients()
-{
-	FalldownMulticast();
-}
-
-void ARPGBaseEnemyCharacter::GetupToAllClients()
-{
-	GetupMulticast();
-}
-
-void ARPGBaseEnemyCharacter::InstanceDeath()
-{
-	HealthDecrease(MaxHealth);
-}
-
-void ARPGBaseEnemyCharacter::EnableSuckedInToAllClients()
-{
-	EnableSuckedInMulticast();
-}
-
-void ARPGBaseEnemyCharacter::StopActionToAllClients()
-{
-	StopActionMulticast();
-}
-
-/** 동작 관련 */
-
-void ARPGBaseEnemyCharacter::AttackMulticast_Implementation()
-{
-	PlayAttackMontage();
-}
-
-void ARPGBaseEnemyCharacter::PlayAttackMontage()
-{
-	if (MyAnimInst == nullptr) return;
-	MyAnimInst->PlayAttackMontage();
-}
-
-void ARPGBaseEnemyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-{
-	if (Montage == MyAnimInst->GetAttackMontage())
-	{
-		DOnAttackEnd.Broadcast();
-	}
-}
-
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
 	//PLOG(TEXT("%s Enemy damaged : %f"), *DamagedActor->GetName(), Damage);
 
 	HealthDecrease(Damage);
 }
+
+/** 체력 */
 
 void ARPGBaseEnemyCharacter::HealthDecrease(const float& Damage)
 {
@@ -184,6 +117,8 @@ void ARPGBaseEnemyCharacter::HealthBarVisibilityOff()
 	HealthBarWidget->SetVisibility(false);
 }
 
+/** 죽음 */
+
 void ARPGBaseEnemyCharacter::EnemyDeath()
 {
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Ignore);
@@ -197,7 +132,45 @@ void ARPGBaseEnemyCharacter::DestroySelf()
 	Destroy();
 }
 
-/** 멀티캐스트 함수 */
+/** 공격 */
+
+void ARPGBaseEnemyCharacter::BTTask_Attack()
+{
+	AttackMulticast();
+}
+
+void ARPGBaseEnemyCharacter::AttackMulticast_Implementation()
+{
+	PlayAttackMontage();
+}
+
+void ARPGBaseEnemyCharacter::PlayAttackMontage()
+{
+	if (MyAnimInst == nullptr) return;
+	MyAnimInst->PlayAttackMontage();
+}
+
+void ARPGBaseEnemyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == MyAnimInst->GetAttackMontage())
+	{
+		DOnAttackEnd.Broadcast();
+	}
+}
+
+/** 반환 함수 */
+
+bool ARPGBaseEnemyCharacter::GetIsInAir() const
+{
+	return GetMovementComponent()->IsFalling();
+}
+
+/** 기절 */
+
+void ARPGBaseEnemyCharacter::FalldownToAllClients()
+{
+	FalldownMulticast();
+}
 
 void ARPGBaseEnemyCharacter::FalldownMulticast_Implementation()
 {
@@ -214,6 +187,13 @@ void ARPGBaseEnemyCharacter::Falldown()
 	{
 		MyAnimInst->PlayDeathMontage();
 	}
+}
+
+/** 기상 */
+
+void ARPGBaseEnemyCharacter::GetupToAllClients()
+{
+	GetupMulticast();
 }
 
 void ARPGBaseEnemyCharacter::GetupMulticast_Implementation()
@@ -233,6 +213,33 @@ void ARPGBaseEnemyCharacter::Getup()
 	}
 }
 
+/** 커스텀 뎁스 온/오프 */
+
+void ARPGBaseEnemyCharacter::OnRenderCustomDepthEffect(int8 StencilValue)
+{
+	GetMesh()->SetRenderCustomDepth(true);
+	GetMesh()->SetCustomDepthStencilValue(StencilValue);
+}
+
+void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffect()
+{
+	GetMesh()->SetRenderCustomDepth(false);
+}
+
+/** 즉사 */
+
+void ARPGBaseEnemyCharacter::InstanceDeath()
+{
+	HealthDecrease(MaxHealth);
+}
+
+/** 블랙홀 상호작용 */
+
+void ARPGBaseEnemyCharacter::EnableSuckedInToAllClients()
+{
+	EnableSuckedInMulticast();
+}
+
 void ARPGBaseEnemyCharacter::EnableSuckedInMulticast_Implementation()
 {
 	EnableSuckedIn();
@@ -242,6 +249,13 @@ void ARPGBaseEnemyCharacter::EnableSuckedIn()
 {
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
 	GetCharacterMovement()->GravityScale = 0.f;
+}
+
+/** 행동 정지, 해제 */
+
+void ARPGBaseEnemyCharacter::StopActionToAllClients()
+{
+	StopActionMulticast();
 }
 
 void ARPGBaseEnemyCharacter::StopActionMulticast_Implementation()

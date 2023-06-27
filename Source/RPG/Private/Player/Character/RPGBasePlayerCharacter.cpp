@@ -496,11 +496,6 @@ void ARPGBasePlayerCharacter::AbilityCooldownEndClient_Implementation(int8 Bit)
 	DOnAbilityCooldownEnd.Broadcast(Bit);
 }
 
-void ARPGBasePlayerCharacter::OnAbilityEnded(EPressedKey KeyType)
-{
-
-}
-
 /** --------------------------- Á×À½ --------------------------- */
 
 void ARPGBasePlayerCharacter::PlayerDie()

@@ -25,9 +25,6 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	FORCEINLINE void SetAIController(ARPGEnemyAIController* AICont) { MyController = AICont; }
-	bool GetIsInAir() const;
-
 	FDelegateOnAttackEnd DOnAttackEnd;
 	FOnDeathDelegate DOnDeath;
 	FDelegateOnHealthChanged DOnHealthChanged;
@@ -38,23 +35,29 @@ protected:
 
 	virtual void BeginPlay() override;
 
-public:
+	UFUNCTION()
+	void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
+
+	/** 체력 */
+
+	void HealthDecrease(const float& Damage);
+
+	UFUNCTION()
+	void OnRep_Health();
+
+	void OnHealthChanged();
+
+	void HealthBarVisibilityOff();
+
+	/** 죽음 */
+
+	void EnemyDeath();
+
+	void DestroySelf();
+
+public: /** 공격 */
 
 	void BTTask_Attack();
-
-	void OnRenderCustomDepthEffect(int8 StencilValue);
-
-	void OffRenderCustomDepthEffect();
-
-	void FalldownToAllClients();
-
-	void GetupToAllClients();
-
-	void InstanceDeath();
-
-	void EnableSuckedInToAllClients();
-
-	void StopActionToAllClients();
 
 protected:
 
@@ -69,36 +72,64 @@ protected:
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-	UFUNCTION()
-	void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
+public:
 
-	void HealthDecrease(const float& Damage);
+	/** 설정 반환 함수 */
 
-	UFUNCTION()
-	void OnRep_Health();
+	FORCEINLINE void SetAIController(ARPGEnemyAIController* AICont) { MyController = AICont; }
 
-	void OnHealthChanged();
+	bool GetIsInAir() const;
 
-	void HealthBarVisibilityOff();
+public: /** 기절 */
 
-	void EnemyDeath();
+	void FalldownToAllClients();
 
-	void DestroySelf();
+protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void FalldownMulticast();
 
 	void Falldown();
 
+public: /** 기상 */
+
+	void GetupToAllClients();
+
+protected:
+
 	UFUNCTION(NetMulticast, Reliable)
 	void GetupMulticast();
 
 	void Getup();
 
+public: 
+
+	/** 커스텀 뎁스 온 / 오프 */
+
+	void OnRenderCustomDepthEffect(int8 StencilValue);
+
+	void OffRenderCustomDepthEffect();
+	
+	/** 즉사 */
+
+	void InstanceDeath();
+
+	/** 블랙홀 상호작용 */
+
+	void EnableSuckedInToAllClients();
+
 	UFUNCTION(NetMulticast, Reliable)
 	void EnableSuckedInMulticast();
 
 	void EnableSuckedIn();
+
+	/** 행동 정지, 해제 */
+
+public:
+
+	void StopActionToAllClients();
+
+protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void StopActionMulticast();

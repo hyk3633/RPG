@@ -31,17 +31,13 @@ protected:
 
 	virtual void BeginPlay() override;
 
-public:
+protected:
+
+	/** 스킬 사용 */
 
 	virtual void CastAbilityByKey(EPressedKey KeyType) override;
 
 	virtual void CastAbilityAfterTargeting() override;
-
-protected:
-
-	virtual void OnAbilityEnded(EPressedKey KeyType) override;
-
-protected:
 
 	/** 스킬 취소 */
 
@@ -148,6 +144,12 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void SetMovementModeToWalkMulticast();
+
+protected:
+
+	/** 스킬 사용 제한 */
+
+	virtual void OnAbilityEnded(EPressedKey KeyType) override;
 
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 

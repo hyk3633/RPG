@@ -143,6 +143,8 @@ protected:
 
 	virtual void CastAbilityAfterTargeting();
 
+	/** ---------- 스킬 사용 제한 ---------- */
+
 	void AbilityActiveBitSet(EPressedKey KeyType);
 
 	UFUNCTION(Client, Reliable)
@@ -159,7 +161,7 @@ protected:
 	void AbilityCooldownEndClient(int8 Bit);
 
 	UFUNCTION()
-	virtual void OnAbilityEnded(EPressedKey KeyType);
+	virtual void OnAbilityEnded(EPressedKey KeyType) PURE_VIRTUAL(ARPGBasePlayerCharacter::OnAbilityEnded, );
 
 protected: /** ---------- 죽음 ---------- */
 
