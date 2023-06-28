@@ -22,31 +22,30 @@ void URPGAnimInstance::JumpToAttackMontageSection(int32 NewSection)
 	Montage_JumpToSection(GetAttackMontageSectionName(NewSection), NormalAttackMontage);
 }
 
-void URPGAnimInstance::PlayAbilityMontageOfKey(bool bJumpToSection)
+void URPGAnimInstance::PlayAbilityMontageOfKey()
 {
 	switch (CurrentKeyState)
 	{
 	case EPressedKey::EPK_Q:
-		PlayAbilityMontage(Ability_Q_Montage, bJumpToSection);
+		PlayAbilityMontage(Ability_Q_Montage);
 		break;
 	case EPressedKey::EPK_W:
-		PlayAbilityMontage(Ability_W_Montage, bJumpToSection);
+		PlayAbilityMontage(Ability_W_Montage);
 		break;
 	case EPressedKey::EPK_E:
-		PlayAbilityMontage(Ability_E_Montage, bJumpToSection);
+		PlayAbilityMontage(Ability_E_Montage);
 		break;
 	case EPressedKey::EPK_R:
-		PlayAbilityMontage(Ability_R_Montage, bJumpToSection);
+		PlayAbilityMontage(Ability_R_Montage);
 		break;
 	}
 }
 
-void URPGAnimInstance::PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJumpToSection)
+void URPGAnimInstance::PlayAbilityMontage(UAnimMontage* AbilityMontage)
 {
 	if (AbilityMontage == nullptr) return;
 	if (IsAnyMontagePlaying()) return;
 	Montage_Play(AbilityMontage);
-	if (bJumpToSection) Montage_JumpToSection(FName("Cast"), AbilityMontage);
 }
 
 bool URPGAnimInstance::GetIsAbilityERMontagePlaying()

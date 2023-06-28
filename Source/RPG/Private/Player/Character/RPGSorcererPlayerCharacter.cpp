@@ -65,14 +65,13 @@ void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 {
 	Super::CastAbilityByKey(KeyType);
 
-	// TODO : R 스킬도 인트로 애니메이션 만들기
 	// R 스킬 제외한 스킬만 인트로 애니메이션 재생
-	if (KeyType != EPressedKey::EPK_R)
-	{
-		RPGAnimInstance->PlayAbilityMontageOfKey();
-	}
 	URPGSorcererAnimInstance* SAnimInstance = Cast<URPGSorcererAnimInstance>(RPGAnimInstance);
-	if (SAnimInstance) SAnimInstance->AimingPoseOn();
+	if (SAnimInstance)
+	{
+		if (KeyType != EPressedKey::EPK_R) SAnimInstance->PlayAbilityIntroMontage();
+		SAnimInstance->AimingPoseOn();
+	}
 	if (IsLocallyControlled())
 	{
 		bAiming = true;
@@ -85,7 +84,7 @@ void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
 {
 	Super::CastAbilityAfterTargeting();
 
-	RPGAnimInstance->PlayAbilityMontageOfKey(true);
+	RPGAnimInstance->PlayAbilityMontageOfKey();
 	URPGSorcererAnimInstance* SAnimInstance = Cast<URPGSorcererAnimInstance>(RPGAnimInstance);
 	if (SAnimInstance) SAnimInstance->AimingPoseOff();
 	if (HasAuthority()) UsingMana(RPGAnimInstance->GetCurrentKeyState());
@@ -106,8 +105,8 @@ void ARPGSorcererPlayerCharacter::OnAbilityEnded(EPressedKey KeyType)
 			AbilityCooldownStartServer(EPressedKey::EPK_Q);
 			break;
 		case EPressedKey::EPK_W:
-			AbilityActiveBitOff(EPressedKey::EPK_E);
-			AbilityCooldownStartServer(EPressedKey::EPK_E);
+			AbilityActiveBitOff(EPressedKey::EPK_W);
+			AbilityCooldownStartServer(EPressedKey::EPK_W);
 			break;
 		case EPressedKey::EPK_R:
 			AbilityActiveBitOff(EPressedKey::EPK_R);

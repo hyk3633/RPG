@@ -107,7 +107,11 @@ void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, 
 		Health = FMath::Max(Health - Damage, 0.f);
 		if (Health == 0.f)
 		{
-			
+			TempController = GetController();
+			GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			GetWorldTimerManager().SetTimer(RespawnTimer, this, &ARPGBasePlayerCharacter::PlayerRespawn, 5.f);
+			SetLifeSpan(6.f);
 		}
 	}
 }
@@ -120,8 +124,27 @@ void ARPGBasePlayerCharacter::OnRep_Health()
 	}
 	if (Health == 0.f)
 	{
-		//PlayerDie();
+		PlayerDie();
 	}
+}
+
+/** --------------------------- Á×À½ --------------------------- */
+
+void ARPGBasePlayerCharacter::PlayerRespawn()
+{
+	DetachFromControllerPendingDestroy();
+	GetWorld()->GetAuthGameMode()->RestartPlayer(TempController);
+}
+
+void ARPGBasePlayerCharacter::PlayerDie()
+{
+	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->PlayDeathMontage();
+}
+
+void ARPGBasePlayerCharacter::AfterDeath()
+{
+	GetMovementComponent()->Deactivate();
 }
 
 void ARPGBasePlayerCharacter::UsingMana(EPressedKey KeyType)
@@ -509,19 +532,6 @@ void ARPGBasePlayerCharacter::AbilityCooldownStart(EPressedKey KeyType)
 void ARPGBasePlayerCharacter::AbilityCooldownEndClient_Implementation(int8 Bit)
 {
 	DOnAbilityCooldownEnd.Broadcast(Bit);
-}
-
-/** --------------------------- Á×À½ --------------------------- */
-
-void ARPGBasePlayerCharacter::PlayerDie()
-{
-	if (RPGAnimInstance == nullptr) return;
-	RPGAnimInstance->PlayDeathMontage();
-}
-
-void ARPGBasePlayerCharacter::AfterDeath()
-{
-	GetMovementComponent()->Deactivate();
 }
 
 void ARPGBasePlayerCharacter::SpawnParticle(UParticleSystem* Particle, const FVector& SpawnLoc, const FRotator& SpawnRot)

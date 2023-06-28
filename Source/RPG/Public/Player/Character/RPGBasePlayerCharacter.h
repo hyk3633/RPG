@@ -46,6 +46,19 @@ protected:
 	UFUNCTION()
 	void OnRep_Health();
 
+	/** ---------- Á×À½ ---------- */
+
+	AController* TempController;
+
+	FTimerHandle RespawnTimer;
+
+	void PlayerRespawn();
+
+	void PlayerDie();
+
+	UFUNCTION()
+	void AfterDeath();
+
 	void UsingMana(EPressedKey KeyType);
 
 	UFUNCTION()
@@ -170,13 +183,6 @@ protected:
 
 	UFUNCTION()
 	virtual void OnAbilityEnded(EPressedKey KeyType) PURE_VIRTUAL(ARPGBasePlayerCharacter::OnAbilityEnded, );
-
-protected: /** ---------- Á×À½ ---------- */
-
-	void PlayerDie();
-
-	UFUNCTION()
-	void AfterDeath();
 
 	void SpawnParticle(UParticleSystem* Particle, const FVector& SpawnLoc, const FRotator& SpawnRot = FRotator::ZeroRotator);
 

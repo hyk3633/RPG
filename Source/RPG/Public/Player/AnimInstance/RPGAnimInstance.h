@@ -32,9 +32,7 @@ public:
 
 	void JumpToAttackMontageSection(int32 NewSection);
 
-	void PlayAbilityMontageOfKey(bool bJumpToSection = false);
-
-	void PlayAbilityMontage(UAnimMontage* AbilityMontage, bool bJumpToSection);
+	void PlayAbilityMontageOfKey();
 
 	bool GetIsAbilityERMontagePlaying();
 
@@ -56,6 +54,8 @@ public:
 
 protected:
 
+	void PlayAbilityMontage(UAnimMontage* AbilityMontage);
+
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
@@ -74,8 +74,6 @@ protected:
 private:
 
 	FName GetAttackMontageSectionName(int32 Section);
-
-private:
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
 	UAnimMontage* DeathMontage;
