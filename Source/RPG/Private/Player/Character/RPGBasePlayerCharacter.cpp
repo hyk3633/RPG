@@ -67,6 +67,7 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 
 	RemainedCooldownTime.Init(0, 4);
 	MaxCooldownTime.Init(0, 4);
+	ManaUsage.Init(0, 4);
 
 	AttackEndComboState();
 }
@@ -120,6 +121,20 @@ void ARPGBasePlayerCharacter::OnRep_Health()
 	if (Health == 0.f)
 	{
 		//PlayerDie();
+	}
+}
+
+void ARPGBasePlayerCharacter::UsingMana(EPressedKey KeyType)
+{
+	const int8 Index = StaticCast<int8>(KeyType);
+	Mana = FMath::Clamp(Mana - ManaUsage[Index], 0, MaxMana);
+}
+
+void ARPGBasePlayerCharacter::OnRep_Mana()
+{
+	if (IsLocallyControlled())
+	{
+		DOnChangeManaPercentage.Broadcast(Mana / MaxMana);
 	}
 }
 
@@ -547,6 +562,14 @@ void ARPGBasePlayerCharacter::SetAbilityCooldownTime(int8 QTime, int8 WTime, int
 	MaxCooldownTime[1] = WTime;
 	MaxCooldownTime[2] = ETime;
 	MaxCooldownTime[3] = RTime;
+}
+
+void ARPGBasePlayerCharacter::SetAbilityManaUsage(int32 QUsage, int32 WUsage, int32 EUsage, int32 RUsage)
+{
+	ManaUsage[0] = QUsage;
+	ManaUsage[1] = WUsage;
+	ManaUsage[2] = EUsage;
+	ManaUsage[3] = RUsage;
 }
 
 void ARPGBasePlayerCharacter::GetTargetingCompOverlappingEnemies(TArray<AActor*>& Enemies)

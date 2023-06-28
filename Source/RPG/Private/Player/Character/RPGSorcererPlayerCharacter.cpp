@@ -42,6 +42,7 @@ void ARPGSorcererPlayerCharacter::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	SetAbilityCooldownTime(10, 12, 15, 30);
+	SetAbilityManaUsage(30, 50, 100, 150);
 }
 
 void ARPGSorcererPlayerCharacter::BeginPlay()
@@ -87,6 +88,7 @@ void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
 	RPGAnimInstance->PlayAbilityMontageOfKey(true);
 	URPGSorcererAnimInstance* SAnimInstance = Cast<URPGSorcererAnimInstance>(RPGAnimInstance);
 	if (SAnimInstance) SAnimInstance->AimingPoseOff();
+	if (HasAuthority()) UsingMana(RPGAnimInstance->GetCurrentKeyState());
 	if (IsLocallyControlled())
 	{
 		TargetingCompOff();

@@ -29,6 +29,7 @@ void ARPGWarriorPlayerCharacter::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	SetAbilityCooldownTime(5, 8, 12, 30);
+	SetAbilityManaUsage(15, 30, 80, 150);
 }
 
 void ARPGWarriorPlayerCharacter::BeginPlay()
@@ -83,6 +84,7 @@ void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	if (KeyType == EPressedKey::EPK_Q || KeyType == EPressedKey::EPK_W)
 	{
 		RPGAnimInstance->PlayAbilityMontageOfKey();
+		if (HasAuthority()) UsingMana(RPGAnimInstance->GetCurrentKeyState());
 		if (IsLocallyControlled())
 		{
 			AbilityActiveBitSet(RPGAnimInstance->GetCurrentKeyState());
@@ -104,6 +106,7 @@ void ARPGWarriorPlayerCharacter::CastAbilityAfterTargeting()
 	Super::CastAbilityAfterTargeting();
 
 	RPGAnimInstance->PlayAbilityMontageOfKey();
+	if (HasAuthority()) UsingMana(RPGAnimInstance->GetCurrentKeyState());
 	if (IsLocallyControlled())
 	{
 		TargetingCompOff();

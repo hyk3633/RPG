@@ -27,6 +27,7 @@ void ARPGHUD::BeginPlay()
 	if (PlayerPawn)
 	{
 		PlayerPawn->DOnChangeHealthPercentage.AddUFunction(this, FName("SetHealthBarPercentage"));
+		PlayerPawn->DOnChangeManaPercentage.AddUFunction(this, FName("SetManaBarPercentage"));
 		PlayerPawn->DOnAbilityCooldownEnd.AddUFunction(this, FName("CooldownProgressSetFull"));
 	}
 
@@ -56,7 +57,7 @@ void ARPGHUD::SetHealthBarPercentage(float Percentage)
 
 void ARPGHUD::SetManaBarPercentage(float Percentage)
 {
-
+	GameplayInterface->ManaBar->SetPercent(Percentage);
 }
 
 void ARPGHUD::UpdateCooldownProgress()

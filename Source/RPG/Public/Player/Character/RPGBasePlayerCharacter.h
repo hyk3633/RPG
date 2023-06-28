@@ -14,6 +14,7 @@ class USphereComponent;
 class ARPGBaseEnemyCharacter;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnChangeHealthPercentageDelegate, float Percentage);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnChangeManaPercentageDelegate, float Percentage);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAbilityCooldownEndDelegate, int8 Bit);
 
 UCLASS()
@@ -29,6 +30,8 @@ public:
 
 	FOnChangeHealthPercentageDelegate DOnChangeHealthPercentage;
 
+	FOnChangeManaPercentageDelegate DOnChangeManaPercentage;
+
 	FOnAbilityCooldownEndDelegate DOnAbilityCooldownEnd;
 
 protected:
@@ -42,6 +45,11 @@ protected:
 
 	UFUNCTION()
 	void OnRep_Health();
+
+	void UsingMana(EPressedKey KeyType);
+
+	UFUNCTION()
+	void OnRep_Mana();
 
 	UFUNCTION()
 	void OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -186,6 +194,8 @@ public: /** ---------- 반환 및 설정 함수 ---------- */
 protected:
 
 	void SetAbilityCooldownTime(int8 QTime, int8 WTime, int8 ETime, int8 RTime);
+
+	void SetAbilityManaUsage(int32 QUsage, int32 WUsage, int32 EUsage, int32 RUsage);
 	
 	void GetTargetingCompOverlappingEnemies(TArray<AActor*>& Enemies);
 
@@ -236,11 +246,13 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Character | Status")
 	float MaxHealth = 200.f;
 
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Character | Status")
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Mana, Category = "Character | Status")
 	float Mana = 100.f;
 
 	UPROPERTY(VisibleAnywhere, Category = "Character | Status")
 	float MaxMana = 100.f;
+
+	TArray<int32> ManaUsage;
 
 	/** 이동 */
 
