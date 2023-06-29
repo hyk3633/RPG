@@ -15,10 +15,28 @@ ARPGHUD::ARPGHUD()
 	if (Obj_CooldownProgress.Succeeded()) ClockProgressMatInst = Obj_CooldownProgress.Object;
 }
 
+void ARPGHUD::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	DrawOverlay();
+}
+
 void ARPGHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
+}
+
+void ARPGHUD::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	UpdateCooldownProgress();
+}
+
+void ARPGHUD::InitHUD()
+{
 	if (GetOwningPlayerController())
 	{
 		PlayerPawn = Cast<ARPGBasePlayerCharacter>(GetOwningPlayerController()->GetPawn());
@@ -30,15 +48,9 @@ void ARPGHUD::BeginPlay()
 		PlayerPawn->DOnChangeManaPercentage.AddUFunction(this, FName("SetManaBarPercentage"));
 		PlayerPawn->DOnAbilityCooldownEnd.AddUFunction(this, FName("CooldownProgressSetFull"));
 	}
-
-	DrawOverlay();
-}
-
-void ARPGHUD::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	UpdateCooldownProgress();
+	SetHealthBarPercentage(1);
+	SetManaBarPercentage(1);
+	GameplayInterface->SetVisibility(ESlateVisibility::Visible);
 }
 
 void ARPGHUD::DrawOverlay()
@@ -46,6 +58,7 @@ void ARPGHUD::DrawOverlay()
 	if (GameplayInterfaceClass)
 	{
 		GameplayInterface = CreateWidget<URPGGameplayInterface>(GetOwningPlayerController(), GameplayInterfaceClass);
+		GameplayInterface->SetVisibility(ESlateVisibility::Hidden);
 		GameplayInterface->AddToViewport();
 	}
 }
@@ -53,6 +66,10 @@ void ARPGHUD::DrawOverlay()
 void ARPGHUD::SetHealthBarPercentage(float Percentage)
 {
 	GameplayInterface->HealthBar->SetPercent(Percentage);
+	if (Percentage == 0.f)
+	{
+		GetWorldTimerManager().SetTimer(OffTimer, this, &ARPGHUD::OffHUD, 3.f);
+	}
 }
 
 void ARPGHUD::SetManaBarPercentage(float Percentage)
@@ -96,4 +113,9 @@ void ARPGHUD::SetProgressPercentage(const int8 Index, const float Percentage)
 void ARPGHUD::CooldownProgressSetFull(uint8 Bit)
 {
 	SetProgressPercentage(Bit, 1);
+}
+
+void ARPGHUD::OffHUD()
+{
+	GameplayInterface->SetVisibility(ESlateVisibility::Hidden);
 }

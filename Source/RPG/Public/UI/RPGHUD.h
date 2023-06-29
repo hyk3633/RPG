@@ -22,10 +22,18 @@ public:
 	ARPGHUD();
 
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void PostInitializeComponents() override;
 	
 protected:
 
+
+
 	virtual void BeginPlay() override;
+
+public:
+
+	void InitHUD();
 
 private:
 
@@ -48,6 +56,8 @@ private:
 	UFUNCTION()
 	void CooldownProgressSetFull(uint8 Bit);
 
+	void OffHUD();
+
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	TSubclassOf<UUserWidget> GameplayInterfaceClass;
 
@@ -62,5 +72,7 @@ private:
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* ClockProgressMatInstDynamic;
+
+	FTimerHandle OffTimer;
 
 };

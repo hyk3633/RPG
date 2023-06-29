@@ -1,9 +1,11 @@
 
 #include "Player/RPGPlayerController.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
+#include "UI/RPGHUD.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Enums/PressedKey.h"
+#include "GameFramework/HUD.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
@@ -86,6 +88,12 @@ void ARPGPlayerController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 
 	MyCharacter = Cast<ARPGBasePlayerCharacter>(InPawn);
+}
+
+void ARPGPlayerController::OnRep_MyCharacter()
+{
+	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
+	if (RPGHUD) RPGHUD->InitHUD();
 }
 
 void ARPGPlayerController::Tick(float DeltaTime)

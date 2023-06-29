@@ -31,6 +31,9 @@ protected:
 
 	virtual void OnPossess(APawn* InPawn) override;
 
+	UFUNCTION()
+	void OnRep_MyCharacter();
+
 public:
 
 	virtual void Tick(float DeltaTime) override;
@@ -59,7 +62,7 @@ protected:
 
 private:
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_MyCharacter)
 	ARPGBasePlayerCharacter* MyCharacter;
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
