@@ -1,6 +1,8 @@
 
 #include "Player/RPGPlayerController.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
+#include "Player/RPGPlayerState.h"
+#include "Item/RPGItem.h"
 #include "UI/RPGHUD.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
@@ -56,7 +58,7 @@ void ARPGPlayerController::BeginPlay()
 	{
 		Subsystem->AddMappingContext(DefaultMappingContext, 0);
 	}
-
+	
 	/*int32 GridSize;
 	int32 GridDist;
 	float WorldOffset;
@@ -100,6 +102,31 @@ void ARPGPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (MyCharacter)
+	{
+		ItemTrace();
+	}
+}
+
+void ARPGPlayerController::ItemTrace()
+{
+	if (IsValid(TracedItem))
+	{
+		TracedItem->SetItemNameTagVisibility(false);
+	}
+
+	FHitResult ItemTraceHit;
+	GetHitResultUnderCursor(ECC_ItemTrace, false, ItemTraceHit);
+
+	if (ItemTraceHit.bBlockingHit)
+	{
+		TracedItem = Cast<ARPGItem>(ItemTraceHit.GetActor());
+		if (IsValid(TracedItem)) TracedItem->SetItemNameTagVisibility(true);
+	}
+	else
+	{
+		TracedItem = nullptr;
+	}
 }
 
 void ARPGPlayerController::SetupInputComponent()
@@ -134,10 +161,22 @@ void ARPGPlayerController::LeftClickAction_SetPath()
 	{
 		MyCharacter->CancelAbility();
 	}
+	else if (IsValid(TracedItem) && TracedItem->GetDistanceTo(MyCharacter) < 500.f)
+	{
+		ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
+		if (RPGHUD) RPGHUD->ItemAdd(TracedItem->GetItemType());
+		PickupItemServer(TracedItem);
+	}
 	else
 	{
 		MyCharacter->SetDestinationAndPath();
 	}
+}
+
+void ARPGPlayerController::PickupItemServer_Implementation(ARPGItem* Item)
+{
+	GetPlayerState<ARPGPlayerState>()->AddItem(Item->GetItemType());
+	Item->DestroyFromAllClients();
 }
 
 void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()

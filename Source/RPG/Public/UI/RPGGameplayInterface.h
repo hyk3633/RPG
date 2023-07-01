@@ -12,6 +12,7 @@
 class ARPGHUD;
 class UProgressBar;
 class UImage;
+class URPGInventoryWidget;
 
 UCLASS()
 class RPG_API URPGGameplayInterface : public UUserWidget
@@ -39,4 +40,7 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* ClockProgress_R;
+
+	UPROPERTY(meta = (BindWidget))
+	URPGInventoryWidget* InventoryWidget;
 };

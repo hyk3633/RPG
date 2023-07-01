@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
+#include "Enums/ItemType.h"
 #include "RPGHUD.generated.h"
 
 /**
@@ -11,6 +12,7 @@
 
 class URPGGameplayInterface;
 class ARPGBasePlayerCharacter;
+class URPGInventoryWidget;
 
 UCLASS()
 class RPG_API ARPGHUD : public AHUD
@@ -27,13 +29,15 @@ public:
 	
 protected:
 
-
-
 	virtual void BeginPlay() override;
 
 public:
 
 	void InitHUD();
+
+private:
+
+	void OffHUD();
 
 private:
 
@@ -56,7 +60,15 @@ private:
 	UFUNCTION()
 	void CooldownProgressSetFull(uint8 Bit);
 
-	void OffHUD();
+public: /** 인벤토리 */
+
+	void ItemAdd(const EItemType Type);
+
+private:
+
+
+
+private:
 
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	TSubclassOf<UUserWidget> GameplayInterfaceClass;
@@ -74,5 +86,8 @@ private:
 	UMaterialInstanceDynamic* ClockProgressMatInstDynamic;
 
 	FTimerHandle OffTimer;
+
+	/** 인벤토리 */
+
 
 };

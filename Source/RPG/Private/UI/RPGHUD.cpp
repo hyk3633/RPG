@@ -1,6 +1,7 @@
 
 #include "UI/RPGHUD.h"
 #include "UI/RPGGameplayInterface.h"
+#include "UI/RPGInventoryWidget.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "../RPG.h"
 #include "Components/ProgressBar.h"
@@ -19,7 +20,7 @@ void ARPGHUD::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	DrawOverlay();
+	
 }
 
 void ARPGHUD::BeginPlay()
@@ -40,17 +41,25 @@ void ARPGHUD::InitHUD()
 	if (GetOwningPlayerController())
 	{
 		PlayerPawn = Cast<ARPGBasePlayerCharacter>(GetOwningPlayerController()->GetPawn());
+		DrawOverlay();
 	}
-
+	
 	if (PlayerPawn)
 	{
 		PlayerPawn->DOnChangeHealthPercentage.AddUFunction(this, FName("SetHealthBarPercentage"));
 		PlayerPawn->DOnChangeManaPercentage.AddUFunction(this, FName("SetManaBarPercentage"));
 		PlayerPawn->DOnAbilityCooldownEnd.AddUFunction(this, FName("CooldownProgressSetFull"));
 	}
+
 	SetHealthBarPercentage(1);
 	SetManaBarPercentage(1);
+
 	GameplayInterface->SetVisibility(ESlateVisibility::Visible);
+}
+
+void ARPGHUD::OffHUD()
+{
+	GameplayInterface->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void ARPGHUD::DrawOverlay()
@@ -59,6 +68,7 @@ void ARPGHUD::DrawOverlay()
 	{
 		GameplayInterface = CreateWidget<URPGGameplayInterface>(GetOwningPlayerController(), GameplayInterfaceClass);
 		GameplayInterface->SetVisibility(ESlateVisibility::Hidden);
+		GameplayInterface->InventoryWidget->InitInventory();
 		GameplayInterface->AddToViewport();
 	}
 }
@@ -115,7 +125,14 @@ void ARPGHUD::CooldownProgressSetFull(uint8 Bit)
 	SetProgressPercentage(Bit, 1);
 }
 
-void ARPGHUD::OffHUD()
+void ARPGHUD::ItemAdd(const EItemType Type)
 {
-	GameplayInterface->SetVisibility(ESlateVisibility::Hidden);
+	if (GameplayInterface->InventoryWidget == nullptr) return;
+
+	if (GameplayInterface->InventoryWidget->IsInventoryFull())
+	{
+		GameplayInterface->InventoryWidget->CreateInventorySlot(GetOwningPlayerController());
+	}
+	
+	GameplayInterface->InventoryWidget->AddItem(Type);
 }

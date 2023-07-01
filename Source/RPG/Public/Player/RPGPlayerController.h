@@ -13,6 +13,7 @@ class ARPGBasePlayerCharacter;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
+class ARPGItem;
 
 UCLASS()
 class RPG_API ARPGPlayerController : public APlayerController
@@ -40,11 +41,16 @@ public:
 
 protected:
 
+	void ItemTrace();
+
 	virtual void SetupInputComponent() override;
 
 	void LeftClickAction_StopMove();
 
 	void LeftClickAction_SetPath();
+
+	UFUNCTION(Server, Reliable)
+	void PickupItemServer(ARPGItem* Item);
 
 	void RightClick_AttackOrSetAbilityPoint();
 
@@ -88,4 +94,7 @@ private:
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* MouseWheelScroll;
+
+	UPROPERTY()
+	ARPGItem* TracedItem;
 };
