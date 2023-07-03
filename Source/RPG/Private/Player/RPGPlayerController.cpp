@@ -164,7 +164,7 @@ void ARPGPlayerController::LeftClickAction_SetPath()
 	else if (IsValid(TracedItem) && TracedItem->GetDistanceTo(MyCharacter) < 500.f)
 	{
 		ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
-		if (RPGHUD) RPGHUD->ItemAdd(TracedItem->GetItemType());
+		if (RPGHUD) RPGHUD->ItemAdd(TracedItem);
 		PickupItemServer(TracedItem);
 	}
 	else
@@ -175,7 +175,7 @@ void ARPGPlayerController::LeftClickAction_SetPath()
 
 void ARPGPlayerController::PickupItemServer_Implementation(ARPGItem* Item)
 {
-	GetPlayerState<ARPGPlayerState>()->AddItem(Item->GetItemType());
+	GetPlayerState<ARPGPlayerState>()->AddItem(Item);
 	Item->DestroyFromAllClients();
 }
 

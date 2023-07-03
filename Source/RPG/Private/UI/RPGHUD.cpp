@@ -125,7 +125,7 @@ void ARPGHUD::CooldownProgressSetFull(uint8 Bit)
 	SetProgressPercentage(Bit, 1);
 }
 
-void ARPGHUD::ItemAdd(const EItemType Type)
+void ARPGHUD::ItemAdd(ARPGItem* PickedItem)
 {
 	if (GameplayInterface->InventoryWidget == nullptr) return;
 
@@ -134,5 +134,5 @@ void ARPGHUD::ItemAdd(const EItemType Type)
 		GameplayInterface->InventoryWidget->CreateInventorySlot(GetOwningPlayerController());
 	}
 	
-	GameplayInterface->InventoryWidget->AddItem(Type);
+	//GameplayInterface->InventoryWidget->AddItem(Type);
 }

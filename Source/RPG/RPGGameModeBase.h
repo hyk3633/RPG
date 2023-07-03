@@ -10,6 +10,7 @@
  */
 
 class UWorldGridManagerComponent;
+class UItemSpawnManagerComponent;
 
 UCLASS()
 class RPG_API ARPGGameModeBase : public AGameModeBase
@@ -20,14 +21,21 @@ public:
 
 	ARPGGameModeBase();
 
-	void GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<float>& PathToDestX, TArray<float>& PathToDestY);
-
 protected:
 
 	virtual void BeginPlay() override;
 
+public:
+
+	void GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<float>& PathToDestX, TArray<float>& PathToDestY);
+
+	void SpawnItems(const FVector& Location);
+
 private:
 
-	UWorldGridManagerComponent* WorldGridManagerComponent;
+	UPROPERTY()
+	UWorldGridManagerComponent* WorldGridManager;
 	
+	UPROPERTY(EditAnywhere)
+	UItemSpawnManagerComponent* ItemSpawnManager;
 };

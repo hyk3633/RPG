@@ -13,6 +13,7 @@
 class URPGGameplayInterface;
 class ARPGBasePlayerCharacter;
 class URPGInventoryWidget;
+class ARPGItem;
 
 UCLASS()
 class RPG_API ARPGHUD : public AHUD
@@ -62,7 +63,7 @@ private:
 
 public: /** 인벤토리 */
 
-	void ItemAdd(const EItemType Type);
+	void ItemAdd(ARPGItem* PickedItem);
 
 private:
 

@@ -3,6 +3,7 @@
 #include "UI/RPGItemNameTag.h"
 #include "../RPG.h"
 #include "Components/WidgetComponent.h"
+#include "Net/UnrealNetwork.h"
 
 ARPGItem::ARPGItem()
 {
@@ -45,7 +46,7 @@ void ARPGItem::BeginPlay()
 	URPGItemNameTag* NameTagText = Cast<URPGItemNameTag>(NameTagWidget->GetWidget());
 	if (NameTagText)
 	{
-		NameTagText->SetNameTagText(ItemName);
+		NameTagText->SetNameTagText(ItemInfo.ItemName);
 	}
 }
 
@@ -53,6 +54,21 @@ void ARPGItem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void ARPGItem::SetItemInfo(FItemInfo NewItemInfo)
+{
+	ItemInfo = NewItemInfo;
+}
+
+void ARPGItem::SetItemMesh(UStaticMesh* NewMesh)
+{
+	SetItemMeshMulticast(NewMesh);
+}
+
+void ARPGItem::SetItemMeshMulticast_Implementation(UStaticMesh* NewMesh)
+{
+	ItemMesh->SetStaticMesh(NewMesh);
 }
 
 void ARPGItem::DestroyFromAllClients()
@@ -70,3 +86,10 @@ void ARPGItem::SetItemNameTagVisibility(const bool bVisible)
 	NameTagWidget->SetVisibility(bVisible);
 }
 
+void ARPGItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ARPGItem, ItemInfo);
+
+}

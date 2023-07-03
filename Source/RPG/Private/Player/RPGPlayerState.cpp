@@ -1,6 +1,7 @@
 
 
 #include "Player/RPGPlayerState.h"
+#include "Item/RPGItem.h"
 #include "../RPG.h"
 
 void ARPGPlayerState::PostInitializeComponents()
@@ -16,9 +17,9 @@ void ARPGPlayerState::BeginPlay()
 
 }
 
-void ARPGPlayerState::AddItem(EItemType Type)
+void ARPGPlayerState::AddItem(ARPGItem* PickedItem)
 {
-	const int32 Index = StaticCast<int32>(Type);
+	//const int32 Index = StaticCast<int32>(Type);
 
-	ItemArray[Index] += 1;
+	//ItemArray[Index] += 1;
 }

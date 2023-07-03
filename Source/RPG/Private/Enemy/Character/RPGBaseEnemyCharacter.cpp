@@ -3,6 +3,7 @@
 #include "Enemy/RPGEnemyAIController.h"
 #include "Enemy/RPGEnemyAnimInstance.h"
 #include "UI/RPGEnemyHealthBarWidget.h"
+#include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
@@ -86,7 +87,8 @@ void ARPGBaseEnemyCharacter::HealthDecrease(const float& Damage)
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Ignore);
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 		DOnDeath.Broadcast();
-		GetWorldTimerManager().SetTimer(DestroyTimer, this, &ARPGBaseEnemyCharacter::DestroySelf, 5.f, false);
+		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->SpawnItems(GetActorLocation());
+		GetWorldTimerManager().SetTimer(DestroyTimer, this, &ARPGBaseEnemyCharacter::DestroySelf, 3.f, false);
 	}
 }
 

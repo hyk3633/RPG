@@ -9,6 +9,9 @@
 /**
  * 
  */
+
+class ARPGItem;
+
 UCLASS()
 class RPG_API ARPGPlayerState : public APlayerState
 {
@@ -22,7 +25,7 @@ public:
 
 public:
 
-	void AddItem(EItemType Type);
+	void AddItem(ARPGItem* PickedItem);
 
 private:
 

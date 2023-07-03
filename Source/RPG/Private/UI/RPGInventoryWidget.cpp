@@ -17,20 +17,20 @@ void URPGInventoryWidget::CreateInventorySlot(APlayerController* PController)
 
 	// 생성된 슬롯의 열 개수
 	const int32 SlotCount = ItemSlotArr.Num();
-	const int32 Row = SlotCount == 0 ? SlotCount : SlotCount / 4;
+	const int32 Row = SlotCount == 0 ? 0 : SlotCount / 4;
 
 	for (int32 i = 0; i < 4; i++)
 	{
 		URPGInventorySlotWidget* InvSlot = CreateWidget<URPGInventorySlotWidget>(PController, ItemSlotClass);
-
+		
 		ItemSlotArr.Add(InvSlot);
 
 		if (InvUniformGridPanel)
 		{
 			// 그리드의 좌상단 부터 슬롯 추가
 			UUniformGridSlot* GridSlot = InvUniformGridPanel->AddChildToUniformGrid(InvSlot, Row, i);
-			GridSlot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
-			GridSlot->SetVerticalAlignment(EVerticalAlignment::VAlign_Center);
+			GridSlot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Fill);
+			GridSlot->SetVerticalAlignment(EVerticalAlignment::VAlign_Fill);
 		}
 	}
 }
