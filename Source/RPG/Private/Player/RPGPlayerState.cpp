@@ -1,14 +1,14 @@
 
 
 #include "Player/RPGPlayerState.h"
-#include "Item/RPGItem.h"
 #include "../RPG.h"
 
 void ARPGPlayerState::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	ItemArray.Init(0, StaticCast<int32>(EItemType::EIT_MAX));
+	// 0번은 체력 포션, 1번은 마나 포션
+	ItemArr.Init(FItemInfo(), 2);
 }
 
 void ARPGPlayerState::BeginPlay()
@@ -19,7 +19,23 @@ void ARPGPlayerState::BeginPlay()
 
 void ARPGPlayerState::AddItem(ARPGItem* PickedItem)
 {
-	//const int32 Index = StaticCast<int32>(Type);
+	EItemType PickedItemType = PickedItem->GetItemInfo().ItemType;
+	const int32 Idx = StaticCast<int32>(PickedItemType);
 
-	//ItemArray[Index] += 1;
+	switch (PickedItemType)
+	{
+	case EItemType::EIT_Coin:
+		Coins += PickedItem->GetItemInfo().ItemStat.CoinAmount;
+		break;
+	case EItemType::EIT_HealthPotion:
+		HealthPotionCount += 1;
+		break;
+	case EItemType::EIT_ManaPotion:
+		ManaPotionCount += 1;
+		break;
+	case EItemType::EIT_Armour:
+	case EItemType::EIT_Weapon:
+		ItemArr.Add(PickedItem->GetItemInfo());
+		break;
+	}
 }

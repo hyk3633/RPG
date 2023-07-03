@@ -27,6 +27,8 @@ public:
 
 	void SetItemCountText(const int32 Count);
 
+	FORCEINLINE void SetUniqueNumber(int32 Num) { UniqueNumber = Num; }
+
 private:
 
 	UPROPERTY(meta = (BindWidget))
@@ -39,5 +41,7 @@ private:
 	UTextBlock* ItemCountText;
 
 	EItemType SlottedItemType;
+
+	int32 UniqueNumber;
 
 };

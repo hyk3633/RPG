@@ -3,6 +3,7 @@
 #include "UI/RPGGameplayInterface.h"
 #include "UI/RPGInventoryWidget.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
+#include "Item/RPGItem.h"
 #include "../RPG.h"
 #include "Components/ProgressBar.h"
 #include "Components/Image.h"
@@ -125,7 +126,26 @@ void ARPGHUD::CooldownProgressSetFull(uint8 Bit)
 	SetProgressPercentage(Bit, 1);
 }
 
-void ARPGHUD::ItemAdd(ARPGItem* PickedItem)
+void ARPGHUD::AddCoins(const int32 CoinAmount)
+{
+	GameplayInterface->InventoryWidget->AddCoins(CoinAmount);
+}
+
+void ARPGHUD::AddPotion(const int32 SlotNum, const EItemType PotionType, const int32 PotionCount)
+{
+	ExpandInventoryIfNoSpace();
+
+	GameplayInterface->InventoryWidget->AddPotion(SlotNum, PotionType, PotionCount);
+}
+
+void ARPGHUD::AddEquipment(const int32 SlotNum, const EItemType ItemType)
+{
+	ExpandInventoryIfNoSpace();
+
+	GameplayInterface->InventoryWidget->AddEquipment(SlotNum, ItemType);
+}
+
+void ARPGHUD::ExpandInventoryIfNoSpace()
 {
 	if (GameplayInterface->InventoryWidget == nullptr) return;
 
@@ -133,6 +153,4 @@ void ARPGHUD::ItemAdd(ARPGItem* PickedItem)
 	{
 		GameplayInterface->InventoryWidget->CreateInventorySlot(GetOwningPlayerController());
 	}
-	
-	//GameplayInterface->InventoryWidget->AddItem(Type);
 }

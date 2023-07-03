@@ -7,7 +7,7 @@
 
 ARPGItem::ARPGItem()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	bReplicates = true;
 
@@ -29,7 +29,11 @@ ARPGItem::ARPGItem()
 	ItemMesh->SetCollisionResponseToChannel(ECC_ItemTrace, ECollisionResponse::ECR_Block);
 
 	NameTagWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameTag Widget"));
+	static ConstructorHelpers::FClassFinder<UUserWidget> WidgetBPAsset(TEXT("WidgetBlueprint'/Game/_Assets/Blueprints/HUD/WBP_ItemNameTag.WBP_ItemNameTag_C'"));
+	if (WidgetBPAsset.Succeeded()) { NameTagWidget->SetWidgetClass(WidgetBPAsset.Class); }
 	NameTagWidget->SetupAttachment(ItemMesh);
+	NameTagWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	NameTagWidget->SetDrawSize(FVector2D(200, 50));
 	NameTagWidget->SetVisibility(false);
 }
 
@@ -43,11 +47,6 @@ void ARPGItem::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	URPGItemNameTag* NameTagText = Cast<URPGItemNameTag>(NameTagWidget->GetWidget());
-	if (NameTagText)
-	{
-		NameTagText->SetNameTagText(ItemInfo.ItemName);
-	}
 }
 
 void ARPGItem::Tick(float DeltaTime)
@@ -86,10 +85,18 @@ void ARPGItem::SetItemNameTagVisibility(const bool bVisible)
 	NameTagWidget->SetVisibility(bVisible);
 }
 
+void ARPGItem::OnRep_ItemInfo()
+{
+	URPGItemNameTag* NameTagText = Cast<URPGItemNameTag>(NameTagWidget->GetWidget());
+	if (NameTagText)
+	{
+		NameTagText->SetNameTagText(ItemInfo.ItemName);
+	}
+}
+
 void ARPGItem::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ARPGItem, ItemInfo);
-
 }

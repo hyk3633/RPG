@@ -101,6 +101,8 @@ public:
 
     void SetItemInfo(FItemInfo NewItemInfo);
 
+    FORCEINLINE const FItemInfo GetItemInfo() const { return ItemInfo; }
+
     void SetItemMesh(UStaticMesh* NewMesh);
 
 protected:
@@ -119,6 +121,9 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void DestroyMulticast();
 
+    UFUNCTION()
+    void OnRep_ItemInfo();
+
 protected:
 
     void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
@@ -134,6 +139,6 @@ private:
 	UPROPERTY(EditAnywhere)
 	UWidgetComponent* NameTagWidget;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_ItemInfo)
 	FItemInfo ItemInfo;
 };

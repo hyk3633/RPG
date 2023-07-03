@@ -13,6 +13,7 @@
 class UUniformGridPanel;
 class UTextBlock;
 class URPGInventorySlotWidget;
+class ARPGItem;
 
 UCLASS()
 class RPG_API URPGInventoryWidget : public UUserWidget
@@ -25,7 +26,11 @@ public:
 
 	void CreateInventorySlot(APlayerController* PController);
 
-	void AddItem(const EItemType Type);
+	void AddCoins(const int32 CoinAmount);
+
+	void AddPotion(const int32 SlotNum, const EItemType PotionType, const int32 PotionCount);
+
+	void AddEquipment(const int32 SlotNum, const EItemType ItemType);
 
 	bool IsInventoryFull();
 
@@ -42,9 +47,6 @@ private:
 
 	UPROPERTY()
 	TArray<URPGInventorySlotWidget*> ItemSlotArr;
-
-	// 아이템의 종류 별 갯수
-	TArray<int32> ItemCountArr;
 
 	// Key : 아이템 Enum, Value : 그 아이템을 저장하고 있는 슬롯 포인터
 	TMap<int32, URPGInventorySlotWidget*> ItemSlotMap;

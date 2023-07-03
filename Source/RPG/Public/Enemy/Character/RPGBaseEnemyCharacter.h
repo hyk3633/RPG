@@ -162,7 +162,7 @@ private:
 	FTimerHandle HealthBarTimer;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleInstanceOnly, Category = "Enemy | Status")
-	float Health = 300.f;
+	float Health = 10.f;
 
 	float MaxHealth = 300.f;
 

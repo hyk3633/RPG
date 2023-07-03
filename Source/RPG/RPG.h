@@ -12,6 +12,8 @@
 #define ECC_EnemyProjectile		ECollisionChannel::ECC_GameTraceChannel6
 #define ECC_ItemMesh			ECollisionChannel::ECC_GameTraceChannel7
 #define ECC_ItemTrace			ECollisionChannel::ECC_GameTraceChannel8
+#define ECC_CursorTrace			ECollisionChannel::ECC_GameTraceChannel9
+#define ECC_GroundTrace			ECollisionChannel::ECC_GameTraceChannel10
 
 #define CALLINFO			(FString(__FUNCTION__) + TEXT("(")+FString::FromInt(__LINE__) + TEXT(")")) 
 

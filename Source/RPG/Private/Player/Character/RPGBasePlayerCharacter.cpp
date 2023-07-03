@@ -38,7 +38,7 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	FollowCamera->SetupAttachment(CameraArm, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
-	//GetMesh()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -46,7 +46,7 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	GetCapsuleComponent()->SetCollisionObjectType(ECC_PlayerBody);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyAttack, ECollisionResponse::ECR_Block);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
-	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
 
 	TargetingComp = CreateDefaultSubobject<USphereComponent>(TEXT("Targeting Component"));
 	TargetingComp->SetupAttachment(RootComponent);

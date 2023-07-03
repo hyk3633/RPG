@@ -163,8 +163,6 @@ void ARPGPlayerController::LeftClickAction_SetPath()
 	}
 	else if (IsValid(TracedItem) && TracedItem->GetDistanceTo(MyCharacter) < 500.f)
 	{
-		ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
-		if (RPGHUD) RPGHUD->ItemAdd(TracedItem);
 		PickupItemServer(TracedItem);
 	}
 	else
@@ -175,8 +173,61 @@ void ARPGPlayerController::LeftClickAction_SetPath()
 
 void ARPGPlayerController::PickupItemServer_Implementation(ARPGItem* Item)
 {
+	PickupItem(Item);
+}
+
+void ARPGPlayerController::PickupItem(ARPGItem* Item)
+{
 	GetPlayerState<ARPGPlayerState>()->AddItem(Item);
+	const int32 Num = GetPlayerState<ARPGPlayerState>()->GetLastItemArrayNumber();
+
+	const EItemType Type = Item->GetItemInfo().ItemType;
+	switch (Type)
+	{
+	case EItemType::EIT_Coin:
+		PickupCoinsClient(GetPlayerState<ARPGPlayerState>()->GetCoins());
+		break;
+	case EItemType::EIT_HealthPotion:
+		PickupPotionClient(0, Type, GetPlayerState<ARPGPlayerState>()->GetHealthPotionCount());
+		break;
+	case EItemType::EIT_ManaPotion:
+		PickupPotionClient(1, Type, GetPlayerState<ARPGPlayerState>()->GetManaPotionCount());
+		break;
+	case EItemType::EIT_Armour:
+	case EItemType::EIT_Weapon:
+		PickupEquipmentClient(GetPlayerState<ARPGPlayerState>()->GetLastItemArrayNumber(), Type);
+		break;
+	}
+
 	Item->DestroyFromAllClients();
+}
+
+void ARPGPlayerController::PickupCoinsClient_Implementation(const int32 CoinAmount)
+{
+	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
+	if (RPGHUD)
+	{
+		const EItemType TracedItemType = TracedItem->GetItemInfo().ItemType;
+		RPGHUD->AddCoins(CoinAmount);
+	}
+}
+
+void ARPGPlayerController::PickupPotionClient_Implementation(const int32 SlotNum, const EItemType PotionType, const int32 PotionCount)
+{
+	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
+	if (RPGHUD)
+	{
+		RPGHUD->AddPotion(SlotNum, PotionType, PotionCount);
+	}
+}
+
+void ARPGPlayerController::PickupEquipmentClient_Implementation(const int32 SlotNum, const EItemType ItemType)
+{
+	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
+	if (RPGHUD)
+	{
+		RPGHUD->AddEquipment(SlotNum, ItemType);
+	}
 }
 
 void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()

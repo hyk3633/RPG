@@ -3,6 +3,7 @@
 #include "RPGGameModeBase.h"
 #include "GameSystem/WorldGridManagerComponent.h"
 #include "GameSystem/ItemSpawnManagerComponent.h"
+#include "../RPG.h"
 
 ARPGGameModeBase::ARPGGameModeBase()
 {
@@ -25,6 +26,18 @@ void ARPGGameModeBase::GetPathToDestination(const FVector& Start, const FVector&
 
 void ARPGGameModeBase::SpawnItems(const FVector& Location)
 {
-	ItemSpawnManager->SpawnItems(Location);
+	FHitResult Hit;
+	FVector TraceEnd = Location;
+	TraceEnd.Z -= 200.f;
+	GetWorld()->LineTraceSingleByChannel(Hit, Location, TraceEnd, ECC_GroundTrace);
+
+	if (Hit.bBlockingHit)
+	{
+		ItemSpawnManager->SpawnItems(Hit.ImpactPoint);
+	}
+	else
+	{
+		ItemSpawnManager->SpawnItems(Location);
+	}
 }
 

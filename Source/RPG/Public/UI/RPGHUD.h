@@ -63,11 +63,15 @@ private:
 
 public: /** 인벤토리 */
 
-	void ItemAdd(ARPGItem* PickedItem);
+	void AddCoins(const int32 CoinAmount);
 
-private:
+	void AddPotion(const int32 SlotNum, const EItemType PotionType, const int32 PotionCount);
 
+	void AddEquipment(const int32 SlotNum, const EItemType ItemType);
 
+protected:
+
+	void ExpandInventoryIfNoSpace();
 
 private:
 

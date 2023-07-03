@@ -4,13 +4,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
 #include "Enums/ItemType.h"
+#include "Item/RPGItem.h"
 #include "RPGPlayerState.generated.h"
 
 /**
  * 
  */
-
-class ARPGItem;
 
 UCLASS()
 class RPG_API ARPGPlayerState : public APlayerState
@@ -23,12 +22,21 @@ public:
 
 	virtual void BeginPlay() override;
 
+	FORCEINLINE int32 GetLastItemArrayNumber() { return ItemArr.Num() - 1; }
+	FORCEINLINE int32 GetCoins() const { return Coins; }
+	FORCEINLINE int32 GetHealthPotionCount() const { return HealthPotionCount; }
+	FORCEINLINE int32 GetManaPotionCount() const { return ManaPotionCount; }
+
 public:
 
 	void AddItem(ARPGItem* PickedItem);
 
 private:
 
-	TArray<int32> ItemArray;
+	int32 Coins = 0;
+
+	int32 HealthPotionCount = 0;
+	int32 ManaPotionCount = 0;
+	TArray<FItemInfo> ItemArr;
 
 };

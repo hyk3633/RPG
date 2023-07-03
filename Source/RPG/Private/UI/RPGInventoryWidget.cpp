@@ -1,6 +1,8 @@
 
 #include "UI/RPGInventoryWidget.h"
 #include "UI/RPGInventorySlotWidget.h"
+#include "Item/RPGItem.h"
+#include "../RPG.h"
 #include "Components/TextBlock.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
@@ -8,7 +10,7 @@
 void URPGInventoryWidget::InitInventory()
 {
 	const int32 MaxIdx = StaticCast<int32>(EItemType::EIT_MAX);
-	ItemCountArr.Init(0, MaxIdx);
+	
 }
 
 void URPGInventoryWidget::CreateInventorySlot(APlayerController* PController)
@@ -35,30 +37,32 @@ void URPGInventoryWidget::CreateInventorySlot(APlayerController* PController)
 	}
 }
 
-void URPGInventoryWidget::AddItem(const EItemType Type)
+void URPGInventoryWidget::AddCoins(const int32 CoinAmount)
 {
-	const int32 Idx = StaticCast<int32>(Type);
+	CoinText->SetText(FText::FromString(FString::FromInt(CoinAmount)));
+}
 
-	ItemCountArr[Idx]++;
-
-	if (Type == EItemType::EIT_Coin)
+void URPGInventoryWidget::AddPotion(const int32 SlotNum, const EItemType PotionType, const int32 PotionCount)
+{
+	if (ItemSlotMap.Find(SlotNum) == nullptr)
 	{
-		CoinText->SetText(FText::FromString(FString::FromInt(ItemCountArr[Idx])));
+		ItemSlotMap.Add(SlotNum, ItemSlotArr[LastItemSlotIndex]);
+		ItemSlotArr[LastItemSlotIndex]->SaveItemToSlot(PotionType);
+		ItemSlotArr[LastItemSlotIndex]->SetItemCountText(PotionCount);
+		LastItemSlotIndex++;
 	}
 	else
 	{
-		if (ItemSlotMap.Find(Idx) == nullptr)
-		{
-			ItemSlotMap.Add(Idx, ItemSlotArr[LastItemSlotIndex]);
-			ItemSlotArr[LastItemSlotIndex]->SaveItemToSlot(Type);
-			ItemSlotArr[LastItemSlotIndex]->SetItemCountText(ItemCountArr[Idx]);
-			LastItemSlotIndex++;
-		}
-		else
-		{
-			(*ItemSlotMap.Find(Idx))->SetItemCountText(ItemCountArr[Idx]);
-		}
+		(*ItemSlotMap.Find(SlotNum))->SetItemCountText(PotionCount);
 	}
+}
+
+void URPGInventoryWidget::AddEquipment(const int32 SlotNum, const EItemType ItemType)
+{
+	ItemSlotMap.Add(SlotNum, ItemSlotArr[LastItemSlotIndex]);
+	ItemSlotArr[LastItemSlotIndex]->SaveItemToSlot(ItemType);
+	ItemSlotArr[LastItemSlotIndex]->SetItemCountText(1);
+	LastItemSlotIndex++;
 }
 
 bool URPGInventoryWidget::IsInventoryFull()

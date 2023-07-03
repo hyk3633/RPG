@@ -53,8 +53,8 @@ void UItemSpawnManagerComponent::SpawnItems(const FVector& Location)
 
 FVector& UItemSpawnManagerComponent::GetRandomVector(FVector Vector)
 {
-	Vector.X += FMath::RandRange(-25.f, 25.f);
-	Vector.Y += FMath::RandRange(-25.f, 25.f);
+	Vector.X += FMath::RandRange(-25, 25);
+	Vector.Y += FMath::RandRange(-25, 25);
 
 	return Vector;
 }

@@ -52,6 +52,17 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void PickupItemServer(ARPGItem* Item);
 
+	void PickupItem(ARPGItem* Item);
+
+	UFUNCTION(Client, Reliable)
+	void PickupCoinsClient(const int32 CoinAmount);
+
+	UFUNCTION(Client, Reliable)
+	void PickupPotionClient(const int32 SlotNum, const EItemType PotionType, const int32 PotionCount);
+
+	UFUNCTION(Client, Reliable)
+	void PickupEquipmentClient(const int32 SlotNum, const EItemType ItemType);
+
 	void RightClick_AttackOrSetAbilityPoint();
 
 	void QPressedAction_Cast();
