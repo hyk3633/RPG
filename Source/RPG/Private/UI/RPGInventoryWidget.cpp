@@ -42,12 +42,12 @@ void URPGInventoryWidget::AddCoins(const int32 CoinAmount)
 	CoinText->SetText(FText::FromString(FString::FromInt(CoinAmount)));
 }
 
-void URPGInventoryWidget::AddPotion(const int32 SlotNum, const EItemType PotionType, const int32 PotionCount)
+void URPGInventoryWidget::AddPotion(const int32 SlotNum, const EItemType ItemType, const int32 PotionCount)
 {
 	if (ItemSlotMap.Find(SlotNum) == nullptr)
 	{
 		ItemSlotMap.Add(SlotNum, ItemSlotArr[LastItemSlotIndex]);
-		ItemSlotArr[LastItemSlotIndex]->SaveItemToSlot(PotionType);
+		ItemSlotArr[LastItemSlotIndex]->SaveItemToSlot(ItemType);
 		ItemSlotArr[LastItemSlotIndex]->SetItemCountText(PotionCount);
 		LastItemSlotIndex++;
 	}
@@ -63,6 +63,16 @@ void URPGInventoryWidget::AddEquipment(const int32 SlotNum, const EItemType Item
 	ItemSlotArr[LastItemSlotIndex]->SaveItemToSlot(ItemType);
 	ItemSlotArr[LastItemSlotIndex]->SetItemCountText(1);
 	LastItemSlotIndex++;
+}
+
+void URPGInventoryWidget::SetSlotIcon(const int32 SlotNum, UMaterial* Icon)
+{
+	(*ItemSlotMap.Find(SlotNum))->SetSlotIcon(Icon);
+}
+
+bool URPGInventoryWidget::SlotIsEmpty(const int32 SlotNum)
+{
+	return (ItemSlotMap.Find(SlotNum) == nullptr);
 }
 
 bool URPGInventoryWidget::IsInventoryFull()

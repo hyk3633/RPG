@@ -8,7 +8,6 @@ UItemSpawnManagerComponent::UItemSpawnManagerComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
-	
 }
 
 void UItemSpawnManagerComponent::BeginPlay()
@@ -24,7 +23,10 @@ void UItemSpawnManagerComponent::SpawnItems(const FVector& Location)
 
 	// 코인 무조건 스폰
 	ItemInitializeBeforeSpawn(EItemType::EIT_Coin, GetRandomVector(Location));
-
+	ItemInitializeBeforeSpawn(EItemType::EIT_HealthPotion, GetRandomVector(Location));
+	ItemInitializeBeforeSpawn(EItemType::EIT_ManaPotion, GetRandomVector(Location));
+	ItemInitializeBeforeSpawn(EItemType::EIT_Armour, GetRandomVector(Location));
+	ItemInitializeBeforeSpawn(EItemType::EIT_Weapon, GetRandomVector(Location));
 	if (FMath::RandRange(1, 100) < 30)
 	{
 		const int8 RandNum = FMath::RandRange(0, 1);

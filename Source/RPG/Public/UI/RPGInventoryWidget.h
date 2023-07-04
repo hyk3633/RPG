@@ -28,9 +28,13 @@ public:
 
 	void AddCoins(const int32 CoinAmount);
 
-	void AddPotion(const int32 SlotNum, const EItemType PotionType, const int32 PotionCount);
+	void AddPotion(const int32 SlotNum, const EItemType ItemType, const int32 PotionCount);
 
 	void AddEquipment(const int32 SlotNum, const EItemType ItemType);
+
+	void SetSlotIcon(const int32 SlotNum, UMaterial* Icon);
+
+	bool SlotIsEmpty(const int32 SlotNum);
 
 	bool IsInventoryFull();
 

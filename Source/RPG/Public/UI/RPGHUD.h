@@ -14,6 +14,7 @@ class URPGGameplayInterface;
 class ARPGBasePlayerCharacter;
 class URPGInventoryWidget;
 class ARPGItem;
+class UDataTable;
 
 UCLASS()
 class RPG_API ARPGHUD : public AHUD
@@ -65,11 +66,13 @@ public: /** 인벤토리 */
 
 	void AddCoins(const int32 CoinAmount);
 
-	void AddPotion(const int32 SlotNum, const EItemType PotionType, const int32 PotionCount);
+	void AddPotion(const int32 SlotNum, const EItemType ItemType, const int32 PotionCount);
 
 	void AddEquipment(const int32 SlotNum, const EItemType ItemType);
 
 protected:
+
+	void SetSlotIcon(const int32 SlotNum, const EItemType ItemType);
 
 	void ExpandInventoryIfNoSpace();
 
@@ -84,7 +87,7 @@ private:
 	UPROPERTY()
 	ARPGBasePlayerCharacter* PlayerPawn;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY()
 	UMaterialInstance* ClockProgressMatInst;
 
 	UPROPERTY()
@@ -92,7 +95,6 @@ private:
 
 	FTimerHandle OffTimer;
 
-	/** 인벤토리 */
-
-
+	UPROPERTY(EditAnywhere, Category = "HUD")
+	UDataTable* ItemDataTable;
 };

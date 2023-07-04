@@ -13,6 +13,7 @@
 class UButton;
 class UBorder;
 class UTextBlock;
+class UImage;
 
 UCLASS()
 class RPG_API URPGInventorySlotWidget : public UUserWidget
@@ -27,6 +28,8 @@ public:
 
 	void SetItemCountText(const int32 Count);
 
+	void SetSlotIcon(UMaterial* Icon);
+
 	FORCEINLINE void SetUniqueNumber(int32 Num) { UniqueNumber = Num; }
 
 private:
@@ -35,7 +38,10 @@ private:
 	UBorder* ItemSlotBorder;
 
 	UPROPERTY(meta = (BindWidget))
-	UButton* ItemSlotIconButton;
+	UImage* ItemSlotIcon;
+
+	UPROPERTY(meta = (BindWidget))
+	UButton* ItemSlotButton;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* ItemCountText;

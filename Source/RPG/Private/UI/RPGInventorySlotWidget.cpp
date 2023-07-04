@@ -2,6 +2,7 @@
 #include "UI/RPGInventorySlotWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/Border.h"
+#include "Components/Image.h"
 
 bool URPGInventorySlotWidget::IsSlotEmpty()
 {
@@ -20,4 +21,13 @@ void URPGInventorySlotWidget::SaveItemToSlot(EItemType Type)
 void URPGInventorySlotWidget::SetItemCountText(const int32 Count)
 {
 	ItemCountText->SetText(FText::FromString(FString::FromInt(Count)));
+}
+
+void URPGInventorySlotWidget::SetSlotIcon(UMaterial* Icon)
+{
+	FSlateBrush Brush;
+	Brush.DrawAs = ESlateBrushDrawType::Image;
+	Brush.SetImageSize(FVector2D(50, 50));
+	ItemSlotIcon->SetBrush(Brush);
+	ItemSlotIcon->SetBrushFromMaterial(Icon);
 }

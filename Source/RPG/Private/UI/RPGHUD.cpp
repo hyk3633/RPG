@@ -4,10 +4,13 @@
 #include "UI/RPGInventoryWidget.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Item/RPGItem.h"
+#include "GameSystem/ItemSpawnManagerComponent.h"
 #include "../RPG.h"
 #include "Components/ProgressBar.h"
 #include "Components/Image.h"
 #include "Kismet/GameplayStatics.h"
+#include "Engine/DataTable.h"
+#include "UObject/ConstructorHelpers.h"
 
 ARPGHUD::ARPGHUD()
 {
@@ -128,21 +131,47 @@ void ARPGHUD::CooldownProgressSetFull(uint8 Bit)
 
 void ARPGHUD::AddCoins(const int32 CoinAmount)
 {
+	if (GameplayInterface->InventoryWidget == nullptr) return;
+
 	GameplayInterface->InventoryWidget->AddCoins(CoinAmount);
 }
 
-void ARPGHUD::AddPotion(const int32 SlotNum, const EItemType PotionType, const int32 PotionCount)
+void ARPGHUD::AddPotion(const int32 SlotNum, const EItemType ItemType, const int32 PotionCount)
 {
+	if (GameplayInterface->InventoryWidget == nullptr) return;
+
 	ExpandInventoryIfNoSpace();
 
-	GameplayInterface->InventoryWidget->AddPotion(SlotNum, PotionType, PotionCount);
+	const bool bIsFirstPotion = GameplayInterface->InventoryWidget->SlotIsEmpty(SlotNum);
+
+	GameplayInterface->InventoryWidget->AddPotion(SlotNum, ItemType, PotionCount);
+	if (bIsFirstPotion)
+	{
+		SetSlotIcon(SlotNum, ItemType);
+	}
+
 }
 
 void ARPGHUD::AddEquipment(const int32 SlotNum, const EItemType ItemType)
 {
+	if (GameplayInterface->InventoryWidget == nullptr) return;
+
 	ExpandInventoryIfNoSpace();
 
 	GameplayInterface->InventoryWidget->AddEquipment(SlotNum, ItemType);
+	SetSlotIcon(SlotNum, ItemType);
+}
+
+void ARPGHUD::SetSlotIcon(const int32 SlotNum, const EItemType ItemType)
+{
+	if (GameplayInterface->InventoryWidget == nullptr) return;
+
+	const int32 RowNumber = StaticCast<int32>(ItemType);
+	FItemOptionTableRow* ItemTableRow = ItemDataTable->FindRow<FItemOptionTableRow>(FName(*(FString::FormatAsNumber(RowNumber))), FString(""));
+	if (ItemTableRow && ItemTableRow->ItemIcon)
+	{
+		GameplayInterface->InventoryWidget->SetSlotIcon(SlotNum, ItemTableRow->ItemIcon);
+	}
 }
 
 void ARPGHUD::ExpandInventoryIfNoSpace()
