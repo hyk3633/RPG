@@ -13,69 +13,48 @@ void URPGInventoryWidget::InitInventory()
 	
 }
 
-void URPGInventoryWidget::CreateInventorySlot(APlayerController* PController)
+void URPGInventoryWidget::AddSlotToGridPanel(URPGInventorySlotWidget* NewSlot, const int32 Row, const int32 Column)
 {
-	if (PController == nullptr || ItemSlotClass == nullptr) return;
-
-	// 생성된 슬롯의 열 개수
-	const int32 SlotCount = ItemSlotArr.Num();
-	const int32 Row = SlotCount == 0 ? 0 : SlotCount / 4;
-
-	for (int32 i = 0; i < 4; i++)
+	if (InvUniformGridPanel)
 	{
-		URPGInventorySlotWidget* InvSlot = CreateWidget<URPGInventorySlotWidget>(PController, ItemSlotClass);
-		
-		ItemSlotArr.Add(InvSlot);
+		// 그리드의 좌상단 부터 슬롯 추가
+		UUniformGridSlot* GridSlot = InvUniformGridPanel->AddChildToUniformGrid(NewSlot, Row, Column);
+		GridSlot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Fill);
+		GridSlot->SetVerticalAlignment(EVerticalAlignment::VAlign_Fill);
+	}
+}
 
-		if (InvUniformGridPanel)
+void URPGInventoryWidget::SortGridPanel(URPGInventorySlotWidget* SlotToBack, const int32 LastIdx)
+{
+	const int32 SlotCount = InvUniformGridPanel->GetChildrenCount();
+	const int32 SlotIdx = InvUniformGridPanel->GetChildIndex(SlotToBack);
+	int32 Row, Column, GridChildIdx = SlotIdx + 1;
+	for (Row = SlotIdx / 4; Row <= LastIdx / 4; Row++)
+	{
+		int32 FirstCol = (Row > (SlotIdx / 4)) ? 0 : SlotIdx % 4;
+		int32 LastCol = (Row < (LastIdx / 4)) ? 4 : LastIdx % 4;
+		for (Column = FirstCol; Column < LastCol; Column++)
 		{
-			// 그리드의 좌상단 부터 슬롯 추가
-			UUniformGridSlot* GridSlot = InvUniformGridPanel->AddChildToUniformGrid(InvSlot, Row, i);
-			GridSlot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Fill);
-			GridSlot->SetVerticalAlignment(EVerticalAlignment::VAlign_Fill);
+			UWidget* ChildWidget = InvUniformGridPanel->GetChildAt(GridChildIdx);
+			InvUniformGridPanel->AddChildToUniformGrid(ChildWidget, Row, Column);
+			GridChildIdx++;
 		}
+	}
+
+	InvUniformGridPanel->AddChildToUniformGrid(SlotToBack, LastIdx / 4, LastIdx % 4);
+}
+
+void URPGInventoryWidget::RemoveSlotPage()
+{
+	const int32 SlotCount = InvUniformGridPanel->GetChildrenCount();
+	for (int32 Idx = SlotCount - 16; Idx < SlotCount; Idx++)
+	{
+		InvUniformGridPanel->GetChildAt(Idx)->SetVisibility(ESlateVisibility::Hidden);
+		InvUniformGridPanel->RemoveChildAt(Idx);
 	}
 }
 
 void URPGInventoryWidget::AddCoins(const int32 CoinAmount)
 {
 	CoinText->SetText(FText::FromString(FString::FromInt(CoinAmount)));
-}
-
-void URPGInventoryWidget::AddPotion(const int32 SlotNum, const EItemType ItemType, const int32 PotionCount)
-{
-	if (ItemSlotMap.Find(SlotNum) == nullptr)
-	{
-		ItemSlotMap.Add(SlotNum, ItemSlotArr[LastItemSlotIndex]);
-		ItemSlotArr[LastItemSlotIndex]->SaveItemToSlot(ItemType);
-		ItemSlotArr[LastItemSlotIndex]->SetItemCountText(PotionCount);
-		LastItemSlotIndex++;
-	}
-	else
-	{
-		(*ItemSlotMap.Find(SlotNum))->SetItemCountText(PotionCount);
-	}
-}
-
-void URPGInventoryWidget::AddEquipment(const int32 SlotNum, const EItemType ItemType)
-{
-	ItemSlotMap.Add(SlotNum, ItemSlotArr[LastItemSlotIndex]);
-	ItemSlotArr[LastItemSlotIndex]->SaveItemToSlot(ItemType);
-	ItemSlotArr[LastItemSlotIndex]->SetItemCountText(1);
-	LastItemSlotIndex++;
-}
-
-void URPGInventoryWidget::SetSlotIcon(const int32 SlotNum, UMaterial* Icon)
-{
-	(*ItemSlotMap.Find(SlotNum))->SetSlotIcon(Icon);
-}
-
-bool URPGInventoryWidget::SlotIsEmpty(const int32 SlotNum)
-{
-	return (ItemSlotMap.Find(SlotNum) == nullptr);
-}
-
-bool URPGInventoryWidget::IsInventoryFull()
-{
-	return LastItemSlotIndex == ItemSlotArr.Num();
 }

@@ -1,4 +1,4 @@
-
+ï»¿
 
 #include "Player/RPGPlayerState.h"
 #include "../RPG.h"
@@ -7,13 +7,30 @@ void ARPGPlayerState::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	// 0¹øÀº Ã¼·Â Æ÷¼Ç, 1¹øÀº ¸¶³ª Æ÷¼Ç
+	// 0ë²ˆì€ ì²´ë ¥ í¬ì…˜, 1ë²ˆì€ ë§ˆë‚˜ í¬ì…˜
 	ItemArr.Init(FItemInfo(), 2);
 }
 
 void ARPGPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
+
+}
+
+void ARPGPlayerState::UseItem(const int32 ItemNum)
+{
+	if (ItemNum)
+	{
+		ManaPotionCount -= 1;
+	}
+	else
+	{
+		HealthPotionCount -= 1;
+	}
+}
+
+void ARPGPlayerState::DiscardItem(const int32 ItemNum)
+{
 
 }
 
@@ -38,4 +55,6 @@ void ARPGPlayerState::AddItem(ARPGItem* PickedItem)
 		ItemArr.Add(PickedItem->GetItemInfo());
 		break;
 	}
+
+	CurrentItemUniqueNum++;
 }

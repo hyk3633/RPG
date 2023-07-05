@@ -181,6 +181,16 @@ void ARPGBasePlayerCharacter::OnTargetingComponentEndOverlap(UPrimitiveComponent
 	}
 }
 
+void ARPGBasePlayerCharacter::RecoveryHealth(const int32 RecoveryAmount)
+{
+	Health = FMath::Clamp(Health + RecoveryAmount, 0, MaxHealth);
+}
+
+void ARPGBasePlayerCharacter::RecoveryMana(const int32 RecoveryAmount)
+{
+	Mana = FMath::Clamp(Mana + RecoveryAmount, 0, MaxMana);
+}
+
 void ARPGBasePlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

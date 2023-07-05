@@ -10,6 +10,8 @@
  * 
  */
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnIconSlotButtonClickedDelegate, int32 SlotUniqueNumber);
+
 class UButton;
 class UBorder;
 class UTextBlock;
@@ -19,10 +21,10 @@ UCLASS()
 class RPG_API URPGInventorySlotWidget : public UUserWidget
 {
 	GENERATED_BODY()
-	
+
 public:
 
-	bool IsSlotEmpty();
+	void BindButtonEvent();
 
 	void SaveItemToSlot(EItemType Type);
 
@@ -30,7 +32,20 @@ public:
 
 	void SetSlotIcon(UMaterial* Icon);
 
+	void ClearSlot();
+
+	FORCEINLINE bool IsSlotEmpty() { return SlottedItemType == EItemType::EIT_MAX; };
 	FORCEINLINE void SetUniqueNumber(int32 Num) { UniqueNumber = Num; }
+	FORCEINLINE UButton* GetItemSlotButton() const { return ItemSlotButton; }
+	FORCEINLINE void SetSlotIndex(const int32 Index) { SlotIndex = Index; }
+	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex; }
+
+	FOnIconSlotButtonClickedDelegate DOnIconButtonClicked;
+
+protected:
+
+	UFUNCTION()
+	void OnItemSlotButtonClicked();
 
 private:
 
@@ -49,5 +64,7 @@ private:
 	EItemType SlottedItemType;
 
 	int32 UniqueNumber;
+
+	int32 SlotIndex;
 
 };

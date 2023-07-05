@@ -70,7 +70,13 @@ protected:
 	UFUNCTION()
 	void OnTargetingComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-public:	/** Ä«¸Þ¶ó ÁÜ ÀÎ ¾Æ¿ô */
+public:	
+
+	void RecoveryHealth(const int32 RecoveryAmount);
+
+	void RecoveryMana(const int32 RecoveryAmount);
+	
+	/** Ä«¸Þ¶ó ÁÜ ÀÎ ¾Æ¿ô */
 
 	void CameraZoomInOut(int8 Value);
 

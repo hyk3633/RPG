@@ -58,10 +58,26 @@ protected:
 	void PickupCoinsClient(const int32 CoinAmount);
 
 	UFUNCTION(Client, Reliable)
-	void PickupPotionClient(const int32 SlotNum, const EItemType PotionType, const int32 PotionCount);
+	void PickupPotionClient(const int32 UniqueNum, const EItemType PotionType, const int32 PotionCount);
 
 	UFUNCTION(Client, Reliable)
-	void PickupEquipmentClient(const int32 SlotNum, const EItemType ItemType);
+	void PickupEquipmentClient(const int32 UniqueNum, const EItemType ItemType);
+
+public:
+
+	void UseItem(const int32 UniqueNum);
+
+	void EquipItem(const int32 UniqueNum);
+
+	void DiscardItem(const int32 UniqueNum);
+
+protected:
+
+	UFUNCTION(Server, Reliable)
+	void UseItemServer(const int32 UniqueNum);
+
+	UFUNCTION(Client, Reliable)
+	void UpdateItemInfoClient(const int32 UniqueNum);
 
 	void RightClick_AttackOrSetAbilityPoint();
 

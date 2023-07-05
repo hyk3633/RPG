@@ -58,6 +58,11 @@ void ARPGPlayerController::BeginPlay()
 	{
 		Subsystem->AddMappingContext(DefaultMappingContext, 0);
 	}
+
+	//FInputModeGameAndUI InputModeGameAndUI;
+	//FInputModeUIOnly UIOnly;
+	//
+	//SetInputMode(UIOnly);
 	
 	/*int32 GridSize;
 	int32 GridDist;
@@ -106,6 +111,7 @@ void ARPGPlayerController::Tick(float DeltaTime)
 	{
 		ItemTrace();
 	}
+
 }
 
 void ARPGPlayerController::ItemTrace()
@@ -212,21 +218,64 @@ void ARPGPlayerController::PickupCoinsClient_Implementation(const int32 CoinAmou
 	}
 }
 
-void ARPGPlayerController::PickupPotionClient_Implementation(const int32 SlotNum, const EItemType PotionType, const int32 PotionCount)
+void ARPGPlayerController::PickupPotionClient_Implementation(const int32 UniqueNum, const EItemType PotionType, const int32 PotionCount)
 {
 	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
 	if (RPGHUD)
 	{
-		RPGHUD->AddPotion(SlotNum, PotionType, PotionCount);
+		RPGHUD->AddPotion(UniqueNum, PotionType, PotionCount);
 	}
 }
 
-void ARPGPlayerController::PickupEquipmentClient_Implementation(const int32 SlotNum, const EItemType ItemType)
+void ARPGPlayerController::PickupEquipmentClient_Implementation(const int32 UniqueNum, const EItemType ItemType)
 {
 	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
 	if (RPGHUD)
 	{
-		RPGHUD->AddEquipment(SlotNum, ItemType);
+		RPGHUD->AddEquipment(UniqueNum, ItemType);
+	}
+}
+
+void ARPGPlayerController::UseItem(const int32 UniqueNum)
+{
+	UseItemServer(UniqueNum);
+}
+
+void ARPGPlayerController::EquipItem(const int32 UniqueNum)
+{
+
+}
+
+void ARPGPlayerController::DiscardItem(const int32 UniqueNum)
+{
+
+}
+
+void ARPGPlayerController::UseItemServer_Implementation(const int32 UniqueNum)
+{
+	GetPlayerState<ARPGPlayerState>()->UseItem(UniqueNum);
+	if (UniqueNum == 0)
+	{
+		MyCharacter->RecoveryHealth(200);
+	}
+	else if (UniqueNum == 1)
+	{
+		MyCharacter->RecoveryMana(200);
+	}
+	UpdateItemInfoClient(UniqueNum);
+}
+
+void ARPGPlayerController::UpdateItemInfoClient_Implementation(const int32 UniqueNum)
+{
+	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
+	
+	if (UniqueNum)
+	{
+		RPGHUD->UpdatePotionCount(UniqueNum, EItemType::EIT_ManaPotion, GetPlayerState<ARPGPlayerState>()->GetManaPotionCount());
+	}
+	else
+	{
+		RPGHUD->UpdatePotionCount(UniqueNum, EItemType::EIT_HealthPotion, GetPlayerState<ARPGPlayerState>()->GetHealthPotionCount());
 	}
 }
 

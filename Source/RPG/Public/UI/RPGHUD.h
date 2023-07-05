@@ -13,8 +13,30 @@
 class URPGGameplayInterface;
 class ARPGBasePlayerCharacter;
 class URPGInventoryWidget;
+class URPGInventorySlotWidget;
 class ARPGItem;
 class UDataTable;
+class URPGItemSlotMenuWidget;
+
+USTRUCT(Atomic)
+struct FItemSlotStruct
+{
+	GENERATED_BODY()
+public:
+
+	UPROPERTY()
+	URPGInventorySlotWidget* ItemSlot;
+
+	UPROPERTY()
+	int32 UniqueNum;
+
+	FItemSlotStruct() : ItemSlot(nullptr), UniqueNum(-1) {}
+
+	FItemSlotStruct(URPGInventorySlotWidget* NewSlot) : ItemSlot(NewSlot), UniqueNum(-1) {}
+
+	FItemSlotStruct(URPGInventorySlotWidget* NewSlot, int32 NewNum) : ItemSlot(NewSlot), UniqueNum(NewNum) {}
+
+};
 
 UCLASS()
 class RPG_API ARPGHUD : public AHUD
@@ -37,11 +59,9 @@ public:
 
 	void InitHUD();
 
-private:
+protected:
 
 	void OffHUD();
-
-private:
 
 	void DrawOverlay();
 
@@ -62,19 +82,38 @@ private:
 	UFUNCTION()
 	void CooldownProgressSetFull(uint8 Bit);
 
-public: /** 인벤토리 */
+	/** 인벤토리 */
+
+	void InitInventorySlot();
+
+public: 
 
 	void AddCoins(const int32 CoinAmount);
 
-	void AddPotion(const int32 SlotNum, const EItemType ItemType, const int32 PotionCount);
+	void AddPotion(const int32 UniqueNum, const EItemType ItemType, const int32 PotionCount);
 
-	void AddEquipment(const int32 SlotNum, const EItemType ItemType);
+	int32 GetEmptySlotIndex();
+
+	void AddEquipment(const int32 UniqueNum, const EItemType ItemType);
+
+	void UpdatePotionCount(const int32 UniqueNum, const EItemType ItemType, const int32 PotionCount);
 
 protected:
 
-	void SetSlotIcon(const int32 SlotNum, const EItemType ItemType);
+	void ClearItemSlot(const int32 UniqueNum);
+
+	void SetSlotIcon(const int32 UniqueNum, const EItemType ItemType);
 
 	void ExpandInventoryIfNoSpace();
+
+	UFUNCTION()
+	void OnItemSlotButtonClickEvent(int32 UniqueNum);
+
+	UFUNCTION()
+	void OnUseButtonClicked();
+
+	UFUNCTION()
+	void OnDiscardButtonClicked();
 
 private:
 
@@ -95,6 +134,35 @@ private:
 
 	FTimerHandle OffTimer;
 
+	// 인벤토리
+
+	UPROPERTY(EditAnywhere, Category = "HUD")
+	TSubclassOf<URPGInventorySlotWidget> ItemSlotClass;
+
+	UPROPERTY()
+	TArray<FItemSlotStruct> ItemSlotArr;
+
+	UPROPERTY()
+	TMap<int32, URPGInventorySlotWidget*> ItemSlotMap;
+
+	TArray<int32> EmptySlotIndexArr;
+
+	int32 LastStoredSlotNum = 0;
+
+	int32 ActivatedItemSlotNum = 0;
+
+	int32 StoredSlotCount = 0;
+
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	UDataTable* ItemDataTable;
+
+	UPROPERTY(EditAnywhere, Category = "HUD")
+	TSubclassOf<URPGItemSlotMenuWidget> ItemSlotMenuClass;
+
+	UPROPERTY()
+	URPGItemSlotMenuWidget* ItemSlotMenuWidget;
+
+	bool bIsItemSlotMenuWidgetOn = false;
+
+	int32 SelectedItemUniqueNum;
 };

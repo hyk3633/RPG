@@ -1,12 +1,15 @@
 
 #include "UI/RPGInventorySlotWidget.h"
+#include "../RPG.h"
 #include "Components/TextBlock.h"
 #include "Components/Border.h"
 #include "Components/Image.h"
+#include "Components/Button.h"
 
-bool URPGInventorySlotWidget::IsSlotEmpty()
+void URPGInventorySlotWidget::BindButtonEvent()
 {
-	return SlottedItemType == EItemType::EIT_MAX;
+	ItemSlotButton->OnClicked.AddDynamic(this, &URPGInventorySlotWidget::OnItemSlotButtonClicked);
+	
 }
 
 void URPGInventorySlotWidget::SaveItemToSlot(EItemType Type)
@@ -15,7 +18,6 @@ void URPGInventorySlotWidget::SaveItemToSlot(EItemType Type)
 	SetItemCountText(0);
 	ItemCountText->SetVisibility(ESlateVisibility::Visible);
 	ItemSlotBorder->SetBrushColor(FLinearColor::Black);
-	//TODO : 아이콘 설정
 }
 
 void URPGInventorySlotWidget::SetItemCountText(const int32 Count)
@@ -30,4 +32,17 @@ void URPGInventorySlotWidget::SetSlotIcon(UMaterial* Icon)
 	Brush.SetImageSize(FVector2D(50, 50));
 	ItemSlotIcon->SetBrush(Brush);
 	ItemSlotIcon->SetBrushFromMaterial(Icon);
+}
+
+void URPGInventorySlotWidget::ClearSlot()
+{
+	// TODO : Image Size
+	ItemSlotIcon->SetBrushFromMaterial(nullptr);
+	ItemSlotBorder->SetBrushColor(FLinearColor::White);
+	ItemCountText->SetVisibility(ESlateVisibility::Hidden);
+}
+
+void URPGInventorySlotWidget::OnItemSlotButtonClicked()
+{
+	DOnIconButtonClicked.Broadcast(UniqueNumber);
 }

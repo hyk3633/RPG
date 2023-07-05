@@ -22,7 +22,11 @@ public:
 
 	virtual void BeginPlay() override;
 
-	FORCEINLINE int32 GetLastItemArrayNumber() { return ItemArr.Num() - 1; }
+	void UseItem(const int32 ItemNum);
+
+	void DiscardItem(const int32 ItemNum);
+
+	FORCEINLINE int32 GetLastItemArrayNumber() { return CurrentItemUniqueNum; }
 	FORCEINLINE int32 GetCoins() const { return Coins; }
 	FORCEINLINE int32 GetHealthPotionCount() const { return HealthPotionCount; }
 	FORCEINLINE int32 GetManaPotionCount() const { return ManaPotionCount; }
@@ -38,5 +42,7 @@ private:
 	int32 HealthPotionCount = 0;
 	int32 ManaPotionCount = 0;
 	TArray<FItemInfo> ItemArr;
+
+	int32 CurrentItemUniqueNum = 2;
 
 };
