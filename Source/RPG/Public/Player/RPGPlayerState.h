@@ -22,14 +22,16 @@ public:
 
 	virtual void BeginPlay() override;
 
-	void UseItem(const int32 ItemNum);
+	void UseItem(const int32& ItemNum);
 
-	void DiscardItem(const int32 ItemNum);
+	void DiscardItem(const int32& ItemNum);
 
 	FORCEINLINE int32 GetLastItemArrayNumber() { return CurrentItemUniqueNum; }
 	FORCEINLINE int32 GetCoins() const { return Coins; }
 	FORCEINLINE int32 GetHealthPotionCount() const { return HealthPotionCount; }
 	FORCEINLINE int32 GetManaPotionCount() const { return ManaPotionCount; }
+	
+	FItemInfo GetItemInfo(const int32& ItemNum);
 
 public:
 
@@ -40,8 +42,10 @@ private:
 	int32 Coins = 0;
 
 	int32 HealthPotionCount = 0;
+
 	int32 ManaPotionCount = 0;
-	TArray<FItemInfo> ItemArr;
+
+	TMap<int32, FItemInfo> ItemMap;
 
 	int32 CurrentItemUniqueNum = 2;
 

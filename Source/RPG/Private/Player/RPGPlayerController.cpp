@@ -236,49 +236,74 @@ void ARPGPlayerController::PickupEquipmentClient_Implementation(const int32 Uniq
 	}
 }
 
-void ARPGPlayerController::UseItem(const int32 UniqueNum)
+void ARPGPlayerController::UseItem(const int32& UniqueNum)
 {
 	UseItemServer(UniqueNum);
 }
 
-void ARPGPlayerController::EquipItem(const int32 UniqueNum)
+void ARPGPlayerController::EquipItem(const int32& UniqueNum)
 {
 
 }
 
-void ARPGPlayerController::DiscardItem(const int32 UniqueNum)
+void ARPGPlayerController::DiscardItem(const int32& UniqueNum)
 {
+	DiscardItemServer(UniqueNum);
+}
 
+void ARPGPlayerController::DiscardItemServer_Implementation(const int32 UniqueNum)
+{
+	// 아이템 스포너로 아이템 스폰
+	const FItemInfo& ItemInfo = GetPlayerState<ARPGPlayerState>()->GetItemInfo(UniqueNum);
+	FVector Location = MyCharacter->GetActorLocation();
+	SpawnLocation.X += 50.f;
+	SpawnLocation.Z += 100.f;
+	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->DropItem(ItemInfo, Location);
+
+	// 서버 플레이어 스테이트 아이템 버리기
+	GetPlayerState<ARPGPlayerState>()->DiscardItem(UniqueNum);
+
+	UpdateItemInfoClient(UniqueNum, GetItemCount(UniqueNum));
 }
 
 void ARPGPlayerController::UseItemServer_Implementation(const int32 UniqueNum)
 {
 	GetPlayerState<ARPGPlayerState>()->UseItem(UniqueNum);
-	int32 PotionCount;
+	UniqueNum == 0 ? MyCharacter->RecoveryHealth(200) : MyCharacter->RecoveryMana(200);
+	UpdateItemInfoClient(UniqueNum, GetItemCount(UniqueNum));
+}
+
+int32 ARPGPlayerController::GetItemCount(const int32 UniqueNum)
+{
 	if (UniqueNum == 0)
 	{
-		MyCharacter->RecoveryHealth(200);
-		PotionCount = GetPlayerState<ARPGPlayerState>()->GetHealthPotionCount();
+		return GetPlayerState<ARPGPlayerState>()->GetHealthPotionCount();
 	}
 	else if (UniqueNum == 1)
 	{
-		MyCharacter->RecoveryMana(200);
-		PotionCount = GetPlayerState<ARPGPlayerState>()->GetManaPotionCount();
+		return GetPlayerState<ARPGPlayerState>()->GetManaPotionCount();
 	}
-	UpdateItemInfoClient(UniqueNum, PotionCount);
+	else
+	{
+		return 0;
+	}
 }
 
 void ARPGPlayerController::UpdateItemInfoClient_Implementation(const int32 UniqueNum, const int32 ItemCount)
 {
 	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
 	
-	if (UniqueNum)
+	if (UniqueNum == 0)
 	{
-		RPGHUD->UpdatePotionCount(UniqueNum, EItemType::EIT_ManaPotion, ItemCount);
+		RPGHUD->UpdateItemCount(UniqueNum, ItemCount);
+	}
+	else if (UniqueNum == 1)
+	{
+		RPGHUD->UpdateItemCount(UniqueNum, ItemCount);
 	}
 	else
 	{
-		RPGHUD->UpdatePotionCount(UniqueNum, EItemType::EIT_HealthPotion, ItemCount);
+		RPGHUD->UpdateItemCount(UniqueNum, 0);
 	}
 }
 

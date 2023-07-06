@@ -8,7 +8,6 @@ void ARPGPlayerState::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	// 0번은 체력 포션, 1번은 마나 포션
-	ItemArr.Init(FItemInfo(), 2);
 }
 
 void ARPGPlayerState::BeginPlay()
@@ -17,7 +16,7 @@ void ARPGPlayerState::BeginPlay()
 
 }
 
-void ARPGPlayerState::UseItem(const int32 ItemNum)
+void ARPGPlayerState::UseItem(const int32& ItemNum)
 {
 	if (ItemNum)
 	{
@@ -29,9 +28,32 @@ void ARPGPlayerState::UseItem(const int32 ItemNum)
 	}
 }
 
-void ARPGPlayerState::DiscardItem(const int32 ItemNum)
+void ARPGPlayerState::DiscardItem(const int32& ItemNum)
 {
+	if (ItemNum == 0)
+	{
+		HealthPotionCount -= 1;
+	}
+	else if (ItemNum == 1)
+	{
+		ManaPotionCount -= 1;
+	}
+	else
+	{
+		ItemMap.Remove(ItemNum);
+	}
+}
 
+FItemInfo ARPGPlayerState::GetItemInfo(const int32& ItemNum)
+{
+	if (ItemMap.Find(ItemNum) == nullptr)
+	{
+		return FItemInfo();
+	}
+	else
+	{
+		return (*ItemMap.Find(ItemNum));
+	}
 }
 
 void ARPGPlayerState::AddItem(ARPGItem* PickedItem)
@@ -46,13 +68,21 @@ void ARPGPlayerState::AddItem(ARPGItem* PickedItem)
 		break;
 	case EItemType::EIT_HealthPotion:
 		HealthPotionCount += 1;
+		if (ItemMap.Find(0) == nullptr)
+		{
+			ItemMap.Add(CurrentItemUniqueNum, PickedItem->GetItemInfo());
+		}
 		break;
 	case EItemType::EIT_ManaPotion:
 		ManaPotionCount += 1;
+		if (ItemMap.Find(0) == nullptr)
+		{
+			ItemMap.Add(CurrentItemUniqueNum, PickedItem->GetItemInfo());
+		}
 		break;
 	case EItemType::EIT_Armour:
 	case EItemType::EIT_Weapon:
-		ItemArr.Add(PickedItem->GetItemInfo());
+		ItemMap.Add(CurrentItemUniqueNum, PickedItem->GetItemInfo());
 		break;
 	}
 

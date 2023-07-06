@@ -177,14 +177,14 @@ void ARPGHUD::InitInventorySlot()
 	ActivatedItemSlotNum = 16;
 }
 
-void ARPGHUD::AddCoins(const int32 CoinAmount)
+void ARPGHUD::AddCoins(const int32& CoinAmount)
 {
 	if (GameplayInterface->InventoryWidget == nullptr) return;
 
 	GameplayInterface->InventoryWidget->AddCoins(CoinAmount);
 }
 
-void ARPGHUD::AddPotion(const int32 UniqueNum, const EItemType ItemType, const int32 PotionCount)
+void ARPGHUD::AddPotion(const int32& UniqueNum, const EItemType ItemType, const int32& PotionCount)
 {
 	ExpandInventoryIfNoSpace();
 
@@ -203,7 +203,7 @@ void ARPGHUD::AddPotion(const int32 UniqueNum, const EItemType ItemType, const i
 	}
 }
 
-void ARPGHUD::AddEquipment(const int32 UniqueNum, const EItemType ItemType)
+void ARPGHUD::AddEquipment(const int32& UniqueNum, const EItemType ItemType)
 {
 	ExpandInventoryIfNoSpace();
 
@@ -215,9 +215,9 @@ void ARPGHUD::AddEquipment(const int32 UniqueNum, const EItemType ItemType)
 	SavedItemSlotCount++;
 }
 
-void ARPGHUD::UpdatePotionCount(const int32 UniqueNum, const EItemType ItemType, const int32 PotionCount)
+void ARPGHUD::UpdateItemCount(const int32& UniqueNum, const int32& ItemCount)
 {
-	if (PotionCount == 0)
+	if (ItemCount == 0)
 	{
 		SavedItemSlotCount--;
 
@@ -241,11 +241,11 @@ void ARPGHUD::UpdatePotionCount(const int32 UniqueNum, const EItemType ItemType,
 	}
 	else
 	{
-		(*ItemSlotMap.Find(UniqueNum))->SetItemCountText(PotionCount);
+		(*ItemSlotMap.Find(UniqueNum))->SetItemCountText(ItemCount);
 	}
 }
 
-void ARPGHUD::ClearItemSlot(const int32 UniqueNum)
+void ARPGHUD::ClearItemSlot(const int32& UniqueNum)
 {
 	// 슬롯 UI 초기화
 	URPGInventorySlotWidget* SlotToRemove = (*ItemSlotMap.Find(UniqueNum));
@@ -274,7 +274,7 @@ void ARPGHUD::ClearItemSlot(const int32 UniqueNum)
 	}
 }
 
-void ARPGHUD::SetSlotIcon(const int32 UniqueNum, const EItemType ItemType)
+void ARPGHUD::SetSlotIcon(const int32& UniqueNum, const EItemType ItemType)
 {
 	const int32 RowNumber = StaticCast<int32>(ItemType);
 	FItemOptionTableRow* ItemTableRow = ItemDataTable->FindRow<FItemOptionTableRow>(FName(*(FString::FormatAsNumber(RowNumber))), FString(""));
@@ -308,7 +308,7 @@ void ARPGHUD::ExpandInventoryIfNoSpace()
 	}
 }
 
-void ARPGHUD::OnItemSlotButtonClickEvent(int32 UniqueNum)
+void ARPGHUD::OnItemSlotButtonClickEvent(const int32 UniqueNum)
 {
 	bIsItemSlotMenuWidgetOn = true;
 	SelectedItemUniqueNum = UniqueNum;

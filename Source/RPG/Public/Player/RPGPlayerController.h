@@ -65,19 +65,28 @@ protected:
 
 public:
 
-	void UseItem(const int32 UniqueNum);
-
-	void EquipItem(const int32 UniqueNum);
-
-	void DiscardItem(const int32 UniqueNum);
+	void UseItem(const int32& UniqueNum);
 
 protected:
 
 	UFUNCTION(Server, Reliable)
 	void UseItemServer(const int32 UniqueNum);
 
+	int32 GetItemCount(const int32 UniqueNum);
+
 	UFUNCTION(Client, Reliable)
 	void UpdateItemInfoClient(const int32 UniqueNum, const int32 ItemCount);
+
+public:
+
+	void EquipItem(const int32& UniqueNum);
+
+	void DiscardItem(const int32& UniqueNum);
+
+protected:
+
+	UFUNCTION(Server, Reliable)
+	void DiscardItemServer(const int32 UniqueNum);
 
 	void RightClick_AttackOrSetAbilityPoint();
 

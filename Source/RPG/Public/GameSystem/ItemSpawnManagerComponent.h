@@ -44,6 +44,8 @@ protected:
 
 public:
 
+	void DropItem(const FItemInfo& Info, const FVector& Location);
+
 	void SpawnItems(const FVector& Location);
 
 private:

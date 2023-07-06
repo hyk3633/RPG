@@ -16,8 +16,10 @@ ARPGItem::ARPGItem()
 
 	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Item Mesh"));
 	ItemMesh->SetupAttachment(SceneComp);
+	ItemMesh->SetEnableGravity(true);
+	ItemMesh->SetSimulatePhysics(true);
 	ItemMesh->SetCollisionObjectType(ECC_ItemMesh);
-	ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	ItemMesh->SetCollisionResponseToChannel(ECC_PlayerBody, ECollisionResponse::ECR_Ignore);
 	ItemMesh->SetCollisionResponseToChannel(ECC_EnemyBody, ECollisionResponse::ECR_Ignore);
 	ItemMesh->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);

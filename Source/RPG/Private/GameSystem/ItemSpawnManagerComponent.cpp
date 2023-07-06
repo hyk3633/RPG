@@ -16,17 +16,34 @@ void UItemSpawnManagerComponent::BeginPlay()
 	
 }
 
+void UItemSpawnManagerComponent::DropItem(const FItemInfo& Info, const FVector& Location)
+{
+	PLOG(TEXT("%d"), Info.ItemType);
+	const int32 RowNumber = StaticCast<int32>(Info.ItemType);
+	FItemOptionTableRow* ItemTableRow = ItemDataTable->FindRow<FItemOptionTableRow>(FName(*(FString::FormatAsNumber(RowNumber))), FString(""));
+
+	ARPGItem* SpawnedItem = GetWorld()->SpawnActorDeferred<ARPGItem>(ItemClass, FTransform(FRotator::ZeroRotator, Location));
+	if (SpawnedItem)
+	{
+		SpawnedItem->SetItemMesh(ItemTableRow->ItemMesh);
+		SpawnedItem->SetItemInfo(Info);
+		SpawnedItem->FinishSpawning(FTransform(FRotator::ZeroRotator, Location));
+	}
+}
+
 void UItemSpawnManagerComponent::SpawnItems(const FVector& Location)
 {
 	int32 RandInt = FMath::RandRange(0, StaticCast<int32>(EItemType::EIT_MAX) - 1);
 	const EItemType ItemType = StaticCast<EItemType>(RandInt);
 
 	// 코인 무조건 스폰
-	ItemInitializeBeforeSpawn(EItemType::EIT_Coin, GetRandomVector(Location));
+	//ItemInitializeBeforeSpawn(EItemType::EIT_Coin, GetRandomVector(Location));
+
 	ItemInitializeBeforeSpawn(EItemType::EIT_HealthPotion, GetRandomVector(Location));
 	ItemInitializeBeforeSpawn(EItemType::EIT_ManaPotion, GetRandomVector(Location));
 	ItemInitializeBeforeSpawn(EItemType::EIT_Armour, GetRandomVector(Location));
 	ItemInitializeBeforeSpawn(EItemType::EIT_Weapon, GetRandomVector(Location));
+
 	if (FMath::RandRange(1, 100) < 30)
 	{
 		const int8 RandNum = FMath::RandRange(0, 1);

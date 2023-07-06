@@ -68,19 +68,19 @@ protected:
 
 public: 
 
-	void AddCoins(const int32 CoinAmount);
+	void AddCoins(const int32& CoinAmount);
 
-	void AddPotion(const int32 UniqueNum, const EItemType ItemType, const int32 PotionCount);
+	void AddPotion(const int32& UniqueNum, const EItemType ItemType, const int32& PotionCount);
 
-	void AddEquipment(const int32 UniqueNum, const EItemType ItemType);
+	void AddEquipment(const int32& UniqueNum, const EItemType ItemType);
 
-	void UpdatePotionCount(const int32 UniqueNum, const EItemType ItemType, const int32 PotionCount);
+	void UpdateItemCount(const int32& UniqueNum, const int32& ItemCount);
 
 protected:
 
-	void ClearItemSlot(const int32 UniqueNum);
+	void ClearItemSlot(const int32& UniqueNum);
 
-	void SetSlotIcon(const int32 UniqueNum, const EItemType ItemType);
+	void SetSlotIcon(const int32& UniqueNum, const EItemType ItemType);
 
 	void ExpandInventoryIfNoSpace();
 

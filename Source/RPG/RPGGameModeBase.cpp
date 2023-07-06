@@ -26,18 +26,11 @@ void ARPGGameModeBase::GetPathToDestination(const FVector& Start, const FVector&
 
 void ARPGGameModeBase::SpawnItems(const FVector& Location)
 {
-	FHitResult Hit;
-	FVector TraceEnd = Location;
-	TraceEnd.Z -= 200.f;
-	GetWorld()->LineTraceSingleByChannel(Hit, Location, TraceEnd, ECC_GroundTrace);
+	ItemSpawnManager->SpawnItems(Location);
+}
 
-	if (Hit.bBlockingHit)
-	{
-		ItemSpawnManager->SpawnItems(Hit.ImpactPoint);
-	}
-	else
-	{
-		ItemSpawnManager->SpawnItems(Location);
-	}
+void ARPGGameModeBase::DropItem(const FItemInfo& Info, const FVector& Location)
+{
+	ItemSpawnManager->DropItem(Info, Location);
 }
 
