@@ -254,28 +254,31 @@ void ARPGPlayerController::DiscardItem(const int32 UniqueNum)
 void ARPGPlayerController::UseItemServer_Implementation(const int32 UniqueNum)
 {
 	GetPlayerState<ARPGPlayerState>()->UseItem(UniqueNum);
+	int32 PotionCount;
 	if (UniqueNum == 0)
 	{
 		MyCharacter->RecoveryHealth(200);
+		PotionCount = GetPlayerState<ARPGPlayerState>()->GetHealthPotionCount();
 	}
 	else if (UniqueNum == 1)
 	{
 		MyCharacter->RecoveryMana(200);
+		PotionCount = GetPlayerState<ARPGPlayerState>()->GetManaPotionCount();
 	}
-	UpdateItemInfoClient(UniqueNum);
+	UpdateItemInfoClient(UniqueNum, PotionCount);
 }
 
-void ARPGPlayerController::UpdateItemInfoClient_Implementation(const int32 UniqueNum)
+void ARPGPlayerController::UpdateItemInfoClient_Implementation(const int32 UniqueNum, const int32 ItemCount)
 {
 	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
 	
 	if (UniqueNum)
 	{
-		RPGHUD->UpdatePotionCount(UniqueNum, EItemType::EIT_ManaPotion, GetPlayerState<ARPGPlayerState>()->GetManaPotionCount());
+		RPGHUD->UpdatePotionCount(UniqueNum, EItemType::EIT_ManaPotion, ItemCount);
 	}
 	else
 	{
-		RPGHUD->UpdatePotionCount(UniqueNum, EItemType::EIT_HealthPotion, GetPlayerState<ARPGPlayerState>()->GetHealthPotionCount());
+		RPGHUD->UpdatePotionCount(UniqueNum, EItemType::EIT_HealthPotion, ItemCount);
 	}
 }
 

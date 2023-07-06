@@ -158,8 +158,9 @@ void ARPGHUD::InitInventorySlot()
 			// 16개만 활성화
 			if (Idx < 16)
 			{	
-				InvSlot->SetSlotIndex(Idx);
 				GameplayInterface->InventoryWidget->AddSlotToGridPanel(InvSlot, Idx / 4, Idx % 4);
+				InvSlot->SetSlotRowColumn(Idx / 4, Idx % 4);
+				ActivadtedSlots.Add(InvSlot);
 			}
 			else
 			{
@@ -168,8 +169,8 @@ void ARPGHUD::InitInventorySlot()
 
 			InvSlot->BindButtonEvent();
 			InvSlot->DOnIconButtonClicked.AddUFunction(this, FName("OnItemSlotButtonClickEvent"));
-
-			ItemSlotArr.Add(FItemSlotStruct(InvSlot));
+			
+			EmptySlots.Add(InvSlot);
 		}
 	}
 
@@ -187,17 +188,14 @@ void ARPGHUD::AddPotion(const int32 UniqueNum, const EItemType ItemType, const i
 {
 	ExpandInventoryIfNoSpace();
 
-
 	if (ItemSlotMap.Find(UniqueNum) == nullptr)
 	{
-		const int32 SlotIdx = GetEmptySlotIndex();
-		ItemSlotMap.Add(UniqueNum, ItemSlotArr[SlotIdx].ItemSlot);
-		ItemSlotArr[SlotIdx].UniqueNum = UniqueNum;
-		ItemSlotArr[SlotIdx].ItemSlot->SaveItemToSlot(ItemType);
-		ItemSlotArr[SlotIdx].ItemSlot->SetItemCountText(PotionCount);
-		ItemSlotArr[SlotIdx].ItemSlot->SetUniqueNumber(UniqueNum);
+		ItemSlotMap.Add(UniqueNum, ActivadtedSlots[SavedItemSlotCount]);
+		ActivadtedSlots[SavedItemSlotCount]->SaveItemToSlot(ItemType);
+		ActivadtedSlots[SavedItemSlotCount]->SetItemCountText(PotionCount);
+		ActivadtedSlots[SavedItemSlotCount]->SetUniqueNumber(UniqueNum);
 		SetSlotIcon(UniqueNum, ItemType);
-		StoredSlotCount++;
+		SavedItemSlotCount++;
 	}
 	else
 	{
@@ -205,54 +203,40 @@ void ARPGHUD::AddPotion(const int32 UniqueNum, const EItemType ItemType, const i
 	}
 }
 
-int32 ARPGHUD::GetEmptySlotIndex()
-{
-	if (EmptySlotIndexArr.Num() > 0)
-	{
-		int32 SlotIdx = EmptySlotIndexArr.Last();
-		EmptySlotIndexArr.RemoveAtSwap(EmptySlotIndexArr.Num() - 1);
-		return SlotIdx;
-	}
-	else
-	{
-		return LastStoredSlotNum++;
-	}
-}
-
 void ARPGHUD::AddEquipment(const int32 UniqueNum, const EItemType ItemType)
 {
 	ExpandInventoryIfNoSpace();
 
-	const int32 SlotIdx = GetEmptySlotIndex();
-	ItemSlotMap.Add(UniqueNum, ItemSlotArr[SlotIdx].ItemSlot);
-	ItemSlotArr[SlotIdx].UniqueNum = UniqueNum;
-	ItemSlotArr[SlotIdx].ItemSlot->SaveItemToSlot(ItemType);
-	ItemSlotArr[SlotIdx].ItemSlot->SetItemCountText(1);
-	ItemSlotArr[SlotIdx].ItemSlot->SetUniqueNumber(UniqueNum);
-	ItemSlotArr[SlotIdx].ItemSlot->SetSlotIndex(SlotIdx);
+	ItemSlotMap.Add(UniqueNum, ActivadtedSlots[SavedItemSlotCount]);
+	ActivadtedSlots[SavedItemSlotCount]->SaveItemToSlot(ItemType);
+	ActivadtedSlots[SavedItemSlotCount]->SetItemCountText(1);
+	ActivadtedSlots[SavedItemSlotCount]->SetUniqueNumber(UniqueNum);
 	SetSlotIcon(UniqueNum, ItemType);
-	StoredSlotCount++;
+	SavedItemSlotCount++;
 }
 
 void ARPGHUD::UpdatePotionCount(const int32 UniqueNum, const EItemType ItemType, const int32 PotionCount)
 {
 	if (PotionCount == 0)
 	{
+		SavedItemSlotCount--;
+
 		ClearItemSlot(UniqueNum);
 
 		// 슬롯 1 페이지(16개 슬롯)에서 한 개의 아이템만 저장되어 있는 경우
 		// 페이지 전체 비활성화
-		if(ActivatedItemSlotNum > 16 && LastStoredSlotNum % 16 == 0)
+		if(ActivatedItemSlotNum > 16 && SavedItemSlotCount % 16 == 0)
 		{
-			ActivatedItemSlotNum -= 16;
 			if (GameplayInterface->InventoryWidget == nullptr)
 			{
 				GameplayInterface->InventoryWidget->RemoveSlotPage();
 			}
-		}
-		else if(ActivatedItemSlotNum > 16)
-		{
-			LastStoredSlotNum--;
+			// 배열 뒤에서부터 제거
+			for (int32 Idx = ActivatedItemSlotNum - 1; Idx > ActivatedItemSlotNum - 16; Idx--)
+			{
+				ActivadtedSlots.RemoveAt(Idx);
+			}
+			ActivatedItemSlotNum -= 16;
 		}
 	}
 	else
@@ -267,19 +251,26 @@ void ARPGHUD::ClearItemSlot(const int32 UniqueNum)
 	URPGInventorySlotWidget* SlotToRemove = (*ItemSlotMap.Find(UniqueNum));
 	SlotToRemove->ClearSlot();
 
-	// 빈 슬롯 배열에 추가
-	const int32 Idx = SlotToRemove->GetSlotIndex();
-	EmptySlotIndexArr.Add(Idx);
-	ItemSlotArr[Idx].UniqueNum = -1;
-	
 	// 맵에서 제거
 	ItemSlotMap.Remove(UniqueNum);
-	
-	// 그리드 재정렬
-	if (GameplayInterface->InventoryWidget)
+
+	if (SavedItemSlotCount > 1)
 	{
-		GameplayInterface->InventoryWidget->SortGridPanel(SlotToRemove, StoredSlotCount);
-		StoredSlotCount--;
+		// 활성화된 슬롯 뒤로 보내기
+		int32 Index;
+		ActivadtedSlots.Find(SlotToRemove, Index);
+		for (int32 Idx = Index; Idx < SavedItemSlotCount; Idx++)
+		{
+			ActivadtedSlots[Idx] = ActivadtedSlots[Idx + 1];
+
+		}
+		ActivadtedSlots[SavedItemSlotCount] = SlotToRemove;
+
+		// 그리드 재정렬
+		if (GameplayInterface->InventoryWidget)
+		{
+			GameplayInterface->InventoryWidget->SortGridPanel(SlotToRemove, Index, SavedItemSlotCount);
+		}
 	}
 }
 
@@ -297,7 +288,7 @@ void ARPGHUD::ExpandInventoryIfNoSpace()
 {
 	if (GameplayInterface->InventoryWidget == nullptr) return;
 
-	if (LastStoredSlotNum == ActivatedItemSlotNum && EmptySlotIndexArr.Num() == 0)
+	if (SavedItemSlotCount == ActivatedItemSlotNum)
 	{
 		if (ActivatedItemSlotNum == 96)
 		{
@@ -307,9 +298,10 @@ void ARPGHUD::ExpandInventoryIfNoSpace()
 
 		for (int32 Idx = ActivatedItemSlotNum; Idx < ActivatedItemSlotNum + 16; Idx++)
 		{
-			ItemSlotArr[Idx].ItemSlot->SetSlotIndex(Idx);
-			GameplayInterface->InventoryWidget->AddSlotToGridPanel(ItemSlotArr[Idx].ItemSlot, Idx / 4, Idx % 4);
-			ItemSlotArr[Idx].ItemSlot->SetVisibility(ESlateVisibility::Visible);
+			ActivadtedSlots.Add(EmptySlots[Idx]);
+			EmptySlots[Idx]->SetSlotRowColumn(Idx / 4, Idx % 4);
+			EmptySlots[Idx]->SetVisibility(ESlateVisibility::Visible);
+			GameplayInterface->InventoryWidget->AddSlotToGridPanel(EmptySlots[Idx], Idx / 4, Idx % 4);
 		}
 
 		ActivatedItemSlotNum += 16;

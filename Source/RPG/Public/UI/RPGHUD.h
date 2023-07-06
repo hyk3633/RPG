@@ -18,26 +18,6 @@ class ARPGItem;
 class UDataTable;
 class URPGItemSlotMenuWidget;
 
-USTRUCT(Atomic)
-struct FItemSlotStruct
-{
-	GENERATED_BODY()
-public:
-
-	UPROPERTY()
-	URPGInventorySlotWidget* ItemSlot;
-
-	UPROPERTY()
-	int32 UniqueNum;
-
-	FItemSlotStruct() : ItemSlot(nullptr), UniqueNum(-1) {}
-
-	FItemSlotStruct(URPGInventorySlotWidget* NewSlot) : ItemSlot(NewSlot), UniqueNum(-1) {}
-
-	FItemSlotStruct(URPGInventorySlotWidget* NewSlot, int32 NewNum) : ItemSlot(NewSlot), UniqueNum(NewNum) {}
-
-};
-
 UCLASS()
 class RPG_API ARPGHUD : public AHUD
 {
@@ -92,8 +72,6 @@ public:
 
 	void AddPotion(const int32 UniqueNum, const EItemType ItemType, const int32 PotionCount);
 
-	int32 GetEmptySlotIndex();
-
 	void AddEquipment(const int32 UniqueNum, const EItemType ItemType);
 
 	void UpdatePotionCount(const int32 UniqueNum, const EItemType ItemType, const int32 PotionCount);
@@ -140,18 +118,19 @@ private:
 	TSubclassOf<URPGInventorySlotWidget> ItemSlotClass;
 
 	UPROPERTY()
-	TArray<FItemSlotStruct> ItemSlotArr;
+	TArray<URPGInventorySlotWidget*> ActivadtedSlots;
+
+	UPROPERTY()
+	TArray<URPGInventorySlotWidget*> EmptySlots;
 
 	UPROPERTY()
 	TMap<int32, URPGInventorySlotWidget*> ItemSlotMap;
 
-	TArray<int32> EmptySlotIndexArr;
+	// æ∆¿Ã≈€¿Ã ¿˙¿Âµ» ΩΩ∑‘ ∞πºˆ
+	int32 SavedItemSlotCount = 0;
 
-	int32 LastStoredSlotNum = 0;
-
+	// »∞º∫»≠µ» ΩΩ∑‘ ∞πºˆ
 	int32 ActivatedItemSlotNum = 0;
-
-	int32 StoredSlotCount = 0;
 
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	UDataTable* ItemDataTable;

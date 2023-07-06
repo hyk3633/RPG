@@ -77,7 +77,7 @@ protected:
 	void UseItemServer(const int32 UniqueNum);
 
 	UFUNCTION(Client, Reliable)
-	void UpdateItemInfoClient(const int32 UniqueNum);
+	void UpdateItemInfoClient(const int32 UniqueNum, const int32 ItemCount);
 
 	void RightClick_AttackOrSetAbilityPoint();
 

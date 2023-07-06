@@ -11,6 +11,7 @@
  */
 
 class UUniformGridPanel;
+class UUniformGridSlot;
 class UTextBlock;
 class URPGInventorySlotWidget;
 class ARPGItem;
@@ -28,7 +29,7 @@ public:
 
 	void AddSlotToGridPanel(URPGInventorySlotWidget* NewSlot, const int32 Row, const int32 Column);
 
-	void SortGridPanel(URPGInventorySlotWidget* SlotToBack, const int32 LastIdx);
+	void SortGridPanel(URPGInventorySlotWidget* SlotToBack, const int32 StartIdx, const int32 LastIdx);
 
 	void RemoveSlotPage();
 
@@ -53,5 +54,8 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	UUniformGridPanel* InvUniformGridPanel;
+
+	UPROPERTY()
+	TArray<UUniformGridSlot*> GridArr;
 
 };

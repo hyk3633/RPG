@@ -37,8 +37,9 @@ public:
 	FORCEINLINE bool IsSlotEmpty() { return SlottedItemType == EItemType::EIT_MAX; };
 	FORCEINLINE void SetUniqueNumber(int32 Num) { UniqueNumber = Num; }
 	FORCEINLINE UButton* GetItemSlotButton() const { return ItemSlotButton; }
-	FORCEINLINE void SetSlotIndex(const int32 Index) { SlotIndex = Index; }
-	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex; }
+	FORCEINLINE void SetSlotRowColumn(int32 Row, int32 Col) { SlotRow = Row, SlotColumn = Col; }
+	FORCEINLINE int32 GetSlotRow() const { return SlotRow; }
+	FORCEINLINE int32 GetSlotColumn() const { return SlotColumn; }
 
 	FOnIconSlotButtonClickedDelegate DOnIconButtonClicked;
 
@@ -65,6 +66,8 @@ private:
 
 	int32 UniqueNumber;
 
-	int32 SlotIndex;
+	int32 SlotRow;
+
+	int32 SlotColumn;
 
 };
