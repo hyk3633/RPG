@@ -10,60 +10,6 @@
 class UWidgetComponent;
 
 USTRUCT(Atomic)
-struct FArmourStat
-{
-    GENERATED_BODY()
-public:
-
-    UPROPERTY()
-    float DefensivePower;
-
-    UPROPERTY()
-    int16 ExtraHP;
-
-    UPROPERTY()
-    int16 ExtraMP;
-
-    UPROPERTY()
-    float Dexterity;
-
-    FArmourStat() : DefensivePower(0), ExtraHP(0), ExtraMP(0), Dexterity(0) {}
-
-};
-
-USTRUCT(Atomic)
-struct FWeaponStat
-{
-    GENERATED_BODY()
-public:
-
-    UPROPERTY()
-    float StrikingPower;
-
-    UPROPERTY()
-    float SkillPower;
-
-    UPROPERTY()
-    float AttackSpeed;
-
-    FWeaponStat() : StrikingPower(0), SkillPower(0), AttackSpeed(0) {}
-
-};
-
-union ItemStatUnion
-{
-    int32 CoinAmount;
-    int16 RecoveryAmount;
-    FArmourStat ArmourStat;
-    FWeaponStat WeaponStat;
-
-    ItemStatUnion(int32 CAmount) : CoinAmount(CAmount) {}
-    ItemStatUnion(int16 RAmount) : RecoveryAmount(RAmount) {}
-    ItemStatUnion(FArmourStat AStat) : ArmourStat(AStat) {}
-    ItemStatUnion(FWeaponStat WStat) : WeaponStat(WStat) {}
-};
-
-USTRUCT(Atomic)
 struct FItemInfo
 {
     GENERATED_BODY()
@@ -75,9 +21,20 @@ public:
     UPROPERTY()
     FString ItemName;
 
-    ItemStatUnion ItemStat;
+    UPROPERTY()
+    TArray<float> ItemStatArr;
 
-    FItemInfo() : ItemType(EItemType::EIT_Coin), ItemName(FString(TEXT(""))), ItemStat(0) {}
+    FItemInfo() : ItemType(EItemType::EIT_MAX), ItemName(FString(TEXT(""))) {}
+    FItemInfo& operator=(const FItemInfo& Other)
+    {
+        if (this == &Other) return *this;
+
+        ItemType = Other.ItemType;
+        ItemName = Other.ItemName;
+        ItemStatArr = Other.ItemStatArr;
+
+        return *this;
+    }
 };
 
 UCLASS()
@@ -99,7 +56,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-    void SetItemInfo(FItemInfo NewItemInfo);
+    void SetItemInfo(const FItemInfo& NewItemInfo);
 
     FORCEINLINE const FItemInfo GetItemInfo() const { return ItemInfo; }
 
@@ -123,6 +80,8 @@ private:
 
     UFUNCTION()
     void OnRep_ItemInfo();
+
+    void SetItemTagText();
 
 protected:
 

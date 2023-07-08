@@ -11,6 +11,36 @@
  * 
  */
 
+USTRUCT(Atomic)
+struct FCharacterStats
+{
+	GENERATED_BODY()
+public:
+
+	UPROPERTY()
+	float DefenseivePower;
+
+	UPROPERTY()
+	float Dexterity;
+
+	UPROPERTY()
+	int32 ExtraMP;
+
+	UPROPERTY()
+	int32 ExtraHP;
+
+	UPROPERTY()
+	float StrikingPower;
+
+	UPROPERTY()
+	float SkillPower;
+
+	UPROPERTY()
+	float AttackSpeed;
+
+	FCharacterStats() : DefenseivePower(1), Dexterity(1), ExtraMP(0), ExtraHP(0), StrikingPower(1), SkillPower(1), AttackSpeed(1) {}
+};
+
 UCLASS()
 class RPG_API ARPGPlayerState : public APlayerState
 {
@@ -22,20 +52,25 @@ public:
 
 	virtual void BeginPlay() override;
 
-	void UseItem(const int32& ItemNum);
+	void UseItem(const int32& UniqueNum);
 
-	void DiscardItem(const int32& ItemNum);
+	void EquipOrUnequipItem(const int32& UniqueNum);
+
+	void DiscardItem(const int32& UniqueNum);
+
+	void GetStatInfoText(const int32& UniqueNum, FString& StatString);
+
+	bool GetItemInfo(const int32& UniqueNum, FItemInfo& ItemInfo);
 
 	FORCEINLINE int32 GetLastItemArrayNumber() { return CurrentItemUniqueNum; }
 	FORCEINLINE int32 GetCoins() const { return Coins; }
 	FORCEINLINE int32 GetHealthPotionCount() const { return HealthPotionCount; }
 	FORCEINLINE int32 GetManaPotionCount() const { return ManaPotionCount; }
-	
-	FItemInfo GetItemInfo(const int32& ItemNum);
+	FORCEINLINE const FCharacterStats& GetItemInfo() { return CharacterStats; }
 
 public:
 
-	void AddItem(ARPGItem* PickedItem);
+	const int32 AddItem(ARPGItem* PickedItem);
 
 private:
 
@@ -49,4 +84,9 @@ private:
 
 	int32 CurrentItemUniqueNum = 2;
 
+	int32 EquippedArmourUniqueNum;
+
+	int32 EquippedAccessoriesUniqueNum;
+
+	FCharacterStats CharacterStats;
 };

@@ -18,7 +18,6 @@ void UItemSpawnManagerComponent::BeginPlay()
 
 void UItemSpawnManagerComponent::DropItem(const FItemInfo& Info, const FVector& Location)
 {
-	PLOG(TEXT("%d"), Info.ItemType);
 	const int32 RowNumber = StaticCast<int32>(Info.ItemType);
 	FItemOptionTableRow* ItemTableRow = ItemDataTable->FindRow<FItemOptionTableRow>(FName(*(FString::FormatAsNumber(RowNumber))), FString(""));
 
@@ -42,7 +41,7 @@ void UItemSpawnManagerComponent::SpawnItems(const FVector& Location)
 	ItemInitializeBeforeSpawn(EItemType::EIT_HealthPotion, GetRandomVector(Location));
 	ItemInitializeBeforeSpawn(EItemType::EIT_ManaPotion, GetRandomVector(Location));
 	ItemInitializeBeforeSpawn(EItemType::EIT_Armour, GetRandomVector(Location));
-	ItemInitializeBeforeSpawn(EItemType::EIT_Weapon, GetRandomVector(Location));
+	ItemInitializeBeforeSpawn(EItemType::EIT_Accessories, GetRandomVector(Location));
 
 	if (FMath::RandRange(1, 100) < 30)
 	{
@@ -65,7 +64,7 @@ void UItemSpawnManagerComponent::SpawnItems(const FVector& Location)
 		}
 		else
 		{
-			ItemInitializeBeforeSpawn(EItemType::EIT_Weapon, GetRandomVector(Location));
+			ItemInitializeBeforeSpawn(EItemType::EIT_Accessories, GetRandomVector(Location));
 		}
 	}
 }
@@ -93,21 +92,21 @@ void UItemSpawnManagerComponent::ItemInitializeBeforeSpawn(const EItemType ItemT
 	NewItemInfo.ItemName = ItemTableRow->ItemName;
 
 	// 아이템 스탯 설정
-	switch (ItemType)
+	if (ItemType == EItemType::EIT_Coin)
 	{
-	case EItemType::EIT_Coin:
-		NewItemInfo.ItemStat.CoinAmount = FMath::RandRange(10, 100);
-		break;
-	case EItemType::EIT_HealthPotion:
-	case EItemType::EIT_ManaPotion:
-		NewItemInfo.ItemStat.RecoveryAmount = 300.f;
-		break;
-	case EItemType::EIT_Armour:
+		NewItemInfo.ItemStatArr.Add(FMath::RandRange(10, 100));
+	}
+	else if (ItemType == EItemType::EIT_HealthPotion || ItemType == EItemType::EIT_ManaPotion)
+	{
+		NewItemInfo.ItemStatArr.Add(300);
+	}
+	else if (ItemType == EItemType::EIT_Armour)
+	{
 		ArmourStatRandomInitialize(NewItemInfo);
-		break;
-	case EItemType::EIT_Weapon:
-		WeaponStatRandomInitialize(NewItemInfo);
-		break;
+	}
+	else
+	{
+		AccessoriesStatRandomInitialize(NewItemInfo);
 	}
 
 	// 아이템 스폰
@@ -124,12 +123,12 @@ void UItemSpawnManagerComponent::ArmourStatRandomInitialize(FItemInfo& Info)
 {
 	// 스탯 옵션 개수
 	const int8 MaxStatNum = 4;
+	Info.ItemStatArr.Init(0, MaxStatNum);
 
 	int32 StatBit = 0;
 
 	// 첫번째 스탯
-	const int8 FirstOption = FMath::RandRange(0, MaxStatNum - 1);
-	StatBit &= (1 << FirstOption);
+	RandomBitOn(StatBit, MaxStatNum);
 
 	float ExtraStatPercentage = 60.f;
 	if (FMath::RandRange(1, 100) < ExtraStatPercentage)
@@ -150,26 +149,26 @@ void UItemSpawnManagerComponent::ArmourStatRandomInitialize(FItemInfo& Info)
 		}
 	}
 
-	FArmourStat ArmourStat;
-
+	// DefenseivePower
 	if (StatBit & (1 << 0))
 	{
-		ArmourStat.DefensivePower = FMath::RandRange(1, 10) * 0.5f;
+		Info.ItemStatArr[0] = (FMath::RandRange(1, 10) * 0.5f);
 	}
+	// Dexterity
 	if (StatBit & (1 << 1))
 	{
-		ArmourStat.Dexterity = FMath::RandRange(10, 30) / 10.f;
+		Info.ItemStatArr[1] = (FMath::RandRange(10, 30) / 10.f);
 	}
+	// ExtraMP
 	if (StatBit & (1 << 2))
 	{
-		ArmourStat.ExtraHP = FMath::RandRange(5, 20) * 10;
+		Info.ItemStatArr[2] = (FMath::RandRange(5, 20) * 10);
 	}
+	// ExtraHP
 	if (StatBit & (1 << 3))
 	{
-		ArmourStat.ExtraHP = FMath::RandRange(10, 30) * 10;
+		Info.ItemStatArr[3] = (FMath::RandRange(10, 30) * 10);
 	}
-
-	Info.ItemStat.ArmourStat = ArmourStat;
 }
 
 void UItemSpawnManagerComponent::RandomBitOn(int32& Bit, const int8 Range)
@@ -180,22 +179,22 @@ void UItemSpawnManagerComponent::RandomBitOn(int32& Bit, const int8 Range)
 		int8 RandNum = FMath::RandRange(1, Range - 1);
 		if (!(Bit & (1 << RandNum)))
 		{
-			Bit &= (1 << RandNum);
+			Bit |= (1 << RandNum);
 			return;
 		}
 	}
 }
 
-void UItemSpawnManagerComponent::WeaponStatRandomInitialize(FItemInfo& Info)
+void UItemSpawnManagerComponent::AccessoriesStatRandomInitialize(FItemInfo& Info)
 {
 	// 스탯 옵션 개수
 	const int8 MaxStatNum = 3;
+	Info.ItemStatArr.Init(0, MaxStatNum);
 
 	int32 StatBit = 0;
 
 	// 첫번째 스탯
-	const int8 FirstOption = FMath::RandRange(0, MaxStatNum - 1);
-	StatBit &= (1 << FirstOption);
+	RandomBitOn(StatBit, MaxStatNum);
 
 	float ExtraStatPercentage = 50.f;
 	if (FMath::RandRange(1, 100) < ExtraStatPercentage)
@@ -210,21 +209,20 @@ void UItemSpawnManagerComponent::WeaponStatRandomInitialize(FItemInfo& Info)
 		}
 	}
 
-	FWeaponStat WeaponStat;
-
+	// StrikingPower
 	if (StatBit & (1 << 0))
 	{
-		WeaponStat.StrikingPower = FMath::RandRange(1, 10) * 0.5f;
+		Info.ItemStatArr[0] = (FMath::RandRange(1, 10) * 0.5f);
 	}
+	// SkillPower
 	if (StatBit & (1 << 1))
 	{
-		WeaponStat.SkillPower = FMath::RandRange(1, 10) * 0.5f;
+		Info.ItemStatArr[1] = (FMath::RandRange(1, 10) * 0.5f);
 	}
+	// AttackSpeed
 	if (StatBit & (1 << 2))
 	{
-		WeaponStat.AttackSpeed = FMath::RandRange(10, 30) / 10.f;
+		Info.ItemStatArr[2] = (FMath::RandRange(10, 20) / 10.f);
 	}
-
-	Info.ItemStat.WeaponStat = WeaponStat;
 }
 

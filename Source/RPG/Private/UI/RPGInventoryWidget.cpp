@@ -4,6 +4,7 @@
 #include "Item/RPGItem.h"
 #include "../RPG.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
 
@@ -74,4 +75,39 @@ void URPGInventoryWidget::RemoveSlotPage()
 void URPGInventoryWidget::AddCoins(const int32 CoinAmount)
 {
 	CoinText->SetText(FText::FromString(FString::FromInt(CoinAmount)));
+}
+
+void URPGInventoryWidget::SetEquipmentSlot(const EItemType ItemType, UMaterial* IconMat)
+{
+	FSlateBrush Brush;
+	Brush.DrawAs = ESlateBrushDrawType::Image;
+	Brush.SetImageSize(FVector2D(50, 50));
+
+	if (ItemType == EItemType::EIT_Armour)
+	{
+		ArmourSlotIcon->SetBrush(Brush);
+		ArmourSlotIcon->SetBrushFromMaterial(IconMat);
+	}
+	else if (ItemType == EItemType::EIT_Accessories)
+	{
+		AccessoriesSlotIcon->SetBrush(Brush);
+		AccessoriesSlotIcon->SetBrushFromMaterial(IconMat);
+	}
+}
+
+void URPGInventoryWidget::ClearEquipmentSlot(const EItemType ItemType)
+{
+	FSlateBrush Brush;
+	Brush.DrawAs = ESlateBrushDrawType::Image;
+	Brush.SetImageSize(FVector2D(50, 50));
+
+	if (ItemType == EItemType::EIT_Armour)
+	{
+		ArmourSlotIcon->SetBrushFromMaterial(nullptr);
+		ArmourSlotIcon->SetBrushTintColor(FSlateColor(FColor(0, 0, 0, 0)));
+	}
+	else if (ItemType == EItemType::EIT_Accessories)
+	{
+		AccessoriesSlotIcon->SetBrushFromMaterial(nullptr);
+	}
 }

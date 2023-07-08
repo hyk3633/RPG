@@ -79,7 +79,14 @@ protected:
 
 public:
 
-	void EquipItem(const int32& UniqueNum);
+	void EquipOrUnequipItem(const int32& UniqueNum);
+
+protected:
+
+	UFUNCTION(Server, Reliable)
+	void EquipOrUnequipItemServer(const int32 UniqueNum);
+
+public:
 
 	void DiscardItem(const int32& UniqueNum);
 
@@ -87,6 +94,20 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void DiscardItemServer(const int32 UniqueNum);
+
+public:
+
+	void GetStatInfoText(const int32& UniqueNum);
+
+protected:
+
+	UFUNCTION(Server, Reliable)
+	void GetStatInfoTextServer(const int32 UniqueNum);
+
+	UFUNCTION(Client, Reliable)
+	void GetStatInfoTextClient(const FString& StatString);
+
+protected:
 
 	void RightClick_AttackOrSetAbilityPoint();
 

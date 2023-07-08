@@ -27,6 +27,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
 	UStaticMesh* ItemMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	TArray<FString> PropertyNames;
+
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -58,7 +61,7 @@ private:
 
 	void RandomBitOn(int32& Bit, const int8 Range);
 
-	void WeaponStatRandomInitialize(FItemInfo& Info);
+	void AccessoriesStatRandomInitialize(FItemInfo& Info);
 
 private:
 

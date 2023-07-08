@@ -16,9 +16,9 @@ void ARPGPlayerState::BeginPlay()
 
 }
 
-void ARPGPlayerState::UseItem(const int32& ItemNum)
+void ARPGPlayerState::UseItem(const int32& UniqueNum)
 {
-	if (ItemNum)
+	if (UniqueNum)
 	{
 		ManaPotionCount -= 1;
 	}
@@ -28,35 +28,112 @@ void ARPGPlayerState::UseItem(const int32& ItemNum)
 	}
 }
 
-void ARPGPlayerState::DiscardItem(const int32& ItemNum)
+void ARPGPlayerState::EquipOrUnequipItem(const int32& UniqueNum)
 {
-	if (ItemNum == 0)
+	if (ItemMap.Contains(UniqueNum) == false) return;
+
+	const FItemInfo* EquippedItemInfo = ItemMap.Find(UniqueNum);
+
+	if (EquippedArmourUniqueNum == UniqueNum)
+	{
+		CharacterStats.DefenseivePower	= FMath::Clamp(CharacterStats.DefenseivePower	- EquippedItemInfo->ItemStatArr[0], 1.f, 10.f);
+		CharacterStats.Dexterity		= FMath::Clamp(CharacterStats.Dexterity			- EquippedItemInfo->ItemStatArr[1], 1.f, 2.f);
+		CharacterStats.ExtraMP			= FMath::Clamp(CharacterStats.ExtraMP			- EquippedItemInfo->ItemStatArr[2], 0, 500);
+		CharacterStats.ExtraHP			= FMath::Clamp(CharacterStats.ExtraHP			- EquippedItemInfo->ItemStatArr[3], 0, 500);
+
+		EquippedArmourUniqueNum = -1;
+	}
+	else if(EquippedAccessoriesUniqueNum == UniqueNum)
+	{
+		CharacterStats.StrikingPower	= FMath::Clamp(CharacterStats.StrikingPower		- EquippedItemInfo->ItemStatArr[0], 1.f, 10.f);
+		CharacterStats.SkillPower		= FMath::Clamp(CharacterStats.SkillPower		- EquippedItemInfo->ItemStatArr[1], 1.f, 10.f);
+		CharacterStats.AttackSpeed		= FMath::Clamp(CharacterStats.AttackSpeed		- EquippedItemInfo->ItemStatArr[2], 1.f, 2.f);
+
+		EquippedAccessoriesUniqueNum = -1;
+	}
+	else
+	{
+		if (EquippedItemInfo->ItemType == EItemType::EIT_Armour)
+		{
+			CharacterStats.DefenseivePower	= FMath::Clamp(CharacterStats.DefenseivePower	+ EquippedItemInfo->ItemStatArr[0], 1.f, 10.f);
+			CharacterStats.Dexterity		= FMath::Clamp(CharacterStats.Dexterity			+ EquippedItemInfo->ItemStatArr[1], 1.f, 2.f);
+			CharacterStats.ExtraMP			= FMath::Clamp(CharacterStats.ExtraMP			+ EquippedItemInfo->ItemStatArr[2], 0, 500);
+			CharacterStats.ExtraHP			= FMath::Clamp(CharacterStats.ExtraHP			+ EquippedItemInfo->ItemStatArr[3], 0, 500);
+
+			EquippedArmourUniqueNum = UniqueNum;
+		}
+		else if (EquippedItemInfo->ItemType == EItemType::EIT_Accessories)
+		{
+			CharacterStats.StrikingPower	= FMath::Clamp(CharacterStats.StrikingPower		+ EquippedItemInfo->ItemStatArr[0], 1.f, 10.f);
+			CharacterStats.SkillPower		= FMath::Clamp(CharacterStats.SkillPower		+ EquippedItemInfo->ItemStatArr[1], 1.f, 10.f);
+			CharacterStats.AttackSpeed		= FMath::Clamp(CharacterStats.AttackSpeed		+ EquippedItemInfo->ItemStatArr[2], 1.f, 2.f);
+
+			EquippedAccessoriesUniqueNum = UniqueNum;
+		}
+	}
+}
+
+void ARPGPlayerState::DiscardItem(const int32& UniqueNum)
+{
+	if (UniqueNum == 0)
 	{
 		HealthPotionCount -= 1;
+		if (HealthPotionCount == 0)
+		{
+			ItemMap.Remove(UniqueNum);
+		}
 	}
-	else if (ItemNum == 1)
+	else if (UniqueNum == 1)
 	{
 		ManaPotionCount -= 1;
+		if (ManaPotionCount == 0)
+		{
+			ItemMap.Remove(UniqueNum);
+		}
 	}
 	else
 	{
-		ItemMap.Remove(ItemNum);
+		ItemMap.Remove(UniqueNum);
 	}
 }
 
-FItemInfo ARPGPlayerState::GetItemInfo(const int32& ItemNum)
+void ARPGPlayerState::GetStatInfoText(const int32& UniqueNum, FString& StatString)
 {
-	if (ItemMap.Find(ItemNum) == nullptr)
+	if (ItemMap.Contains(UniqueNum) == false) return;
+
+	const FItemInfo* EquippedItemInfo = ItemMap.Find(UniqueNum);
+
+	switch (EquippedItemInfo->ItemType)
 	{
-		return FItemInfo();
-	}
-	else
-	{
-		return (*ItemMap.Find(ItemNum));
+	case EItemType::EIT_HealthPotion:
+	case EItemType::EIT_ManaPotion:
+		StatString = FString(TEXT("회복량 : %f"), EquippedItemInfo->ItemStatArr[0]);
+		break;
+	case EItemType::EIT_Armour:
+		if(EquippedItemInfo->ItemStatArr[0] > 0) StatString += FString::Printf(TEXT("방어력 : %.1f\n"), EquippedItemInfo->ItemStatArr[0]);
+		if(EquippedItemInfo->ItemStatArr[1] > 0) StatString += FString::Printf(TEXT("민첩 : %.1f\n"), EquippedItemInfo->ItemStatArr[1]);
+		if(EquippedItemInfo->ItemStatArr[2] > 0) StatString += FString::Printf(TEXT("추가체력 : %.0f\n"), EquippedItemInfo->ItemStatArr[2]);
+		if(EquippedItemInfo->ItemStatArr[3] > 0) StatString += FString::Printf(TEXT("추가마나 : %.0f"), EquippedItemInfo->ItemStatArr[3]);
+		break;
+	case EItemType::EIT_Accessories:
+		if(EquippedItemInfo->ItemStatArr[0] > 0) StatString += FString::Printf(TEXT("공격력 : %.1f\n"), EquippedItemInfo->ItemStatArr[0]);
+		if(EquippedItemInfo->ItemStatArr[1] > 0) StatString += FString::Printf(TEXT("스킬 공격력 : %.1f\n"), EquippedItemInfo->ItemStatArr[1]);
+		if(EquippedItemInfo->ItemStatArr[2] > 0) StatString += FString::Printf(TEXT("공격 속도 : %.1f"), EquippedItemInfo->ItemStatArr[2]);
+		break;
 	}
 }
 
-void ARPGPlayerState::AddItem(ARPGItem* PickedItem)
+bool ARPGPlayerState::GetItemInfo(const int32& UniqueNum, FItemInfo& ItemInfo)
+{
+	if (ItemMap.Contains(UniqueNum))
+	{
+		ItemInfo = (*ItemMap.Find(UniqueNum));
+		return true;
+	}
+	return false;
+}
+
+const int32 ARPGPlayerState::AddItem(ARPGItem* PickedItem)
 {
 	EItemType PickedItemType = PickedItem->GetItemInfo().ItemType;
 	const int32 Idx = StaticCast<int32>(PickedItemType);
@@ -64,27 +141,26 @@ void ARPGPlayerState::AddItem(ARPGItem* PickedItem)
 	switch (PickedItemType)
 	{
 	case EItemType::EIT_Coin:
-		Coins += PickedItem->GetItemInfo().ItemStat.CoinAmount;
-		break;
+		Coins += PickedItem->GetItemInfo().ItemStatArr[0];
+		return -1;
 	case EItemType::EIT_HealthPotion:
 		HealthPotionCount += 1;
-		if (ItemMap.Find(0) == nullptr)
+		if (ItemMap.Contains(0) == false)
 		{
-			ItemMap.Add(CurrentItemUniqueNum, PickedItem->GetItemInfo());
+			ItemMap.Add(0, PickedItem->GetItemInfo());
 		}
-		break;
+		return 0;
 	case EItemType::EIT_ManaPotion:
 		ManaPotionCount += 1;
-		if (ItemMap.Find(0) == nullptr)
+		if (ItemMap.Contains(1) == false)
 		{
-			ItemMap.Add(CurrentItemUniqueNum, PickedItem->GetItemInfo());
+			ItemMap.Add(1, PickedItem->GetItemInfo());
 		}
-		break;
+		return 1;
 	case EItemType::EIT_Armour:
-	case EItemType::EIT_Weapon:
+	case EItemType::EIT_Accessories:
 		ItemMap.Add(CurrentItemUniqueNum, PickedItem->GetItemInfo());
 		break;
 	}
-
-	CurrentItemUniqueNum++;
+	return CurrentItemUniqueNum++;
 }

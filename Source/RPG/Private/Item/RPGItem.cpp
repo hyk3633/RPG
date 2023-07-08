@@ -57,7 +57,7 @@ void ARPGItem::Tick(float DeltaTime)
 
 }
 
-void ARPGItem::SetItemInfo(FItemInfo NewItemInfo)
+void ARPGItem::SetItemInfo(const FItemInfo& NewItemInfo)
 {
 	ItemInfo = NewItemInfo;
 }
@@ -88,6 +88,11 @@ void ARPGItem::SetItemNameTagVisibility(const bool bVisible)
 }
 
 void ARPGItem::OnRep_ItemInfo()
+{
+	SetItemTagText();
+}
+
+void ARPGItem::SetItemTagText()
 {
 	URPGItemNameTag* NameTagText = Cast<URPGItemNameTag>(NameTagWidget->GetWidget());
 	if (NameTagText)

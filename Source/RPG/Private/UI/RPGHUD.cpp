@@ -4,6 +4,7 @@
 #include "UI/RPGInventoryWidget.h"
 #include "UI/RPGInventorySlotWidget.h"
 #include "UI/RPGItemSlotMenuWidget.h"
+#include "UI/RPGStatTextBoxWidget.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Player/RPGPlayerController.h"
 #include "Item/RPGItem.h"
@@ -62,10 +63,17 @@ void ARPGHUD::InitHUD()
 	if (ItemSlotMenuClass)
 	{
 		ItemSlotMenuWidget = CreateWidget<URPGItemSlotMenuWidget>(GetOwningPlayerController(), ItemSlotMenuClass);
-		ItemSlotMenuWidget->GetUseButton()->OnClicked.AddDynamic(this, &ARPGHUD::OnUseButtonClicked);
+		ItemSlotMenuWidget->GetUseButton()->OnClicked.AddDynamic(this, &ARPGHUD::OnUseOrEquipButtonClicked);
 		ItemSlotMenuWidget->GetDiscardButton()->OnClicked.AddDynamic(this, &ARPGHUD::OnDiscardButtonClicked);
 		ItemSlotMenuWidget->SetVisibility(ESlateVisibility::Hidden);
 		ItemSlotMenuWidget->AddToViewport();
+	}
+
+	if (ItemStatBoxClass)
+	{
+		ItemStatBoxWidget = CreateWidget<URPGStatTextBoxWidget>(GetOwningPlayerController(), ItemStatBoxClass);
+		ItemStatBoxWidget->SetVisibility(ESlateVisibility::Hidden);
+		ItemStatBoxWidget->AddToViewport();
 	}
 
 	SetHealthBarPercentage(1);
@@ -159,7 +167,6 @@ void ARPGHUD::InitInventorySlot()
 			if (Idx < 16)
 			{	
 				GameplayInterface->InventoryWidget->AddSlotToGridPanel(InvSlot, Idx / 4, Idx % 4);
-				InvSlot->SetSlotRowColumn(Idx / 4, Idx % 4);
 				ActivadtedSlots.Add(InvSlot);
 			}
 			else
@@ -169,6 +176,7 @@ void ARPGHUD::InitInventorySlot()
 
 			InvSlot->BindButtonEvent();
 			InvSlot->DOnIconButtonClicked.AddUFunction(this, FName("OnItemSlotButtonClickEvent"));
+			InvSlot->DOnIconButtonHovered.AddUFunction(this, FName("OnItemSlotButtonHoveredEvent"));
 			
 			EmptySlots.Add(InvSlot);
 		}
@@ -188,7 +196,7 @@ void ARPGHUD::AddPotion(const int32& UniqueNum, const EItemType ItemType, const 
 {
 	ExpandInventoryIfNoSpace();
 
-	if (ItemSlotMap.Find(UniqueNum) == nullptr)
+	if (ItemSlotMap.Contains(UniqueNum) == false)
 	{
 		ItemSlotMap.Add(UniqueNum, ActivadtedSlots[SavedItemSlotCount]);
 		ActivadtedSlots[SavedItemSlotCount]->SaveItemToSlot(ItemType);
@@ -254,7 +262,7 @@ void ARPGHUD::ClearItemSlot(const int32& UniqueNum)
 	// 맵에서 제거
 	ItemSlotMap.Remove(UniqueNum);
 
-	if (SavedItemSlotCount > 1)
+	if (SavedItemSlotCount > 0)
 	{
 		// 활성화된 슬롯 뒤로 보내기
 		int32 Index;
@@ -299,7 +307,6 @@ void ARPGHUD::ExpandInventoryIfNoSpace()
 		for (int32 Idx = ActivatedItemSlotNum; Idx < ActivatedItemSlotNum + 16; Idx++)
 		{
 			ActivadtedSlots.Add(EmptySlots[Idx]);
-			EmptySlots[Idx]->SetSlotRowColumn(Idx / 4, Idx % 4);
 			EmptySlots[Idx]->SetVisibility(ESlateVisibility::Visible);
 			GameplayInterface->InventoryWidget->AddSlotToGridPanel(EmptySlots[Idx], Idx / 4, Idx % 4);
 		}
@@ -313,28 +320,46 @@ void ARPGHUD::OnItemSlotButtonClickEvent(const int32 UniqueNum)
 	bIsItemSlotMenuWidgetOn = true;
 	SelectedItemUniqueNum = UniqueNum;
 
-	float MX, MY;
-	GetOwningPlayerController()->GetMousePosition(MX, MY);
-	int32 VX, VY;
-	GetOwningPlayerController()->GetViewportSize(VX, VY);
-
 	if (UniqueNum < 2)
 	{
 		ItemSlotMenuWidget->SetUseText(FString(TEXT("사용하기")));
 	}
 	else
 	{
-		ItemSlotMenuWidget->SetUseText(FString(TEXT("장착하기")));
+		if (UniqueNum == EquippedArmourUnieuqNum || UniqueNum == EquippedAccessoriesUnieuqNum)
+		{
+			ItemSlotMenuWidget->SetUseText(FString(TEXT("장착해제")));
+		}
+		else
+		{
+			ItemSlotMenuWidget->SetUseText(FString(TEXT("장착하기")));
+		}
 	}
+
+	FVector2D DrawPosition;
+	GetPositionUnderCursor(DrawPosition);
+	ItemSlotMenuWidget->SetWidgetPosition(DrawPosition);
 	ItemSlotMenuWidget->SetVisibility(ESlateVisibility::Visible);
-	ItemSlotMenuWidget->SetWidgetPosition(FVector2D(MX - (VX / 2), MY - (VY / 2)));
 }
 
-void ARPGHUD::OnUseButtonClicked()
+void ARPGHUD::GetPositionUnderCursor(FVector2D& Position)
+{
+	float MX, MY;
+	GetOwningPlayerController()->GetMousePosition(MX, MY);
+	int32 VX, VY;
+	GetOwningPlayerController()->GetViewportSize(VX, VY);
+
+	Position.X = MX - (VX / 2);
+	Position.Y = MY - (VY / 2);
+}
+
+void ARPGHUD::OnUseOrEquipButtonClicked()
 {
 	ARPGPlayerController* RPGController = Cast<ARPGPlayerController>(GetOwningPlayerController());
 	if (RPGController == nullptr) return;
 
+	ItemSlotMenuWidget->SetVisibility(ESlateVisibility::Hidden);
+	
 	bIsItemSlotMenuWidgetOn = false;
 
 	if (SelectedItemUniqueNum < 2)
@@ -343,10 +368,46 @@ void ARPGHUD::OnUseButtonClicked()
 	}
 	else
 	{
-		RPGController->EquipItem(SelectedItemUniqueNum);
+		RPGController->EquipOrUnequipItem(SelectedItemUniqueNum);
+		EquipOrUnequipItem();
 	}
+}
 
-	ItemSlotMenuWidget->SetVisibility(ESlateVisibility::Hidden);
+void ARPGHUD::EquipOrUnequipItem()
+{
+	if (SelectedItemUniqueNum < 2) return;
+	if (ItemSlotMap.Contains(SelectedItemUniqueNum) == false) return;
+
+	URPGInventorySlotWidget* SelectedSlot = (*ItemSlotMap.Find(SelectedItemUniqueNum));
+	const EItemType SelectedItemType = SelectedSlot->GetSavedItemType();
+
+	// 장착된 아이템 장착 해제
+	if (SelectedItemUniqueNum == EquippedArmourUnieuqNum || SelectedItemUniqueNum == EquippedAccessoriesUnieuqNum)
+	{
+		GameplayInterface->InventoryWidget->ClearEquipmentSlot(SelectedItemType);
+		SelectedSlot->SetBorderStateToEquipped(false);
+		if (SelectedItemType == EItemType::EIT_Armour)
+		{
+			EquippedArmourUnieuqNum = -1;
+		}
+		else if (SelectedItemType == EItemType::EIT_Accessories)
+		{
+			EquippedAccessoriesUnieuqNum = -1;
+		}
+	}
+	else // 장비 창에 장착할 아이템의 아이콘으로 설정
+	{
+		GameplayInterface->InventoryWidget->SetEquipmentSlot(SelectedItemType, SelectedSlot->GetIconMaterial());
+		SelectedSlot->SetBorderStateToEquipped(true);
+		if (SelectedItemType == EItemType::EIT_Armour)
+		{
+			EquippedArmourUnieuqNum = SelectedItemUniqueNum;
+		}
+		else if (SelectedItemType == EItemType::EIT_Accessories)
+		{
+			EquippedAccessoriesUnieuqNum = SelectedItemUniqueNum;
+		}
+	}
 }
 
 void ARPGHUD::OnDiscardButtonClicked()
@@ -354,9 +415,43 @@ void ARPGHUD::OnDiscardButtonClicked()
 	ARPGPlayerController* RPGController = Cast<ARPGPlayerController>(GetOwningPlayerController());
 	if (RPGController == nullptr) return;
 
+	ItemSlotMenuWidget->SetVisibility(ESlateVisibility::Hidden);
+	
 	bIsItemSlotMenuWidgetOn = false;
 
-	RPGController->DiscardItem(SelectedItemUniqueNum);
+	if (SelectedItemUniqueNum == EquippedArmourUnieuqNum || SelectedItemUniqueNum == EquippedAccessoriesUnieuqNum)
+	{
+		EquipOrUnequipItem();
+	}
 
-	ItemSlotMenuWidget->SetVisibility(ESlateVisibility::Hidden);
+	RPGController->DiscardItem(SelectedItemUniqueNum);
+}
+
+void ARPGHUD::OnItemSlotButtonHoveredEvent(int32 UniqueNum)
+{
+	if (UniqueNum != -1)
+	{
+		ARPGPlayerController* RPGController = Cast<ARPGPlayerController>(GetOwningPlayerController());
+		if (RPGController == nullptr) return;
+
+		RPGController->GetStatInfoText(UniqueNum);
+	}
+	else
+	{
+		HideItemStatTextBox();
+	}
+}
+
+void ARPGHUD::ShowItemStatTextBox(const FString& StatString)
+{
+	ItemStatBoxWidget->SetStatText(StatString);
+	FVector2D DrawPosition;
+	GetPositionUnderCursor(DrawPosition);
+	ItemStatBoxWidget->SetWidgetPosition(DrawPosition);
+	ItemStatBoxWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
+}
+
+void ARPGHUD::HideItemStatTextBox()
+{
+	ItemStatBoxWidget->SetVisibility(ESlateVisibility::Hidden);
 }

@@ -59,9 +59,9 @@ void ARPGPlayerController::BeginPlay()
 		Subsystem->AddMappingContext(DefaultMappingContext, 0);
 	}
 
-	//FInputModeGameAndUI InputModeGameAndUI;
-	//FInputModeUIOnly UIOnly;
-	//
+	FInputModeGameAndUI InputModeGameAndUI;
+	FInputModeUIOnly UIOnly;
+	
 	//SetInputMode(UIOnly);
 	
 	/*int32 GridSize;
@@ -184,8 +184,7 @@ void ARPGPlayerController::PickupItemServer_Implementation(ARPGItem* Item)
 
 void ARPGPlayerController::PickupItem(ARPGItem* Item)
 {
-	GetPlayerState<ARPGPlayerState>()->AddItem(Item);
-	const int32 Num = GetPlayerState<ARPGPlayerState>()->GetLastItemArrayNumber();
+	const int32 Num = GetPlayerState<ARPGPlayerState>()->AddItem(Item);
 
 	const EItemType Type = Item->GetItemInfo().ItemType;
 	switch (Type)
@@ -194,14 +193,14 @@ void ARPGPlayerController::PickupItem(ARPGItem* Item)
 		PickupCoinsClient(GetPlayerState<ARPGPlayerState>()->GetCoins());
 		break;
 	case EItemType::EIT_HealthPotion:
-		PickupPotionClient(0, Type, GetPlayerState<ARPGPlayerState>()->GetHealthPotionCount());
+		PickupPotionClient(Num, Type, GetPlayerState<ARPGPlayerState>()->GetHealthPotionCount());
 		break;
 	case EItemType::EIT_ManaPotion:
-		PickupPotionClient(1, Type, GetPlayerState<ARPGPlayerState>()->GetManaPotionCount());
+		PickupPotionClient(Num, Type, GetPlayerState<ARPGPlayerState>()->GetManaPotionCount());
 		break;
 	case EItemType::EIT_Armour:
-	case EItemType::EIT_Weapon:
-		PickupEquipmentClient(GetPlayerState<ARPGPlayerState>()->GetLastItemArrayNumber(), Type);
+	case EItemType::EIT_Accessories:
+		PickupEquipmentClient(Num, Type);
 		break;
 	}
 
@@ -241,31 +240,6 @@ void ARPGPlayerController::UseItem(const int32& UniqueNum)
 	UseItemServer(UniqueNum);
 }
 
-void ARPGPlayerController::EquipItem(const int32& UniqueNum)
-{
-
-}
-
-void ARPGPlayerController::DiscardItem(const int32& UniqueNum)
-{
-	DiscardItemServer(UniqueNum);
-}
-
-void ARPGPlayerController::DiscardItemServer_Implementation(const int32 UniqueNum)
-{
-	// 아이템 스포너로 아이템 스폰
-	const FItemInfo& ItemInfo = GetPlayerState<ARPGPlayerState>()->GetItemInfo(UniqueNum);
-	FVector Location = MyCharacter->GetActorLocation();
-	SpawnLocation.X += 50.f;
-	SpawnLocation.Z += 100.f;
-	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->DropItem(ItemInfo, Location);
-
-	// 서버 플레이어 스테이트 아이템 버리기
-	GetPlayerState<ARPGPlayerState>()->DiscardItem(UniqueNum);
-
-	UpdateItemInfoClient(UniqueNum, GetItemCount(UniqueNum));
-}
-
 void ARPGPlayerController::UseItemServer_Implementation(const int32 UniqueNum)
 {
 	GetPlayerState<ARPGPlayerState>()->UseItem(UniqueNum);
@@ -292,7 +266,8 @@ int32 ARPGPlayerController::GetItemCount(const int32 UniqueNum)
 void ARPGPlayerController::UpdateItemInfoClient_Implementation(const int32 UniqueNum, const int32 ItemCount)
 {
 	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
-	
+	if (RPGHUD == nullptr) return;
+
 	if (UniqueNum == 0)
 	{
 		RPGHUD->UpdateItemCount(UniqueNum, ItemCount);
@@ -304,6 +279,65 @@ void ARPGPlayerController::UpdateItemInfoClient_Implementation(const int32 Uniqu
 	else
 	{
 		RPGHUD->UpdateItemCount(UniqueNum, 0);
+	}
+}
+
+void ARPGPlayerController::EquipOrUnequipItem(const int32& UniqueNum)
+{
+	EquipOrUnequipItemServer(UniqueNum);
+}
+
+void ARPGPlayerController::EquipOrUnequipItemServer_Implementation(const int32 UniqueNum)
+{
+	// 플레이어 스테이트에 장착 아이템 정보 저장
+	GetPlayerState<ARPGPlayerState>()->EquipOrUnequipItem(UniqueNum);
+
+	// 플레이어 캐릭터의 스탯 반영 // 구조체 참조로 전달
+	// Validate 함수 추가
+
+}
+
+void ARPGPlayerController::DiscardItem(const int32& UniqueNum)
+{
+	DiscardItemServer(UniqueNum);
+}
+
+void ARPGPlayerController::DiscardItemServer_Implementation(const int32 UniqueNum)
+{
+	// 아이템 스포너로 아이템 스폰
+	FItemInfo ItemInfo;
+	const bool bIsItemExist = GetPlayerState<ARPGPlayerState>()->GetItemInfo(UniqueNum, ItemInfo);
+	if (bIsItemExist == false) return;
+
+	FVector Location = MyCharacter->GetActorLocation();
+	SpawnLocation.X += 50.f;
+	SpawnLocation.Z += 100.f;
+	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->DropItem(ItemInfo, Location);
+
+	// 플레이어 스테이트에서 아이템 제거
+	GetPlayerState<ARPGPlayerState>()->DiscardItem(UniqueNum);
+
+	UpdateItemInfoClient(UniqueNum, GetItemCount(UniqueNum));
+}
+
+void ARPGPlayerController::GetStatInfoText(const int32& UniqueNum)
+{
+	GetStatInfoTextServer(UniqueNum);
+}
+
+void ARPGPlayerController::GetStatInfoTextServer_Implementation(const int32 UniqueNum)
+{
+	FString StatString;
+	GetPlayerState<ARPGPlayerState>()->GetStatInfoText(UniqueNum, StatString);
+	GetStatInfoTextClient(StatString);
+}
+
+void ARPGPlayerController::GetStatInfoTextClient_Implementation(const FString& StatString)
+{
+	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
+	if (RPGHUD)
+	{
+		RPGHUD->ShowItemStatTextBox(StatString);
 	}
 }
 

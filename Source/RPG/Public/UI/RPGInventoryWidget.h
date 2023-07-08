@@ -35,6 +35,10 @@ public:
 
 	void AddCoins(const int32 CoinAmount);
 
+	void SetEquipmentSlot(const EItemType ItemType, UMaterial* IconMat);
+
+	void ClearEquipmentSlot(const EItemType ItemType);
+
 private:
 
 	UPROPERTY(meta = (BindWidget))
@@ -44,10 +48,10 @@ private:
 	UButton* ArmourSlotButton;
 
 	UPROPERTY(meta = (BindWidget))
-	UImage* WeaponSlotIcon;
+	UImage* AccessoriesSlotIcon;
 
 	UPROPERTY(meta = (BindWidget))
-	UButton* WeaponSlotButton;
+	UButton* AccessoriesSlotButton;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* CoinText;

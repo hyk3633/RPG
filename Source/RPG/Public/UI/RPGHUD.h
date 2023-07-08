@@ -17,6 +17,7 @@ class URPGInventorySlotWidget;
 class ARPGItem;
 class UDataTable;
 class URPGItemSlotMenuWidget;
+class URPGStatTextBoxWidget;
 
 UCLASS()
 class RPG_API ARPGHUD : public AHUD
@@ -87,11 +88,26 @@ protected:
 	UFUNCTION()
 	void OnItemSlotButtonClickEvent(int32 UniqueNum);
 
+	void GetPositionUnderCursor(FVector2D& Position);
+
 	UFUNCTION()
-	void OnUseButtonClicked();
+	void OnUseOrEquipButtonClicked();
+
+	void EquipOrUnequipItem();
 
 	UFUNCTION()
 	void OnDiscardButtonClicked();
+
+	UFUNCTION()
+	void OnItemSlotButtonHoveredEvent(int32 UniqueNum);
+
+public:
+
+	void ShowItemStatTextBox(const FString& StatString);
+
+protected:
+
+	void HideItemStatTextBox();
 
 private:
 
@@ -135,6 +151,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	UDataTable* ItemDataTable;
 
+	// 아이템 슬롯 메뉴 
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	TSubclassOf<URPGItemSlotMenuWidget> ItemSlotMenuClass;
 
@@ -144,4 +161,15 @@ private:
 	bool bIsItemSlotMenuWidgetOn = false;
 
 	int32 SelectedItemUniqueNum;
+
+	int32 EquippedArmourUnieuqNum;
+
+	int32 EquippedAccessoriesUnieuqNum;
+
+	// 아이템 스탯 정보창
+	UPROPERTY(EditAnywhere, Category = "HUD")
+	TSubclassOf<URPGStatTextBoxWidget> ItemStatBoxClass;
+
+	UPROPERTY()
+	URPGStatTextBoxWidget* ItemStatBoxWidget;
 };

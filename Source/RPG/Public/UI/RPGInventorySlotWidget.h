@@ -11,6 +11,7 @@
  */
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnIconSlotButtonClickedDelegate, int32 SlotUniqueNumber);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnIconSlotButtonHoveredDelegate, int32 SlotUniqueNumber);
 
 class UButton;
 class UBorder;
@@ -34,19 +35,26 @@ public:
 
 	void ClearSlot();
 
-	FORCEINLINE bool IsSlotEmpty() { return SlottedItemType == EItemType::EIT_MAX; };
+	void SetBorderStateToEquipped(const bool bIsEquipped);
+
+	FORCEINLINE EItemType GetSavedItemType() const { return SlottedItemType; };
 	FORCEINLINE void SetUniqueNumber(int32 Num) { UniqueNumber = Num; }
-	FORCEINLINE UButton* GetItemSlotButton() const { return ItemSlotButton; }
-	FORCEINLINE void SetSlotRowColumn(int32 Row, int32 Col) { SlotRow = Row, SlotColumn = Col; }
-	FORCEINLINE int32 GetSlotRow() const { return SlotRow; }
-	FORCEINLINE int32 GetSlotColumn() const { return SlotColumn; }
+	FORCEINLINE UMaterial* GetIconMaterial() const { return IconMaterial; }
 
 	FOnIconSlotButtonClickedDelegate DOnIconButtonClicked;
+
+	FOnIconSlotButtonHoveredDelegate DOnIconButtonHovered;
 
 protected:
 
 	UFUNCTION()
 	void OnItemSlotButtonClicked();
+
+	UFUNCTION()
+	void OnItemSlotButtonHovered();
+
+	UFUNCTION()
+	void OnItemSlotButtonUnhovered();
 
 private:
 
@@ -66,8 +74,7 @@ private:
 
 	int32 UniqueNumber;
 
-	int32 SlotRow;
+	UMaterial* IconMaterial;
 
-	int32 SlotColumn;
-
+	bool bIsHovered = false;
 };
