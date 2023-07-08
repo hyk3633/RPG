@@ -18,6 +18,7 @@ class ARPGItem;
 class UDataTable;
 class URPGItemSlotMenuWidget;
 class URPGStatTextBoxWidget;
+struct FItemInfo;
 
 UCLASS()
 class RPG_API ARPGHUD : public AHUD
@@ -103,7 +104,7 @@ protected:
 
 public:
 
-	void ShowItemStatTextBox(const FString& StatString);
+	void ShowItemStatTextBox(const FItemInfo& Info);
 
 protected:
 

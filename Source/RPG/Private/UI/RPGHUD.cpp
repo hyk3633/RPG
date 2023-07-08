@@ -434,7 +434,7 @@ void ARPGHUD::OnItemSlotButtonHoveredEvent(int32 UniqueNum)
 		ARPGPlayerController* RPGController = Cast<ARPGPlayerController>(GetOwningPlayerController());
 		if (RPGController == nullptr) return;
 
-		RPGController->GetStatInfoText(UniqueNum);
+		RPGController->GetItemInfoStruct(UniqueNum);
 	}
 	else
 	{
@@ -442,8 +442,22 @@ void ARPGHUD::OnItemSlotButtonHoveredEvent(int32 UniqueNum)
 	}
 }
 
-void ARPGHUD::ShowItemStatTextBox(const FString& StatString)
+void ARPGHUD::ShowItemStatTextBox(const FItemInfo& Info)
 {
+	const int32 RowNumber = StaticCast<int32>(Info.ItemType);
+	FItemOptionTableRow* ItemTableRow = ItemDataTable->FindRow<FItemOptionTableRow>(FName(*(FString::FormatAsNumber(RowNumber))), FString(""));
+
+	FString StatString;
+	const int8 ArrEnd = ItemTableRow->PropertyNames.Num();
+	for (int8 Idx = 0; Idx < ArrEnd; Idx++)
+	{
+		if (Info.ItemStatArr[Idx] > 0)
+		{
+			if (StatString.Len() > 0) StatString += FString(TEXT("\n"));
+			StatString += FString::Printf(TEXT("%s : %.1f"), *ItemTableRow->PropertyNames[Idx], Info.ItemStatArr[Idx]);
+		}
+	}
+
 	ItemStatBoxWidget->SetStatText(StatString);
 	FVector2D DrawPosition;
 	GetPositionUnderCursor(DrawPosition);

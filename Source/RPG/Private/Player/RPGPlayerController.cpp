@@ -320,24 +320,27 @@ void ARPGPlayerController::DiscardItemServer_Implementation(const int32 UniqueNu
 	UpdateItemInfoClient(UniqueNum, GetItemCount(UniqueNum));
 }
 
-void ARPGPlayerController::GetStatInfoText(const int32& UniqueNum)
+void ARPGPlayerController::GetItemInfoStruct(const int32& UniqueNum)
 {
-	GetStatInfoTextServer(UniqueNum);
+	GetItemInfoStructServer(UniqueNum);
 }
 
-void ARPGPlayerController::GetStatInfoTextServer_Implementation(const int32 UniqueNum)
+void ARPGPlayerController::GetItemInfoStructServer_Implementation(const int32 UniqueNum)
 {
-	FString StatString;
-	GetPlayerState<ARPGPlayerState>()->GetStatInfoText(UniqueNum, StatString);
-	GetStatInfoTextClient(StatString);
+	FItemInfo ItemInfo;
+	const bool bIsItemExist = GetPlayerState<ARPGPlayerState>()->GetItemInfo(UniqueNum, ItemInfo);
+	if (bIsItemExist)
+	{
+		GetItemInfoStructClient(ItemInfo);
+	}
 }
 
-void ARPGPlayerController::GetStatInfoTextClient_Implementation(const FString& StatString)
+void ARPGPlayerController::GetItemInfoStructClient_Implementation(const FItemInfo& Info)
 {
 	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
 	if (RPGHUD)
 	{
-		RPGHUD->ShowItemStatTextBox(StatString);
+		RPGHUD->ShowItemStatTextBox(Info);
 	}
 }
 

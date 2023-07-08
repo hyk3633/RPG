@@ -97,32 +97,6 @@ void ARPGPlayerState::DiscardItem(const int32& UniqueNum)
 	}
 }
 
-void ARPGPlayerState::GetStatInfoText(const int32& UniqueNum, FString& StatString)
-{
-	if (ItemMap.Contains(UniqueNum) == false) return;
-
-	const FItemInfo* EquippedItemInfo = ItemMap.Find(UniqueNum);
-
-	switch (EquippedItemInfo->ItemType)
-	{
-	case EItemType::EIT_HealthPotion:
-	case EItemType::EIT_ManaPotion:
-		StatString = FString(TEXT("회복량 : %f"), EquippedItemInfo->ItemStatArr[0]);
-		break;
-	case EItemType::EIT_Armour:
-		if(EquippedItemInfo->ItemStatArr[0] > 0) StatString += FString::Printf(TEXT("방어력 : %.1f\n"), EquippedItemInfo->ItemStatArr[0]);
-		if(EquippedItemInfo->ItemStatArr[1] > 0) StatString += FString::Printf(TEXT("민첩 : %.1f\n"), EquippedItemInfo->ItemStatArr[1]);
-		if(EquippedItemInfo->ItemStatArr[2] > 0) StatString += FString::Printf(TEXT("추가체력 : %.0f\n"), EquippedItemInfo->ItemStatArr[2]);
-		if(EquippedItemInfo->ItemStatArr[3] > 0) StatString += FString::Printf(TEXT("추가마나 : %.0f"), EquippedItemInfo->ItemStatArr[3]);
-		break;
-	case EItemType::EIT_Accessories:
-		if(EquippedItemInfo->ItemStatArr[0] > 0) StatString += FString::Printf(TEXT("공격력 : %.1f\n"), EquippedItemInfo->ItemStatArr[0]);
-		if(EquippedItemInfo->ItemStatArr[1] > 0) StatString += FString::Printf(TEXT("스킬 공격력 : %.1f\n"), EquippedItemInfo->ItemStatArr[1]);
-		if(EquippedItemInfo->ItemStatArr[2] > 0) StatString += FString::Printf(TEXT("공격 속도 : %.1f"), EquippedItemInfo->ItemStatArr[2]);
-		break;
-	}
-}
-
 bool ARPGPlayerState::GetItemInfo(const int32& UniqueNum, FItemInfo& ItemInfo)
 {
 	if (ItemMap.Contains(UniqueNum))

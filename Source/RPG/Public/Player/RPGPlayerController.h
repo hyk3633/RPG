@@ -97,15 +97,15 @@ protected:
 
 public:
 
-	void GetStatInfoText(const int32& UniqueNum);
+	void GetItemInfoStruct(const int32& UniqueNum);
 
 protected:
 
 	UFUNCTION(Server, Reliable)
-	void GetStatInfoTextServer(const int32 UniqueNum);
+	void GetItemInfoStructServer(const int32 UniqueNum);
 
 	UFUNCTION(Client, Reliable)
-	void GetStatInfoTextClient(const FString& StatString);
+	void GetItemInfoStructClient(const FItemInfo& Info);
 
 protected:
 

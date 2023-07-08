@@ -58,8 +58,6 @@ public:
 
 	void DiscardItem(const int32& UniqueNum);
 
-	void GetStatInfoText(const int32& UniqueNum, FString& StatString);
-
 	bool GetItemInfo(const int32& UniqueNum, FItemInfo& ItemInfo);
 
 	FORCEINLINE int32 GetLastItemArrayNumber() { return CurrentItemUniqueNum; }
