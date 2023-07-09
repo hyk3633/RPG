@@ -136,6 +136,7 @@ void ARPGPlayerController::ItemTrace()
 	if (IsValid(TracedItem))
 	{
 		TracedItem->SetItemNameTagVisibility(false);
+		TracedItem->SetRenderCustomDepthOff();
 	}
 
 	FHitResult ItemTraceHit;
@@ -144,7 +145,11 @@ void ARPGPlayerController::ItemTrace()
 	if (ItemTraceHit.bBlockingHit)
 	{
 		TracedItem = Cast<ARPGItem>(ItemTraceHit.GetActor());
-		if (IsValid(TracedItem)) TracedItem->SetItemNameTagVisibility(true);
+		if (IsValid(TracedItem))
+		{
+			TracedItem->SetItemNameTagVisibility(true);
+			TracedItem->SetRenderCustomDepthOn(200);
+		}
 	}
 	else
 	{
@@ -359,7 +364,7 @@ void ARPGPlayerController::GetItemInfoStructClient_Implementation(const FItemInf
 
 void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 {
-	if (bIsInventoryOn || MyCharacter == nullptr && MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{

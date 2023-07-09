@@ -71,6 +71,10 @@ public:
 
 	void SetItemNameTagVisibility(const bool bVisible);
 
+    void SetRenderCustomDepthOn(const int32 StencilValue);
+
+    void SetRenderCustomDepthOff();
+
 	void DestroyFromAllClients();
 
 private:

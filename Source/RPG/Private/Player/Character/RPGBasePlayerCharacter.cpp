@@ -116,15 +116,23 @@ void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, 
 	}
 }
 
-void ARPGBasePlayerCharacter::OnRep_Health()
+void ARPGBasePlayerCharacter::OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (IsLocallyControlled())
+	ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(OtherActor);
+	if (IsValid(Enemy))
 	{
-		DOnChangeHealthPercentage.Broadcast(Health / MaxHealth);
+		Enemy->OnRenderCustomDepthEffect(126);
+		OutlinedEnemies.Add(Enemy);
 	}
-	if (Health == 0.f)
+}
+
+void ARPGBasePlayerCharacter::OnTargetingComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(OtherActor);
+	if (IsValid(Enemy))
 	{
-		PlayerDie();
+		Enemy->OffRenderCustomDepthEffect();
+		OutlinedEnemies.Remove(Enemy);
 	}
 }
 
@@ -147,6 +155,20 @@ void ARPGBasePlayerCharacter::AfterDeath()
 	GetMovementComponent()->Deactivate();
 }
 
+/** --------------------------- 체력, 마나 --------------------------- */
+
+void ARPGBasePlayerCharacter::OnRep_Health()
+{
+	if (IsLocallyControlled())
+	{
+		DOnChangeHealthPercentage.Broadcast(Health / MaxHealth);
+	}
+	if (Health == 0.f)
+	{
+		PlayerDie();
+	}
+}
+
 void ARPGBasePlayerCharacter::UsingMana(EPressedKey KeyType)
 {
 	const int8 Index = StaticCast<int8>(KeyType);
@@ -158,26 +180,6 @@ void ARPGBasePlayerCharacter::OnRep_Mana()
 	if (IsLocallyControlled())
 	{
 		DOnChangeManaPercentage.Broadcast(Mana / MaxMana);
-	}
-}
-
-void ARPGBasePlayerCharacter::OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(OtherActor);
-	if (Enemy)
-	{
-		Enemy->OnRenderCustomDepthEffect(126);
-		OutlinedEnemies.Add(Enemy);
-	}
-}
-
-void ARPGBasePlayerCharacter::OnTargetingComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(OtherActor);
-	if (Enemy)
-	{
-		Enemy->GetMesh()->SetRenderCustomDepth(false);
-		OutlinedEnemies.Remove(Enemy);
 	}
 }
 
@@ -238,11 +240,6 @@ void ARPGBasePlayerCharacter::Tick(float DeltaTime)
 				}
 			}
 		}
-	}
-
-	if (IsLocallyControlled())
-	{
-		//PLOG(TEXT("%d"),IsAbilityAvailable(EPressedKey::EPK_Q));
 	}
 }
 

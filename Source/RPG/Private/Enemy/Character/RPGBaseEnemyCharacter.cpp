@@ -124,6 +124,8 @@ void ARPGBaseEnemyCharacter::HealthBarVisibilityOff()
 
 void ARPGBaseEnemyCharacter::EnemyDeath()
 {
+	OffRenderCustomDepthEffect();
+
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 	HealthBarWidget->SetVisibility(false);
@@ -234,6 +236,8 @@ void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffect()
 void ARPGBaseEnemyCharacter::InstanceDeath()
 {
 	HealthDecrease(MaxHealth);
+
+	OffRenderCustomDepthEffect();
 }
 
 /** 블랙홀 상호작용 */
@@ -252,6 +256,8 @@ void ARPGBaseEnemyCharacter::EnableSuckedIn()
 {
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
 	GetCharacterMovement()->GravityScale = 0.f;
+
+	OffRenderCustomDepthEffect();
 }
 
 /** 행동 정지, 해제 */

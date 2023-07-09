@@ -44,7 +44,10 @@ protected:
 	virtual void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 
 	UFUNCTION()
-	void OnRep_Health();
+	void OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnTargetingComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	/** ---------- Á×À½ ---------- */
 
@@ -59,16 +62,15 @@ protected:
 	UFUNCTION()
 	void AfterDeath();
 
+	/** ---------- Ã¼·Â ---------- */
+
+	UFUNCTION()
+	void OnRep_Health();
+
 	void UsingMana(EPressedKey KeyType);
 
 	UFUNCTION()
 	void OnRep_Mana();
-
-	UFUNCTION()
-	void OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void OnTargetingComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 public:	
 

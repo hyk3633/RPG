@@ -87,6 +87,17 @@ void ARPGItem::SetItemNameTagVisibility(const bool bVisible)
 	NameTagWidget->SetVisibility(bVisible);
 }
 
+void ARPGItem::SetRenderCustomDepthOn(const int32 StencilValue)
+{
+	ItemMesh->SetRenderCustomDepth(true);
+	ItemMesh->SetCustomDepthStencilValue(StencilValue);
+}
+
+void ARPGItem::SetRenderCustomDepthOff()
+{
+	ItemMesh->SetRenderCustomDepth(false);
+}
+
 void ARPGItem::OnRep_ItemInfo()
 {
 	if (ItemInfo.ItemType == EItemType::EIT_Coin)
