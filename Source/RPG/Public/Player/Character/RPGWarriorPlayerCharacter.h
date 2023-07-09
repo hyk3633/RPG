@@ -97,6 +97,15 @@ protected:
 	/** E 스킬 함수 */
 
 	UFUNCTION()
+	void Dash(ENotifyCode NotifyCode);
+
+	UFUNCTION(Server, Reliable)
+	void DashServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void DashMulticast(const FVector_NetQuantize& DashDirection);
+
+	UFUNCTION()
 	void SmashDown(ENotifyCode NotifyCode);
 
 	UFUNCTION(Server, Reliable)

@@ -115,9 +115,6 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void GetHitCursorServer(const FHitResult& Hit);
 
-	UFUNCTION(NetMulticast, Reliable)
-	void GetHitCursorMulticast(const FHitResult& Hit);
-
 	UFUNCTION(Server, Reliable)
 	void NormalAttackWithComboServer();
 
@@ -152,7 +149,7 @@ protected:
 
 	void DrawTargetingCursor();
 
-	void TargetingCompOn();
+	void TargetingCompOn(const float& SphereRadius);
 
 	void TargetingCompOff();
 
@@ -228,7 +225,6 @@ protected:
 
 	int32 MaxCombo = 4;
 
-	UPROPERTY(Replicated)
 	FHitResult TargetingHitResult;
 
 private:

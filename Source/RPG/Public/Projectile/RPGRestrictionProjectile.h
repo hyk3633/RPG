@@ -19,14 +19,10 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	void SetHomingTarget(ACharacter* HomingTarget);
-
 protected:
 
 	virtual void BeginPlay() override;
 
 	virtual void ProcessHitEvent(const FHitResult& HitResult) override;
-
-	float VelocityLastFrame;
 
 };

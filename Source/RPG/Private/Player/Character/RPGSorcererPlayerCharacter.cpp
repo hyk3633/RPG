@@ -76,7 +76,18 @@ void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	{
 		bAiming = true;
 		AimCursor->SetVisibility(true);
-		TargetingCompOn();
+		if (KeyType == EPressedKey::EPK_Q)
+		{
+			TargetingCompOn(30);
+		}
+		else if (KeyType == EPressedKey::EPK_W)
+		{
+			TargetingCompOn(350);
+		}
+		else
+		{
+			TargetingCompOn(500);
+		}
 	}
 }
 
@@ -201,13 +212,20 @@ void ARPGSorcererPlayerCharacter::FireRestrictionBallServer_Implementation()
 void ARPGSorcererPlayerCharacter::SpawnRestrictionProjectile()
 {
 	FVector SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L")).GetLocation();
-	FRotator SpawnDirection = (TargetingHitResult.GetActor()->GetActorLocation() - SpawnPoint).Rotation();
-	ARPGRestrictionProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGRestrictionProjectile>(RestrictionPorjectile, FTransform(SpawnDirection.Add(60.f, 0.f, 0.f), SpawnPoint), this, this);
+	FRotator SpawnDirection = (TargetingHitResult.ImpactPoint - SpawnPoint).Rotation();
+
+	ARPGRestrictionProjectile* Projectile = 
+		GetWorld()->SpawnActorDeferred<ARPGRestrictionProjectile>
+		(
+			RestrictionPorjectile, 
+			FTransform(SpawnDirection, SpawnPoint),
+			this, 
+			this
+		);
+
 	if (Projectile)
 	{
-		Projectile->SetProjectileData(FProjectileData(true, 30, 2, 1000, 32, true, 300));
-		ACharacter* TargetCha = Cast<ACharacter>(TargetingHitResult.GetActor());
-		if (TargetCha) Projectile->SetHomingTarget(TargetCha);
+		Projectile->SetProjectileData(FProjectileData(true, 0, 3, 1500, 30, false));
 		Projectile->FinishSpawning(FTransform(SpawnDirection, SpawnPoint));
 	}
 }
@@ -238,7 +256,7 @@ void ARPGSorcererPlayerCharacter::SpawnMeteorProjectile()
 	ARPGBaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGBaseProjectile>(MeteorlitePorjectile, SpanwTransform, this, this);
 	if (Projectile)
 	{
-		Projectile->SetProjectileData(FProjectileData(true, 600, 1, 1000, 70, true, 600));
+		Projectile->SetProjectileData(FProjectileData(true, 600, 1, 1000, 200, true, 350));
 		Projectile->FinishSpawning(SpanwTransform);
 	}
 }

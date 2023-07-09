@@ -21,6 +21,7 @@ ARPGBaseProjectile::ARPGBaseProjectile()
 	CollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	CollisionComponent->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECollisionResponse::ECR_Ignore);
 	CollisionComponent->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
+	CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Ignore);
 
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body Mesh"));
 	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -60,16 +61,19 @@ void ARPGBaseProjectile::BeginPlay()
 
 	ProjectileMovementComponent->OnProjectileStop.AddDynamic(this, &ARPGBaseProjectile::OnImpact);
 
-	if (BodyParticle)
+	if (GetLocalRole() == ENetRole::ROLE_SimulatedProxy)
 	{
-		BodyParticleComp = UGameplayStatics::SpawnEmitterAttached(
-			BodyParticle,
-			CollisionComponent,
-			FName(),
-			GetActorLocation(),
-			GetActorRotation(),
-			EAttachLocation::KeepWorldPosition
-		);
+		if (BodyParticle)
+		{
+			BodyParticleComp = UGameplayStatics::SpawnEmitterAttached(
+				BodyParticle,
+				CollisionComponent,
+				FName(),
+				GetActorLocation(),
+				GetActorRotation(),
+				EAttachLocation::KeepWorldPosition
+			);
+		}
 	}
 
 	GetWorldTimerManager().SetTimer(ExpireTimer, this, &ARPGBaseProjectile::ExpireProjectile, ExpireTime, false);

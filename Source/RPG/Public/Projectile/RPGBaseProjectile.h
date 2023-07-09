@@ -98,10 +98,10 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UProjectileMovementComponent* ProjectileMovementComponent;
 
-private:
-
 	UPROPERTY(EditAnywhere)
 	USphereComponent* CollisionComponent;
+
+private:
 
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* BodyMesh;
@@ -127,8 +127,12 @@ private:
 	FTimerHandle ExpireTimer;
 
 	bool bIsExplosive;
+
 	int32 Damage;
+
 	int32 InitialSpeed;
+
 	float ExpireTime;
+
 	int32 ExplosionRadius;
 };

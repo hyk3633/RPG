@@ -45,6 +45,7 @@ void ARPGWarriorPlayerCharacter::BeginPlay()
 	{
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("Wield"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("RevealEnemies"));
+		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("Dash"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("SmashDown"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("MoveToTargettedLocation"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("Rebirth"));
@@ -96,7 +97,14 @@ void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 		{
 			bAiming = true;
 			AimCursor->SetVisibility(true);
-			TargetingCompOn();
+			if (KeyType == EPressedKey::EPK_E)
+			{
+				TargetingCompOn(400);
+			}
+			else
+			{
+				TargetingCompOn(600);
+			}
 		}
 	}
 }
@@ -324,6 +332,28 @@ void ARPGWarriorPlayerCharacter::DeactivateEnforceParticle()
 	}
 }
 
+void ARPGWarriorPlayerCharacter::Dash(ENotifyCode NotifyCode)
+{
+	if (NotifyCode != ENotifyCode::ENC_W_E_Dash) return;
+
+	if (IsLocallyControlled())
+	{
+		DashServer();
+	}
+}
+
+void ARPGWarriorPlayerCharacter::DashServer_Implementation()
+{
+	const FVector Direction = (TargetingHitResult.ImpactPoint - GetActorLocation()).GetSafeNormal();
+	const float LaunchPower = FVector::Dist2D(TargetingHitResult.ImpactPoint, GetActorLocation());
+	DashMulticast(Direction * LaunchPower * 20);
+}
+
+void ARPGWarriorPlayerCharacter::DashMulticast_Implementation(const FVector_NetQuantize& DashDirection)
+{
+	LaunchCharacter(DashDirection, true, true);
+}
+
 void ARPGWarriorPlayerCharacter::PlayReflectMontageAndParticleMulticast_Implementation(const FVector_NetQuantize& SpawnLocation)
 {
 	if (HasAuthority() == false)
@@ -346,7 +376,7 @@ void ARPGWarriorPlayerCharacter::SmashDown(ENotifyCode NotifyCode)
 
 void ARPGWarriorPlayerCharacter::SmashDownServer_Implementation()
 {
-	SphereTrace(GetActorLocation(), GetActorLocation(), 600.f);
+	SphereTrace(GetActorLocation(), GetActorLocation(), 400.f);
 	SmashDownToEnemies();
 }
 
@@ -413,7 +443,7 @@ void ARPGWarriorPlayerCharacter::Rebirth(ENotifyCode NotifyCode)
 
 void ARPGWarriorPlayerCharacter::RebirthServer_Implementation()
 {
-	SphereTrace(GetActorLocation(), GetActorLocation(), 1000.f);
+	SphereTrace(GetActorLocation(), GetActorLocation(), 600.f);
 	OneShotKill();
 }
 

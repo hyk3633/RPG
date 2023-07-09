@@ -138,6 +138,11 @@ void ARPGPlayerController::ItemTrace()
 		TracedItem->SetItemNameTagVisibility(false);
 		TracedItem->SetRenderCustomDepthOff();
 	}
+	if (MyCharacter->GetAiming())
+	{
+		TracedItem = nullptr;
+		return;
+	}
 
 	FHitResult ItemTraceHit;
 	GetHitResultUnderCursor(ECC_ItemTrace, false, ItemTraceHit);

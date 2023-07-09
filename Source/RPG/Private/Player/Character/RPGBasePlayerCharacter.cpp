@@ -248,17 +248,15 @@ void ARPGBasePlayerCharacter::DrawTargetingCursor()
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (PC == nullptr) return;
 	
-	PC->GetHitResultUnderCursor(ECC_Visibility, true, CursorHitResult);
-	FVector CursorLocation = CursorHitResult.Location;
-	CursorLocation.Z = GetActorLocation().Z;
-	CursorHitResult.Location.Z += 5.f;
-	if (FVector::Dist2D(GetActorLocation(), CursorLocation) >= 800.f)
+	PC->GetHitResultUnderCursor(ECC_GroundTrace, true, CursorHitResult);
+	CursorHitResult.Location.Z = GetActorLocation().Z + 5;
+	if (FVector::Dist2D(GetActorLocation(), CursorHitResult.Location) >= 800.f)
 	{
-		CursorLocation = GetActorLocation() + (CursorLocation - GetActorLocation()).GetUnsafeNormal() * 800.f;
+		CursorHitResult.Location = GetActorLocation() + (CursorHitResult.Location - GetActorLocation()).GetUnsafeNormal() * 800.f;
 	}
 
-	AimCursor->SetWorldLocation(CursorLocation);
-	TargetingComp->SetWorldLocation(CursorLocation);
+	AimCursor->SetWorldLocation(CursorHitResult.Location);
+	TargetingComp->SetWorldLocation(CursorHitResult.Location);
 }
 
 void ARPGBasePlayerCharacter::CameraZoomInOut(int8 Value)
@@ -369,11 +367,6 @@ void ARPGBasePlayerCharacter::GetHitCursor()
 
 void ARPGBasePlayerCharacter::GetHitCursorServer_Implementation(const FHitResult& Hit)
 {
-	GetHitCursorMulticast(Hit);
-}
-
-void ARPGBasePlayerCharacter::GetHitCursorMulticast_Implementation(const FHitResult& Hit)
-{
 	TargetingHitResult = Hit;
 }
 
@@ -434,6 +427,8 @@ void ARPGBasePlayerCharacter::CastNormalAttack()
 
 void ARPGBasePlayerCharacter::ReadyToCastAbilityByKey(EPressedKey KeyType)
 {
+	ARPGPlayerController* PController = Cast<ARPGPlayerController>(GetController());
+	if (PController) PController->bShowMouseCursor = false;
 	CastAbilityByKeyServer(KeyType);
 }
 
@@ -453,8 +448,11 @@ void ARPGBasePlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	RPGAnimInstance->SetCurrentKeyState(KeyType);
 }
 
-void ARPGBasePlayerCharacter::TargetingCompOn()
+void ARPGBasePlayerCharacter::TargetingCompOn(const float& SphereRadius)
 {
+	const float Size = FMath::Clamp(SphereRadius / 30 - 2, 1, 20);
+	AimCursor->SetWorldScale3D(FVector(Size, Size, 1));
+	TargetingComp->SetSphereRadius(SphereRadius);
 	TargetingComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 }
 
@@ -476,6 +474,8 @@ void ARPGBasePlayerCharacter::CancelAbility()
 {
 	if (IsLocallyControlled())
 	{
+		ARPGPlayerController* PController = Cast<ARPGPlayerController>(GetController());
+		if (PController) PController->bShowMouseCursor = true;
 		bAiming = false;
 		AimCursor->SetVisibility(false);
 	}
@@ -514,6 +514,8 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
 	if (HasAuthority()) return;
 	if (IsLocallyControlled())
 	{
+		ARPGPlayerController* PController = Cast<ARPGPlayerController>(GetController());
+		if (PController) PController->bShowMouseCursor = true;
 		bAiming = false;
 	}
 }
@@ -606,12 +608,11 @@ void ARPGBasePlayerCharacter::GetTargetingCompOverlappingEnemies(TArray<AActor*>
 void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
+	
 	DOREPLIFETIME(ARPGBasePlayerCharacter, PathX);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, PathY);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Health);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Mana);
-	DOREPLIFETIME(ARPGBasePlayerCharacter, TargetingHitResult);
 	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, AbilityCooldownBit, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, RemainedCooldownTime, COND_OwnerOnly);
 }
