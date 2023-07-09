@@ -36,7 +36,7 @@ void UItemSpawnManagerComponent::SpawnItems(const FVector& Location)
 	const EItemType ItemType = StaticCast<EItemType>(RandInt);
 
 	// 코인 무조건 스폰
-	//ItemInitializeBeforeSpawn(EItemType::EIT_Coin, GetRandomVector(Location));
+	ItemInitializeBeforeSpawn(EItemType::EIT_Coin, GetRandomVector(Location));
 
 	ItemInitializeBeforeSpawn(EItemType::EIT_HealthPotion, GetRandomVector(Location));
 	ItemInitializeBeforeSpawn(EItemType::EIT_ManaPotion, GetRandomVector(Location));

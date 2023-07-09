@@ -181,6 +181,15 @@ void ARPGBasePlayerCharacter::OnTargetingComponentEndOverlap(UPrimitiveComponent
 	}
 }
 
+void ARPGBasePlayerCharacter::ResetHealthManaUI()
+{
+	if (IsLocallyControlled())
+	{
+		DOnChangeHealthPercentage.Broadcast(Health / MaxHealth);
+		DOnChangeManaPercentage.Broadcast(Mana / MaxMana);
+	}
+}
+
 void ARPGBasePlayerCharacter::RecoveryHealth(const int32 RecoveryAmount)
 {
 	Health = FMath::Clamp(Health + RecoveryAmount, 0, MaxHealth);

@@ -25,8 +25,6 @@ class RPG_API URPGInventoryWidget : public UUserWidget
 	
 public:
 
-	void InitInventory();
-
 	void AddSlotToGridPanel(URPGInventorySlotWidget* NewSlot, const int32 Row, const int32 Column);
 
 	void SortGridPanel(URPGInventorySlotWidget* SlotToBack, const int32 StartIdx, const int32 LastIdx);

@@ -89,6 +89,17 @@ void ARPGItem::SetItemNameTagVisibility(const bool bVisible)
 
 void ARPGItem::OnRep_ItemInfo()
 {
+	if (ItemInfo.ItemType == EItemType::EIT_Coin)
+	{
+		ItemMesh->SetWorldScale3D(FVector(0.75f));
+	}
+	else
+	{
+		ItemMesh->SetWorldScale3D(FVector(2.f));
+		ItemMesh->SetMassScale(NAME_None, 10.f);
+		ItemMesh->SetLinearDamping(2.f);
+		ItemMesh->SetAngularDamping(0.5f);
+	}
 	SetItemTagText();
 }
 

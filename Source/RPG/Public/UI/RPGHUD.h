@@ -39,7 +39,17 @@ protected:
 
 public:
 
+	/** 첫 시작 시 HUD 초기화 */
 	void InitHUD();
+
+protected:
+
+	void CastPawnAndBindFunctions();
+
+public:
+
+	/** 캐릭터 리스폰 후 HUD 다시 로딩 */
+	void ReloadHUD();
 
 protected:
 
@@ -69,6 +79,8 @@ protected:
 	void InitInventorySlot();
 
 public: 
+
+	void InventoryWidgetToggle(const bool bInventoryOn);
 
 	void AddCoins(const int32& CoinAmount);
 

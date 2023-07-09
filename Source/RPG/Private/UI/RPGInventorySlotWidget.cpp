@@ -35,13 +35,15 @@ void URPGInventorySlotWidget::SetSlotIcon(UMaterial* Icon)
 	Brush.SetImageSize(FVector2D(50, 50));
 	ItemSlotIcon->SetBrush(Brush);
 	ItemSlotIcon->SetBrushFromMaterial(Icon);
+	ItemSlotIcon->SetVisibility(ESlateVisibility::Visible);
 }
 
 void URPGInventorySlotWidget::ClearSlot()
 {
 	// TODO : Image Size
 	ItemSlotIcon->SetBrushFromMaterial(nullptr);
-	ItemSlotBorder->SetBrushColor(FLinearColor::White);
+	ItemSlotIcon->SetVisibility(ESlateVisibility::Hidden);
+	ItemSlotBorder->SetBrushColor(FLinearColor(0.2f, 0.2f, 0.2f));
 	ItemCountText->SetVisibility(ESlateVisibility::Hidden);
 	UniqueNumber = -1;
 

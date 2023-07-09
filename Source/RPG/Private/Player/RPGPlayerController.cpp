@@ -40,6 +40,9 @@ ARPGPlayerController::ARPGPlayerController()
 	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_R (TEXT("/Game/_Assets/Input/IA_R.IA_R"));
 	if (Obj_R.Succeeded()) RPressedAction = Obj_R.Object;
 
+	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_I(TEXT("/Game/_Assets/Input/IA_I.IA_I"));
+	if (Obj_I.Succeeded()) IPressedAction = Obj_I.Object;
+
 	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_MouseWheelScroll (TEXT("/Game/_Assets/Input/IA_ZoomInOut.IA_ZoomInOut"));
 	if (Obj_MouseWheelScroll.Succeeded()) MouseWheelScroll = Obj_MouseWheelScroll.Object;
 }
@@ -58,11 +61,6 @@ void ARPGPlayerController::BeginPlay()
 	{
 		Subsystem->AddMappingContext(DefaultMappingContext, 0);
 	}
-
-	FInputModeGameAndUI InputModeGameAndUI;
-	FInputModeUIOnly UIOnly;
-	
-	//SetInputMode(UIOnly);
 	
 	/*int32 GridSize;
 	int32 GridDist;
@@ -99,8 +97,28 @@ void ARPGPlayerController::OnPossess(APawn* InPawn)
 
 void ARPGPlayerController::OnRep_MyCharacter()
 {
-	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
-	if (RPGHUD) RPGHUD->InitHUD();
+	if (RPGHUD == nullptr)
+	{
+		ARPGHUD* TempHUD = Cast<ARPGHUD>(GetHUD());
+		if (TempHUD)
+		{
+			RPGHUD = TempHUD;
+			RPGHUD->InitHUD();
+		}
+		else
+		{
+			WLOG(TEXT("Character cast is Failed!"));
+		}
+	}
+	else
+	{
+		RPGHUD->ReloadHUD();
+	}
+
+	if (MyCharacter)
+	{
+		MyCharacter->ResetHealthManaUI();
+	}
 }
 
 void ARPGPlayerController::Tick(float DeltaTime)
@@ -111,7 +129,6 @@ void ARPGPlayerController::Tick(float DeltaTime)
 	{
 		ItemTrace();
 	}
-
 }
 
 void ARPGPlayerController::ItemTrace()
@@ -148,6 +165,7 @@ void ARPGPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(WPressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::WPressedAction_Cast);
 		EnhancedInputComponent->BindAction(EPressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::EPressedAction_Cast);
 		EnhancedInputComponent->BindAction(RPressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::RPressedAction_Cast);
+		EnhancedInputComponent->BindAction(IPressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::IPressedAction_ToggleInventory);
 		EnhancedInputComponent->BindAction(MouseWheelScroll, ETriggerEvent::Triggered, this, &ARPGPlayerController::MouseWheelScroll_ZoomInOut);
 	}
 }
@@ -171,7 +189,7 @@ void ARPGPlayerController::LeftClickAction_SetPath()
 	{
 		PickupItemServer(TracedItem);
 	}
-	else
+	else if(bIsInventoryOn == false)
 	{
 		MyCharacter->SetDestinationAndPath();
 	}
@@ -209,7 +227,6 @@ void ARPGPlayerController::PickupItem(ARPGItem* Item)
 
 void ARPGPlayerController::PickupCoinsClient_Implementation(const int32 CoinAmount)
 {
-	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
 	if (RPGHUD)
 	{
 		const EItemType TracedItemType = TracedItem->GetItemInfo().ItemType;
@@ -219,7 +236,6 @@ void ARPGPlayerController::PickupCoinsClient_Implementation(const int32 CoinAmou
 
 void ARPGPlayerController::PickupPotionClient_Implementation(const int32 UniqueNum, const EItemType PotionType, const int32 PotionCount)
 {
-	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
 	if (RPGHUD)
 	{
 		RPGHUD->AddPotion(UniqueNum, PotionType, PotionCount);
@@ -228,7 +244,6 @@ void ARPGPlayerController::PickupPotionClient_Implementation(const int32 UniqueN
 
 void ARPGPlayerController::PickupEquipmentClient_Implementation(const int32 UniqueNum, const EItemType ItemType)
 {
-	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
 	if (RPGHUD)
 	{
 		RPGHUD->AddEquipment(UniqueNum, ItemType);
@@ -265,7 +280,6 @@ int32 ARPGPlayerController::GetItemCount(const int32 UniqueNum)
 
 void ARPGPlayerController::UpdateItemInfoClient_Implementation(const int32 UniqueNum, const int32 ItemCount)
 {
-	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
 	if (RPGHUD == nullptr) return;
 
 	if (UniqueNum == 0)
@@ -337,7 +351,6 @@ void ARPGPlayerController::GetItemInfoStructServer_Implementation(const int32 Un
 
 void ARPGPlayerController::GetItemInfoStructClient_Implementation(const FItemInfo& Info)
 {
-	ARPGHUD* RPGHUD = Cast<ARPGHUD>(GetHUD());
 	if (RPGHUD)
 	{
 		RPGHUD->ShowItemStatTextBox(Info);
@@ -346,7 +359,7 @@ void ARPGPlayerController::GetItemInfoStructClient_Implementation(const FItemInf
 
 void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 {
-	if (MyCharacter == nullptr && MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr && MyCharacter->GetIsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -360,7 +373,7 @@ void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 
 void ARPGPlayerController::QPressedAction_Cast()
 {
-	if (MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -374,7 +387,7 @@ void ARPGPlayerController::QPressedAction_Cast()
 
 void ARPGPlayerController::WPressedAction_Cast()
 {
-	if (MyCharacter == nullptr && MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr && MyCharacter->GetIsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -388,7 +401,7 @@ void ARPGPlayerController::WPressedAction_Cast()
 
 void ARPGPlayerController::EPressedAction_Cast()
 {
-	if (MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -402,15 +415,30 @@ void ARPGPlayerController::EPressedAction_Cast()
 
 void ARPGPlayerController::RPressedAction_Cast()
 {
-	if (MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
 		MyCharacter->CancelAbility();
 	}
-	else  if (MyCharacter->IsAbilityAvailable(EPressedKey::EPK_R))
+	else if (MyCharacter->IsAbilityAvailable(EPressedKey::EPK_R))
 	{
 		MyCharacter->ReadyToCastAbilityByKey(EPressedKey::EPK_R);
+	}
+}
+
+void ARPGPlayerController::IPressedAction_ToggleInventory()
+{
+	if (RPGHUD == nullptr || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
+
+	if (MyCharacter->GetAiming())
+	{
+		MyCharacter->CancelAbility();
+	}
+	else
+	{
+		bIsInventoryOn = !bIsInventoryOn;
+		RPGHUD->InventoryWidgetToggle(bIsInventoryOn);
 	}
 }
 

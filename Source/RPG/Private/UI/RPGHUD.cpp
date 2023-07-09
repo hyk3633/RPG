@@ -47,18 +47,7 @@ void ARPGHUD::Tick(float DeltaTime)
 
 void ARPGHUD::InitHUD()
 {
-	if (GetOwningPlayerController())
-	{
-		PlayerPawn = Cast<ARPGBasePlayerCharacter>(GetOwningPlayerController()->GetPawn());
-		DrawOverlay();
-	}
-	
-	if (PlayerPawn)
-	{
-		PlayerPawn->DOnChangeHealthPercentage.AddUFunction(this, FName("SetHealthBarPercentage"));
-		PlayerPawn->DOnChangeManaPercentage.AddUFunction(this, FName("SetManaBarPercentage"));
-		PlayerPawn->DOnAbilityCooldownEnd.AddUFunction(this, FName("CooldownProgressSetFull"));
-	}
+	CastPawnAndBindFunctions();
 
 	if (ItemSlotMenuClass)
 	{
@@ -76,9 +65,29 @@ void ARPGHUD::InitHUD()
 		ItemStatBoxWidget->AddToViewport();
 	}
 
-	SetHealthBarPercentage(1);
-	SetManaBarPercentage(1);
+	DrawOverlay();
+}
 
+void ARPGHUD::CastPawnAndBindFunctions()
+{
+	if (GetOwningPlayerController())
+	{
+		PlayerPawn = Cast<ARPGBasePlayerCharacter>(GetOwningPlayerController()->GetPawn());
+	}
+
+	if (PlayerPawn)
+	{
+		PlayerPawn->DOnChangeHealthPercentage.AddUFunction(this, FName("SetHealthBarPercentage"));
+		PlayerPawn->DOnChangeManaPercentage.AddUFunction(this, FName("SetManaBarPercentage"));
+		PlayerPawn->DOnAbilityCooldownEnd.AddUFunction(this, FName("CooldownProgressSetFull"));
+	}
+}
+
+void ARPGHUD::ReloadHUD()
+{
+	CastPawnAndBindFunctions();
+
+	GameplayInterface->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
 	GameplayInterface->SetVisibility(ESlateVisibility::Visible);
 }
 
@@ -92,8 +101,7 @@ void ARPGHUD::DrawOverlay()
 	if (GameplayInterfaceClass)
 	{
 		GameplayInterface = CreateWidget<URPGGameplayInterface>(GetOwningPlayerController(), GameplayInterfaceClass);
-		GameplayInterface->SetVisibility(ESlateVisibility::Hidden);
-		GameplayInterface->InventoryWidget->InitInventory();
+		GameplayInterface->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
 		GameplayInterface->AddToViewport();
 		InitInventorySlot();
 	}
@@ -183,6 +191,18 @@ void ARPGHUD::InitInventorySlot()
 	}
 
 	ActivatedItemSlotNum = 16;
+}
+
+void ARPGHUD::InventoryWidgetToggle(const bool bInventoryOn)
+{
+	if (bInventoryOn)
+	{
+		GameplayInterface->InventoryWidget->SetVisibility(ESlateVisibility::Visible);
+	}
+	else
+	{
+		GameplayInterface->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
+	}
 }
 
 void ARPGHUD::AddCoins(const int32& CoinAmount)

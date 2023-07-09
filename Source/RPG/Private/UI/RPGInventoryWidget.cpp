@@ -8,12 +8,6 @@
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
 
-void URPGInventoryWidget::InitInventory()
-{
-	const int32 MaxIdx = StaticCast<int32>(EItemType::EIT_MAX);
-	
-}
-
 void URPGInventoryWidget::AddSlotToGridPanel(URPGInventorySlotWidget* NewSlot, const int32 Row, const int32 Column)
 {
 	if (InvUniformGridPanel)

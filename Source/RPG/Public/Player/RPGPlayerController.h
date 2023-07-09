@@ -14,6 +14,7 @@ class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
 class ARPGItem;
+class ARPGHUD;
 
 UCLASS()
 class RPG_API ARPGPlayerController : public APlayerController
@@ -119,6 +120,8 @@ protected:
 
 	void RPressedAction_Cast();
 
+	void IPressedAction_ToggleInventory();
+
 	void MouseWheelScroll_ZoomInOut(const FInputActionValue& Value);
 
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
@@ -128,30 +131,39 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_MyCharacter)
 	ARPGBasePlayerCharacter* MyCharacter;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY()
+	ARPGHUD* RPGHUD;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = Input)
 	UInputMappingContext* DefaultMappingContext;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, Category = Input)
 	UInputAction* LeftClickAction;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, Category = Input)
 	UInputAction* RightClickAction;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, Category = Input)
 	UInputAction* QPressedAction;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, Category = Input)
 	UInputAction* WPressedAction;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, Category = Input)
 	UInputAction* EPressedAction;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, Category = Input)
 	UInputAction* RPressedAction;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleDefaultsOnly, Category = Input)
+	UInputAction* IPressedAction;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = Input)
 	UInputAction* MouseWheelScroll;
 
 	UPROPERTY()
 	ARPGItem* TracedItem;
+
+	bool bIsInventoryOn = false;
+	
 };

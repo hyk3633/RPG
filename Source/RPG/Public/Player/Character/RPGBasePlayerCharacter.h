@@ -72,6 +72,8 @@ protected:
 
 public:	
 
+	void ResetHealthManaUI();
+
 	void RecoveryHealth(const int32 RecoveryAmount);
 
 	void RecoveryMana(const int32 RecoveryAmount);
@@ -197,8 +199,8 @@ public: /** ---------- 반환 및 설정 함수 ---------- */
 	FORCEINLINE URPGAnimInstance* GetRPGAnimInstance() const { return RPGAnimInstance; }
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
-	float GetCooldownPercentage(int8 Bit) const;
 	FORCEINLINE int8 GetAbilityCooldownBit() const { return AbilityCooldownBit; }
+	float GetCooldownPercentage(int8 Bit) const;
 	bool IsAbilityAvailable(EPressedKey KeyType);
 	bool GetIsAnyMontagePlaying() const;
 	bool GetAbilityERMontagePlaying();
