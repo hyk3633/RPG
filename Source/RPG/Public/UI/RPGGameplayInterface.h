@@ -13,6 +13,7 @@ class ARPGHUD;
 class UProgressBar;
 class UImage;
 class URPGInventoryWidget;
+class URPGStatInfoWidget;
 
 UCLASS()
 class RPG_API URPGGameplayInterface : public UUserWidget
@@ -43,4 +44,7 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	URPGInventoryWidget* InventoryWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	URPGStatInfoWidget* StatInfoWidget;
 };

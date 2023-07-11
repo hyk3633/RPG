@@ -161,7 +161,7 @@ void ARPGBasePlayerCharacter::OnRep_Health()
 {
 	if (IsLocallyControlled())
 	{
-		DOnChangeHealthPercentage.Broadcast(Health / MaxHealth);
+		DOnChangeHealthPercentage.Broadcast(Health / (MaxHealth + MaxHP));
 	}
 	if (Health == 0.f)
 	{
@@ -179,7 +179,7 @@ void ARPGBasePlayerCharacter::OnRep_Mana()
 {
 	if (IsLocallyControlled())
 	{
-		DOnChangeManaPercentage.Broadcast(Mana / MaxMana);
+		DOnChangeManaPercentage.Broadcast(Mana / (MaxMana + MaxMP));
 	}
 }
 
@@ -187,8 +187,8 @@ void ARPGBasePlayerCharacter::ResetHealthManaUI()
 {
 	if (IsLocallyControlled())
 	{
-		DOnChangeHealthPercentage.Broadcast(Health / MaxHealth);
-		DOnChangeManaPercentage.Broadcast(Mana / MaxMana);
+		DOnChangeHealthPercentage.Broadcast(Health / (MaxHealth + MaxHP));
+		DOnChangeManaPercentage.Broadcast(Mana / (MaxMana + MaxMP));
 	}
 }
 
@@ -584,6 +584,31 @@ bool ARPGBasePlayerCharacter::GetAbilityERMontagePlaying()
 	return RPGAnimInstance->GetIsAbilityERMontagePlaying();
 }
 
+void ARPGBasePlayerCharacter::SetCharacterArmourStats(const float Def, const float Dex, const int32 ExHP, const int32 ExMP)
+{
+	DefenseivePower += Def;
+	Dexterity += Dex;
+	MaxHealth += ExHP;
+	MaxMana += ExMP;
+}
+
+void ARPGBasePlayerCharacter::SetCharacterAccessoriesStats(const float Stk, const float Skp, const float Atks)
+{
+	StrikingPower += Stk;
+	SkillPower += Skp;
+	AttackSpeed += Atks;
+}
+
+void ARPGBasePlayerCharacter::OnRep_MaxHP()
+{
+	DOnChangeHealthPercentage.Broadcast(Health / (MaxHealth + MaxHP));
+}
+
+void ARPGBasePlayerCharacter::OnRep_MaxMP()
+{
+	DOnChangeManaPercentage.Broadcast(Mana / (MaxMana + MaxMP));
+}
+
 void ARPGBasePlayerCharacter::SetAbilityCooldownTime(int8 QTime, int8 WTime, int8 ETime, int8 RTime)
 {
 	MaxCooldownTime[0] = QTime;
@@ -613,6 +638,10 @@ void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ARPGBasePlayerCharacter, PathY);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Health);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Mana);
+	DOREPLIFETIME(ARPGBasePlayerCharacter, Dexterity);
+	DOREPLIFETIME(ARPGBasePlayerCharacter, AttackSpeed);
+	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, MaxHP, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, MaxMP, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, AbilityCooldownBit, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, RemainedCooldownTime, COND_OwnerOnly);
 }

@@ -8,6 +8,14 @@ void ARPGPlayerState::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	// 0번은 체력 포션, 1번은 마나 포션
+	CharacterStats = FCharacterStats();
+
+	EquippedItemStats = FCharacterStats();
+	EquippedItemStats.Dexterity = 0;
+	EquippedItemStats.AttackSpeed = 0;
+
+	EquippedArmourUniqueNum = -1;
+	EquippedAccessoriesUniqueNum = -1;
 }
 
 void ARPGPlayerState::BeginPlay()
@@ -28,48 +36,60 @@ void ARPGPlayerState::UseItem(const int32& UniqueNum)
 	}
 }
 
-void ARPGPlayerState::EquipOrUnequipItem(const int32& UniqueNum)
+const bool ARPGPlayerState::EquipItem(const int32& UniqueNum)
 {
-	if (ItemMap.Contains(UniqueNum) == false) return;
+	if (ItemMap.Contains(UniqueNum) == false || 
+		(EquippedArmourUniqueNum == UniqueNum || EquippedAccessoriesUniqueNum == UniqueNum)) return false;
 
 	const FItemInfo* EquippedItemInfo = ItemMap.Find(UniqueNum);
-
-	if (EquippedArmourUniqueNum == UniqueNum)
+	if (EquippedItemInfo->ItemType == EItemType::EIT_Armour)
 	{
-		CharacterStats.DefenseivePower	= FMath::Clamp(CharacterStats.DefenseivePower	- EquippedItemInfo->ItemStatArr[0], 1.f, 10.f);
-		CharacterStats.Dexterity		= FMath::Clamp(CharacterStats.Dexterity			- EquippedItemInfo->ItemStatArr[1], 1.f, 2.f);
-		CharacterStats.ExtraMP			= FMath::Clamp(CharacterStats.ExtraMP			- EquippedItemInfo->ItemStatArr[2], 0, 500);
-		CharacterStats.ExtraHP			= FMath::Clamp(CharacterStats.ExtraHP			- EquippedItemInfo->ItemStatArr[3], 0, 500);
-
-		EquippedArmourUniqueNum = -1;
-	}
-	else if(EquippedAccessoriesUniqueNum == UniqueNum)
-	{
-		CharacterStats.StrikingPower	= FMath::Clamp(CharacterStats.StrikingPower		- EquippedItemInfo->ItemStatArr[0], 1.f, 10.f);
-		CharacterStats.SkillPower		= FMath::Clamp(CharacterStats.SkillPower		- EquippedItemInfo->ItemStatArr[1], 1.f, 10.f);
-		CharacterStats.AttackSpeed		= FMath::Clamp(CharacterStats.AttackSpeed		- EquippedItemInfo->ItemStatArr[2], 1.f, 2.f);
-
-		EquippedAccessoriesUniqueNum = -1;
+		EquippedArmourUniqueNum = UniqueNum;
 	}
 	else
 	{
-		if (EquippedItemInfo->ItemType == EItemType::EIT_Armour)
-		{
-			CharacterStats.DefenseivePower	= FMath::Clamp(CharacterStats.DefenseivePower	+ EquippedItemInfo->ItemStatArr[0], 1.f, 10.f);
-			CharacterStats.Dexterity		= FMath::Clamp(CharacterStats.Dexterity			+ EquippedItemInfo->ItemStatArr[1], 1.f, 2.f);
-			CharacterStats.ExtraMP			= FMath::Clamp(CharacterStats.ExtraMP			+ EquippedItemInfo->ItemStatArr[2], 0, 500);
-			CharacterStats.ExtraHP			= FMath::Clamp(CharacterStats.ExtraHP			+ EquippedItemInfo->ItemStatArr[3], 0, 500);
+		EquippedAccessoriesUniqueNum = UniqueNum;
+	}
 
-			EquippedArmourUniqueNum = UniqueNum;
-		}
-		else if (EquippedItemInfo->ItemType == EItemType::EIT_Accessories)
-		{
-			CharacterStats.StrikingPower	= FMath::Clamp(CharacterStats.StrikingPower		+ EquippedItemInfo->ItemStatArr[0], 1.f, 10.f);
-			CharacterStats.SkillPower		= FMath::Clamp(CharacterStats.SkillPower		+ EquippedItemInfo->ItemStatArr[1], 1.f, 10.f);
-			CharacterStats.AttackSpeed		= FMath::Clamp(CharacterStats.AttackSpeed		+ EquippedItemInfo->ItemStatArr[2], 1.f, 2.f);
+	UpdateEquippedItemStats(EquippedItemInfo, true);
 
-			EquippedAccessoriesUniqueNum = UniqueNum;
-		}
+	return true;
+}
+
+void ARPGPlayerState::UnequipItem(const int32& UniqueNum)
+{
+	if (ItemMap.Contains(UniqueNum) == false || 
+		(EquippedArmourUniqueNum != UniqueNum && EquippedAccessoriesUniqueNum != UniqueNum)) return;
+	
+	const FItemInfo* EquippedItemInfo = ItemMap.Find(UniqueNum);
+
+	if (EquippedItemInfo->ItemType == EItemType::EIT_Armour)
+	{
+		EquippedArmourUniqueNum = -1;
+	}
+	else
+	{
+		EquippedAccessoriesUniqueNum = -1;
+	}
+
+	UpdateEquippedItemStats(EquippedItemInfo, false);
+}
+
+void ARPGPlayerState::UpdateEquippedItemStats(const FItemInfo* Info, const bool bIsEquip)
+{
+	// TODO : 레벨 업 시스템
+	if (Info->ItemType == EItemType::EIT_Armour)
+	{
+		EquippedItemStats.DefenseivePower	= bIsEquip ? Info->ItemStatArr[0] : 0;
+		EquippedItemStats.Dexterity			= bIsEquip ? Info->ItemStatArr[1] : 0;
+		EquippedItemStats.MaxHP				= bIsEquip ? Info->ItemStatArr[2] : 0;
+		EquippedItemStats.MaxMP				= bIsEquip ? Info->ItemStatArr[3] : 0;
+	}
+	else if (Info->ItemType == EItemType::EIT_Accessories)
+	{
+		EquippedItemStats.StrikingPower		= bIsEquip ? Info->ItemStatArr[0] : 0;
+		EquippedItemStats.SkillPower		= bIsEquip ? Info->ItemStatArr[1] : 0;
+		EquippedItemStats.AttackSpeed		= bIsEquip ? Info->ItemStatArr[2] : 0;
 	}
 }
 
@@ -105,6 +125,35 @@ bool ARPGPlayerState::GetItemInfo(const int32& UniqueNum, FItemInfo& ItemInfo)
 		return true;
 	}
 	return false;
+}
+
+int32 ARPGPlayerState::GetItemCount(const int32& UniqueNum) const
+{
+	if (UniqueNum == 0)
+	{
+		return HealthPotionCount;
+	}
+	else if(UniqueNum == 1)
+	{
+		return ManaPotionCount;
+	}
+	else
+	{
+		return ItemMap.Contains(UniqueNum) ? 1 : 0;
+	}
+}
+
+const bool ARPGPlayerState::GetItemStatInfo(const int32 UniqueNum, FItemInfo& Info)
+{
+	if (ItemMap.Contains(UniqueNum))
+	{
+		Info = (*ItemMap.Find(UniqueNum));
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 const int32 ARPGPlayerState::AddItem(ARPGItem* PickedItem)

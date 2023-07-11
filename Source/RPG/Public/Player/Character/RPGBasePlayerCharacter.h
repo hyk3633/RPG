@@ -12,6 +12,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class USphereComponent;
 class ARPGBaseEnemyCharacter;
+struct FCharacterStats;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnChangeHealthPercentageDelegate, float Percentage);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnChangeManaPercentageDelegate, float Percentage);
@@ -203,8 +204,16 @@ public: /** ---------- 반환 및 설정 함수 ---------- */
 	bool IsAbilityAvailable(EPressedKey KeyType);
 	bool GetIsAnyMontagePlaying() const;
 	bool GetAbilityERMontagePlaying();
+	void SetCharacterArmourStats(const float Def, const float Dex, const int32 ExHP, const int32 ExMP);
+	void SetCharacterAccessoriesStats(const float Stk, const float Skp, const float Atks);
 	
 protected:
+
+	UFUNCTION()
+	void OnRep_MaxHP();
+
+	UFUNCTION()
+	void OnRep_MaxMP();
 
 	void SetAbilityCooldownTime(int8 QTime, int8 WTime, int8 ETime, int8 RTime);
 
@@ -220,12 +229,6 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* AimCursor;
-
-	bool bAiming = false;
-
-	int32 MaxCombo = 4;
-
-	FHitResult TargetingHitResult;
 
 private:
 
@@ -250,6 +253,14 @@ private:
 	UPROPERTY()
 	TArray<ARPGBaseEnemyCharacter*> OutlinedEnemies;
 
+protected:
+
+	bool bAiming = false;
+
+	FHitResult TargetingHitResult;
+
+private:
+
 	/** 스탯 */
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, Category = "Character | Status")
@@ -266,6 +277,33 @@ private:
 
 	TArray<int32> ManaUsage;
 
+	/** 서버 전용 스탯 */
+
+	UPROPERTY()
+	float DefenseivePower;
+
+	UPROPERTY()
+	float StrikingPower;
+
+	UPROPERTY()
+	float SkillPower;
+
+	/** 서버, 클라이언트 스탯 */
+
+	UPROPERTY(ReplicatedUsing = OnRep_MaxHP)
+	int32 MaxHP;
+
+	UPROPERTY(Replicated = OnRep_MaxMP)
+	int32 MaxMP;
+
+	/** 멀티캐스트 스탯 */
+
+	UPROPERTY(Replicated)
+	float Dexterity;
+
+	UPROPERTY(Replicated)
+	float AttackSpeed;
+
 	/** 이동 */
 
 	UPROPERTY(ReplicatedUsing = OnRep_PathX)
@@ -281,6 +319,12 @@ private:
 	int32 PathIdx;
 
 	/** 일반 공격 */
+
+protected:
+
+	int32 MaxCombo = 4;
+
+protected:
 
 	bool bIsAttacking = false;
 	bool bCanNextCombo = false;

@@ -43,6 +43,9 @@ ARPGPlayerController::ARPGPlayerController()
 	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_I(TEXT("/Game/_Assets/Input/IA_I.IA_I"));
 	if (Obj_I.Succeeded()) IPressedAction = Obj_I.Object;
 
+	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_S(TEXT("/Game/_Assets/Input/IA_S.IA_S"));
+	if (Obj_S.Succeeded()) SPressedAction = Obj_S.Object;
+
 	static ConstructorHelpers::FObjectFinder<UInputAction> Obj_MouseWheelScroll (TEXT("/Game/_Assets/Input/IA_ZoomInOut.IA_ZoomInOut"));
 	if (Obj_MouseWheelScroll.Succeeded()) MouseWheelScroll = Obj_MouseWheelScroll.Object;
 }
@@ -115,6 +118,11 @@ void ARPGPlayerController::OnRep_MyCharacter()
 		RPGHUD->ReloadHUD();
 	}
 
+	if (RPGHUD)
+	{
+		// TODO : 시작 시 초기화
+	}
+
 	if (MyCharacter)
 	{
 		MyCharacter->ResetHealthManaUI();
@@ -176,9 +184,12 @@ void ARPGPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(EPressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::EPressedAction_Cast);
 		EnhancedInputComponent->BindAction(RPressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::RPressedAction_Cast);
 		EnhancedInputComponent->BindAction(IPressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::IPressedAction_ToggleInventory);
+		EnhancedInputComponent->BindAction(SPressedAction, ETriggerEvent::Completed, this, &ARPGPlayerController::SPressedAction_ToggleStatInfo);
 		EnhancedInputComponent->BindAction(MouseWheelScroll, ETriggerEvent::Triggered, this, &ARPGPlayerController::MouseWheelScroll_ZoomInOut);
 	}
 }
+
+/** -------------- 왼쪽 클릭 : 이동, 스킬 취소, 아이템 획득 -------------- */
 
 void ARPGPlayerController::LeftClickAction_StopMove()
 {
@@ -204,6 +215,7 @@ void ARPGPlayerController::LeftClickAction_SetPath()
 		MyCharacter->SetDestinationAndPath();
 	}
 }
+/** -------------- 아이템 획득 -------------- */
 
 void ARPGPlayerController::PickupItemServer_Implementation(ARPGItem* Item)
 {
@@ -221,10 +233,8 @@ void ARPGPlayerController::PickupItem(ARPGItem* Item)
 		PickupCoinsClient(GetPlayerState<ARPGPlayerState>()->GetCoins());
 		break;
 	case EItemType::EIT_HealthPotion:
-		PickupPotionClient(Num, Type, GetPlayerState<ARPGPlayerState>()->GetHealthPotionCount());
-		break;
 	case EItemType::EIT_ManaPotion:
-		PickupPotionClient(Num, Type, GetPlayerState<ARPGPlayerState>()->GetManaPotionCount());
+		PickupPotionClient(Num, Type, GetPlayerState<ARPGPlayerState>()->GetItemCount(Num));
 		break;
 	case EItemType::EIT_Armour:
 	case EItemType::EIT_Accessories:
@@ -260,6 +270,8 @@ void ARPGPlayerController::PickupEquipmentClient_Implementation(const int32 Uniq
 	}
 }
 
+/** -------------- 아이템 사용 -------------- */
+
 void ARPGPlayerController::UseItem(const int32& UniqueNum)
 {
 	UseItemServer(UniqueNum);
@@ -269,34 +281,15 @@ void ARPGPlayerController::UseItemServer_Implementation(const int32 UniqueNum)
 {
 	GetPlayerState<ARPGPlayerState>()->UseItem(UniqueNum);
 	UniqueNum == 0 ? MyCharacter->RecoveryHealth(200) : MyCharacter->RecoveryMana(200);
-	UpdateItemInfoClient(UniqueNum, GetItemCount(UniqueNum));
-}
-
-int32 ARPGPlayerController::GetItemCount(const int32 UniqueNum)
-{
-	if (UniqueNum == 0)
-	{
-		return GetPlayerState<ARPGPlayerState>()->GetHealthPotionCount();
-	}
-	else if (UniqueNum == 1)
-	{
-		return GetPlayerState<ARPGPlayerState>()->GetManaPotionCount();
-	}
-	else
-	{
-		return 0;
-	}
+	const int32& ItemCount = GetPlayerState<ARPGPlayerState>()->GetItemCount(UniqueNum);
+	UpdateItemInfoClient(UniqueNum, ItemCount);
 }
 
 void ARPGPlayerController::UpdateItemInfoClient_Implementation(const int32 UniqueNum, const int32 ItemCount)
 {
 	if (RPGHUD == nullptr) return;
 
-	if (UniqueNum == 0)
-	{
-		RPGHUD->UpdateItemCount(UniqueNum, ItemCount);
-	}
-	else if (UniqueNum == 1)
+	if (UniqueNum < 2)
 	{
 		RPGHUD->UpdateItemCount(UniqueNum, ItemCount);
 	}
@@ -306,20 +299,75 @@ void ARPGPlayerController::UpdateItemInfoClient_Implementation(const int32 Uniqu
 	}
 }
 
-void ARPGPlayerController::EquipOrUnequipItem(const int32& UniqueNum)
+/** -------------- 아이템 장착 -------------- */
+
+void ARPGPlayerController::DoEquipItem(const int32& UniqueNum)
 {
-	EquipOrUnequipItemServer(UniqueNum);
+	EquipItemServer(UniqueNum);
 }
 
-void ARPGPlayerController::EquipOrUnequipItemServer_Implementation(const int32 UniqueNum)
+void ARPGPlayerController::EquipItemServer_Implementation(const int32 UniqueNum)
+{
+	EquipItem(UniqueNum);
+}
+
+void ARPGPlayerController::EquipItem(const int32& UniqueNum)
 {
 	// 플레이어 스테이트에 장착 아이템 정보 저장
-	GetPlayerState<ARPGPlayerState>()->EquipOrUnequipItem(UniqueNum);
+	const bool bSuccess = GetPlayerState<ARPGPlayerState>()->EquipItem(UniqueNum);
+	if (bSuccess == false) return;
 
-	// 플레이어 캐릭터의 스탯 반영 // 구조체 참조로 전달
+	FItemInfo ItemInfo;
+	const bool bIsExist = GetPlayerState<ARPGPlayerState>()->GetItemStatInfo(UniqueNum, ItemInfo);
+
 	// Validate 함수 추가
-
+	if (IsValid(MyCharacter) && bIsExist)
+	{
+		if (ItemInfo.ItemType == EItemType::EIT_Armour)
+		{
+			MyCharacter->SetCharacterArmourStats(ItemInfo.ItemStatArr[0], ItemInfo.ItemStatArr[1], ItemInfo.ItemStatArr[2], ItemInfo.ItemStatArr[3]);
+		}
+		else
+		{
+			MyCharacter->SetCharacterAccessoriesStats(ItemInfo.ItemStatArr[0], ItemInfo.ItemStatArr[1], ItemInfo.ItemStatArr[2]);
+		}
+	}
 }
+
+/** -------------- 아이템 장착 해제 -------------- */
+
+void ARPGPlayerController::DoUnequipItem(const int32& UniqueNum)
+{
+	UnequipItemServer(UniqueNum);
+}
+
+void ARPGPlayerController::UnequipItemServer_Implementation(const int32 UniqueNum)
+{
+	UnequipItem(UniqueNum);
+}
+
+void ARPGPlayerController::UnequipItem(const int32& UniqueNum)
+{
+	FItemInfo ItemInfo;
+	const bool bIsExist = GetPlayerState<ARPGPlayerState>()->GetItemStatInfo(UniqueNum, ItemInfo);
+
+	// Validate 함수 추가
+	if (IsValid(MyCharacter) && bIsExist)
+	{
+		if (ItemInfo.ItemType == EItemType::EIT_Armour)
+		{
+			MyCharacter->SetCharacterArmourStats(-ItemInfo.ItemStatArr[0], -ItemInfo.ItemStatArr[1], -ItemInfo.ItemStatArr[2], -ItemInfo.ItemStatArr[3]);
+		}
+		else
+		{
+			MyCharacter->SetCharacterAccessoriesStats(-ItemInfo.ItemStatArr[0], -ItemInfo.ItemStatArr[1], -ItemInfo.ItemStatArr[2]);
+		}
+	}
+
+	GetPlayerState<ARPGPlayerState>()->UnequipItem(UniqueNum);
+}
+
+/** -------------- 아이템 버리기 -------------- */
 
 void ARPGPlayerController::DiscardItem(const int32& UniqueNum)
 {
@@ -338,11 +386,81 @@ void ARPGPlayerController::DiscardItemServer_Implementation(const int32 UniqueNu
 	SpawnLocation.Z += 100.f;
 	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->DropItem(ItemInfo, Location);
 
+	// 장착된 아이템일 경우 장착 해제
+	if (GetPlayerState<ARPGPlayerState>()->IsEquippedItem(UniqueNum))
+	{
+		UnequipItem(UniqueNum);
+	}
+
 	// 플레이어 스테이트에서 아이템 제거
 	GetPlayerState<ARPGPlayerState>()->DiscardItem(UniqueNum);
-
-	UpdateItemInfoClient(UniqueNum, GetItemCount(UniqueNum));
+	const int32& ItemCount = GetPlayerState<ARPGPlayerState>()->GetItemCount(UniqueNum);
+	UpdateItemInfoClient(UniqueNum, ItemCount);
 }
+
+/** -------------- 캐릭터 스탯 정보 업데이트 -------------- */
+
+void ARPGPlayerController::DoUpdateCharacterStat()
+{
+	UpdateCharacterStatServer();
+}
+
+void ARPGPlayerController::UpdateCharacterStatServer_Implementation()
+{
+	UpdateCharacterStat();
+}
+
+void ARPGPlayerController::UpdateCharacterStat()
+{
+	const FCharacterStats& Stats = GetPlayerState<ARPGPlayerState>()->GetCurrentCharacterStats();
+	UpdateCharacterStatClient(Stats);
+}
+
+void ARPGPlayerController::UpdateCharacterStatClient_Implementation(const FCharacterStats& Stats)
+{
+	CallHUDUpdateCharacterStatText(Stats);
+}
+
+void ARPGPlayerController::CallHUDUpdateCharacterStatText(const FCharacterStats& Stats)
+{
+	if (RPGHUD)
+	{
+		RPGHUD->UpdateStatCharacterStatText(Stats);
+	}
+}
+
+/** -------------- 장착 아이템 스탯 정보 업데이트 -------------- */
+
+void ARPGPlayerController::DoUpdateEquippedItemStat()
+{
+	UpdateEquippedItemStatServer();
+}
+
+void ARPGPlayerController::UpdateEquippedItemStatServer_Implementation()
+{
+	UpdateEquippedItemStat();
+}
+
+void ARPGPlayerController::UpdateEquippedItemStat()
+{
+	const FCharacterStats& EquippedItemStat = GetPlayerState<ARPGPlayerState>()->GetEquippedItemStats();
+	UpdateEquippedItemStatClient(EquippedItemStat);
+}
+
+void ARPGPlayerController::UpdateEquippedItemStatClient_Implementation(const FCharacterStats& Info)
+{
+	CallHUDUpdateEquippedItemStatText(Info);
+}
+
+void ARPGPlayerController::CallHUDUpdateEquippedItemStatText(const FCharacterStats& Info)
+{
+	if (RPGHUD)
+	{
+		RPGHUD->UpdateStatEquippedItemStatText(Info);
+	}
+}
+
+/** -------------- 아이템 정보 가져오기 -------------- */
 
 void ARPGPlayerController::GetItemInfoStruct(const int32& UniqueNum)
 {
@@ -367,6 +485,8 @@ void ARPGPlayerController::GetItemInfoStructClient_Implementation(const FItemInf
 	}
 }
 
+/** -------------- 오른쪽 클릭 : 스킬 타격 위치 지정, 일반 공격 -------------- */
+
 void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 {
 	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
@@ -380,6 +500,8 @@ void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 		MyCharacter->DoNormalAttack();
 	}
 }
+
+/** -------------- 스킬 Q, W, E, R -------------- */
 
 void ARPGPlayerController::QPressedAction_Cast()
 {
@@ -437,6 +559,8 @@ void ARPGPlayerController::RPressedAction_Cast()
 	}
 }
 
+/** -------------- 인벤토리 I -------------- */
+
 void ARPGPlayerController::IPressedAction_ToggleInventory()
 {
 	if (RPGHUD == nullptr || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
@@ -452,6 +576,24 @@ void ARPGPlayerController::IPressedAction_ToggleInventory()
 	}
 }
 
+/** -------------- 스탯 정보 S -------------- */
+
+void ARPGPlayerController::SPressedAction_ToggleStatInfo()
+{
+	if (RPGHUD == nullptr || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
+
+	if (MyCharacter->GetAiming())
+	{
+		MyCharacter->CancelAbility();
+	}
+	else
+	{
+		RPGHUD->ToggleStatInfoWidget();
+	}
+}
+
+/** -------------- 줌 인/아웃 마우스 휠 -------------- */
+
 void ARPGPlayerController::MouseWheelScroll_ZoomInOut(const FInputActionValue& Value)
 {
 	if (MyCharacter == nullptr) return;
@@ -465,4 +607,3 @@ void ARPGPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME(ARPGPlayerController, MyCharacter);
 }
-

@@ -33,6 +33,7 @@ void URPGInventorySlotWidget::SetSlotIcon(UMaterial* Icon)
 	FSlateBrush Brush;
 	Brush.DrawAs = ESlateBrushDrawType::Image;
 	Brush.SetImageSize(FVector2D(50, 50));
+	BackgroundColor->SetBrushTintColor(FLinearColor(0.1f, 0.1f, 0.1f));
 	ItemSlotIcon->SetBrush(Brush);
 	ItemSlotIcon->SetBrushFromMaterial(Icon);
 	ItemSlotIcon->SetVisibility(ESlateVisibility::Visible);
@@ -41,6 +42,7 @@ void URPGInventorySlotWidget::SetSlotIcon(UMaterial* Icon)
 void URPGInventorySlotWidget::ClearSlot()
 {
 	// TODO : Image Size
+	BackgroundColor->SetBrushTintColor(FLinearColor(0.15f, 0.075f, 0.04f));
 	ItemSlotIcon->SetBrushFromMaterial(nullptr);
 	ItemSlotIcon->SetVisibility(ESlateVisibility::Hidden);
 	ItemSlotBorder->SetBrushColor(FLinearColor(0.2f, 0.2f, 0.2f));

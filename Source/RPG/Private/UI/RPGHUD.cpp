@@ -5,6 +5,7 @@
 #include "UI/RPGInventorySlotWidget.h"
 #include "UI/RPGItemSlotMenuWidget.h"
 #include "UI/RPGStatTextBoxWidget.h"
+#include "UI/RPGStatInfoWidget.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Player/RPGPlayerController.h"
 #include "Item/RPGItem.h"
@@ -55,14 +56,14 @@ void ARPGHUD::InitHUD()
 		ItemSlotMenuWidget->GetUseButton()->OnClicked.AddDynamic(this, &ARPGHUD::OnUseOrEquipButtonClicked);
 		ItemSlotMenuWidget->GetDiscardButton()->OnClicked.AddDynamic(this, &ARPGHUD::OnDiscardButtonClicked);
 		ItemSlotMenuWidget->SetVisibility(ESlateVisibility::Hidden);
-		ItemSlotMenuWidget->AddToViewport();
+		ItemSlotMenuWidget->AddToViewport(2);
 	}
 
 	if (ItemStatBoxClass)
 	{
 		ItemStatBoxWidget = CreateWidget<URPGStatTextBoxWidget>(GetOwningPlayerController(), ItemStatBoxClass);
 		ItemStatBoxWidget->SetVisibility(ESlateVisibility::Hidden);
-		ItemStatBoxWidget->AddToViewport();
+		ItemStatBoxWidget->AddToViewport(1);
 	}
 
 	DrawOverlay();
@@ -87,6 +88,7 @@ void ARPGHUD::ReloadHUD()
 {
 	CastPawnAndBindFunctions();
 
+	GameplayInterface->StatInfoWidget->SetVisibility(ESlateVisibility::Hidden);
 	GameplayInterface->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
 	GameplayInterface->SetVisibility(ESlateVisibility::Visible);
 }
@@ -102,7 +104,7 @@ void ARPGHUD::DrawOverlay()
 	{
 		GameplayInterface = CreateWidget<URPGGameplayInterface>(GetOwningPlayerController(), GameplayInterfaceClass);
 		GameplayInterface->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
-		GameplayInterface->AddToViewport();
+		GameplayInterface->AddToViewport(0);
 		InitInventorySlot();
 	}
 }
@@ -343,6 +345,7 @@ void ARPGHUD::OnItemSlotButtonClickEvent(const int32 UniqueNum)
 	if (UniqueNum < 2)
 	{
 		ItemSlotMenuWidget->SetUseText(FString(TEXT("사용하기")));
+		
 	}
 	else
 	{
@@ -388,45 +391,67 @@ void ARPGHUD::OnUseOrEquipButtonClicked()
 	}
 	else
 	{
-		RPGController->EquipOrUnequipItem(SelectedItemUniqueNum);
-		EquipOrUnequipItem();
+		if (SelectedItemUniqueNum == EquippedArmourUnieuqNum)
+		{
+			RPGController->DoUnequipItem(EquippedArmourUnieuqNum);
+			UnequipItem(EquippedArmourUnieuqNum);
+		}
+		else if (SelectedItemUniqueNum == EquippedAccessoriesUnieuqNum)
+		{
+			RPGController->DoUnequipItem(EquippedAccessoriesUnieuqNum);
+			UnequipItem(EquippedAccessoriesUnieuqNum);
+		}
+
+		RPGController->DoEquipItem(SelectedItemUniqueNum);
+		EquipItem(SelectedItemUniqueNum);
+	}
+
+	SelectedItemUniqueNum = -1;
+
+	RPGController->DoUpdateEquippedItemStat();
+}
+
+void ARPGHUD::EquipItem(const int32& UniqueNum)
+{
+	if (UniqueNum < 2) return;
+	if (ItemSlotMap.Contains(UniqueNum) == false) return;
+
+	URPGInventorySlotWidget* SelectedSlot = (*ItemSlotMap.Find(UniqueNum));
+	const EItemType SelectedItemType = SelectedSlot->GetSavedItemType();
+
+	// 장비 창에 장착할 아이템의 아이콘으로 설정
+	GameplayInterface->InventoryWidget->SetEquipmentSlot(SelectedItemType, SelectedSlot->GetIconMaterial());
+	SelectedSlot->SetBorderStateToEquipped(true);
+
+	if (SelectedItemType == EItemType::EIT_Armour)
+	{
+		EquippedArmourUnieuqNum = UniqueNum;
+	}
+	else if (SelectedItemType == EItemType::EIT_Accessories)
+	{
+		EquippedAccessoriesUnieuqNum = UniqueNum;
 	}
 }
 
-void ARPGHUD::EquipOrUnequipItem()
+void ARPGHUD::UnequipItem(const int32& UniqueNum)
 {
-	if (SelectedItemUniqueNum < 2) return;
-	if (ItemSlotMap.Contains(SelectedItemUniqueNum) == false) return;
+	if (UniqueNum < 2) return;
+	if (ItemSlotMap.Contains(UniqueNum) == false) return;
 
-	URPGInventorySlotWidget* SelectedSlot = (*ItemSlotMap.Find(SelectedItemUniqueNum));
+	URPGInventorySlotWidget* SelectedSlot = (*ItemSlotMap.Find(UniqueNum));
 	const EItemType SelectedItemType = SelectedSlot->GetSavedItemType();
 
-	// 장착된 아이템 장착 해제
-	if (SelectedItemUniqueNum == EquippedArmourUnieuqNum || SelectedItemUniqueNum == EquippedAccessoriesUnieuqNum)
+	// 장착된 아이템 슬롯 초기화
+	GameplayInterface->InventoryWidget->ClearEquipmentSlot(SelectedItemType);
+	SelectedSlot->SetBorderStateToEquipped(false);
+
+	if (SelectedItemType == EItemType::EIT_Armour)
 	{
-		GameplayInterface->InventoryWidget->ClearEquipmentSlot(SelectedItemType);
-		SelectedSlot->SetBorderStateToEquipped(false);
-		if (SelectedItemType == EItemType::EIT_Armour)
-		{
-			EquippedArmourUnieuqNum = -1;
-		}
-		else if (SelectedItemType == EItemType::EIT_Accessories)
-		{
-			EquippedAccessoriesUnieuqNum = -1;
-		}
+		EquippedArmourUnieuqNum = -1;
 	}
-	else // 장비 창에 장착할 아이템의 아이콘으로 설정
+	else if (SelectedItemType == EItemType::EIT_Accessories)
 	{
-		GameplayInterface->InventoryWidget->SetEquipmentSlot(SelectedItemType, SelectedSlot->GetIconMaterial());
-		SelectedSlot->SetBorderStateToEquipped(true);
-		if (SelectedItemType == EItemType::EIT_Armour)
-		{
-			EquippedArmourUnieuqNum = SelectedItemUniqueNum;
-		}
-		else if (SelectedItemType == EItemType::EIT_Accessories)
-		{
-			EquippedAccessoriesUnieuqNum = SelectedItemUniqueNum;
-		}
+		EquippedAccessoriesUnieuqNum = -1;
 	}
 }
 
@@ -439,12 +464,15 @@ void ARPGHUD::OnDiscardButtonClicked()
 	
 	bIsItemSlotMenuWidgetOn = false;
 
+	RPGController->DiscardItem(SelectedItemUniqueNum);
+
 	if (SelectedItemUniqueNum == EquippedArmourUnieuqNum || SelectedItemUniqueNum == EquippedAccessoriesUnieuqNum)
 	{
-		EquipOrUnequipItem();
+		UnequipItem(SelectedItemUniqueNum);
+		RPGController->DoUpdateEquippedItemStat();
 	}
 
-	RPGController->DiscardItem(SelectedItemUniqueNum);
+	SelectedItemUniqueNum = -1;
 }
 
 void ARPGHUD::OnItemSlotButtonHoveredEvent(int32 UniqueNum)
@@ -488,4 +516,28 @@ void ARPGHUD::ShowItemStatTextBox(const FItemInfo& Info)
 void ARPGHUD::HideItemStatTextBox()
 {
 	ItemStatBoxWidget->SetVisibility(ESlateVisibility::Hidden);
+}
+
+void ARPGHUD::ToggleStatInfoWidget()
+{
+	if (bIsStatInfoWidgetOn)
+	{
+		GameplayInterface->StatInfoWidget->SetVisibility(ESlateVisibility::Hidden);
+		bIsStatInfoWidgetOn = false;
+	}
+	else
+	{
+		GameplayInterface->StatInfoWidget->SetVisibility(ESlateVisibility::Visible);
+		bIsStatInfoWidgetOn = true;
+	}
+}
+
+void ARPGHUD::UpdateStatCharacterStatText(const FCharacterStats& Stats)
+{
+	GameplayInterface->StatInfoWidget->UpdateStatCharacterStatText(Stats);
+}
+
+void ARPGHUD::UpdateStatEquippedItemStatText(const FCharacterStats& Stats)
+{
+	GameplayInterface->StatInfoWidget->UpdateStatEquippedItemStatText(Stats);
 }

@@ -62,6 +62,9 @@ private:
 	UBorder* ItemSlotBorder;
 
 	UPROPERTY(meta = (BindWidget))
+	UImage* BackgroundColor;
+
+	UPROPERTY(meta = (BindWidget))
 	UImage* ItemSlotIcon;
 
 	UPROPERTY(meta = (BindWidget))

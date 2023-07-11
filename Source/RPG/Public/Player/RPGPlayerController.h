@@ -73,19 +73,26 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void UseItemServer(const int32 UniqueNum);
 
-	int32 GetItemCount(const int32 UniqueNum);
-
 	UFUNCTION(Client, Reliable)
 	void UpdateItemInfoClient(const int32 UniqueNum, const int32 ItemCount);
 
 public:
 
-	void EquipOrUnequipItem(const int32& UniqueNum);
+	void DoEquipItem(const int32& UniqueNum);
+
+	void DoUnequipItem(const int32& UniqueNum);
 
 protected:
 
 	UFUNCTION(Server, Reliable)
-	void EquipOrUnequipItemServer(const int32 UniqueNum);
+	void EquipItemServer(const int32 UniqueNum);
+
+	void EquipItem(const int32& UniqueNum);
+
+	UFUNCTION(Server, Reliable)
+	void UnequipItemServer(const int32 UniqueNum);
+
+	void UnequipItem(const int32& UniqueNum);
 
 public:
 
@@ -95,6 +102,38 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void DiscardItemServer(const int32 UniqueNum);
+
+public:
+
+	void DoUpdateCharacterStat();
+
+protected:
+
+	UFUNCTION(Server, Reliable)
+	void UpdateCharacterStatServer();
+
+	void UpdateCharacterStat();
+
+	UFUNCTION(Client, Reliable)
+	void UpdateCharacterStatClient(const FCharacterStats& Stats);
+
+	void CallHUDUpdateCharacterStatText(const FCharacterStats& Stats);
+
+public:
+
+	void DoUpdateEquippedItemStat();
+
+protected:
+
+	UFUNCTION(Server, Reliable)
+	void UpdateEquippedItemStatServer();
+
+	void UpdateEquippedItemStat();
+
+	UFUNCTION(Client, Reliable)
+	void UpdateEquippedItemStatClient(const FCharacterStats& Info);
+
+	void CallHUDUpdateEquippedItemStatText(const FCharacterStats& Info);
 
 public:
 
@@ -121,6 +160,8 @@ protected:
 	void RPressedAction_Cast();
 
 	void IPressedAction_ToggleInventory();
+
+	void SPressedAction_ToggleStatInfo();
 
 	void MouseWheelScroll_ZoomInOut(const FInputActionValue& Value);
 
@@ -157,6 +198,9 @@ private:
 
 	UPROPERTY(VisibleDefaultsOnly, Category = Input)
 	UInputAction* IPressedAction;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = Input)
+	UInputAction* SPressedAction;
 
 	UPROPERTY(VisibleDefaultsOnly, Category = Input)
 	UInputAction* MouseWheelScroll;

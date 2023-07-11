@@ -37,13 +37,10 @@ void UItemSpawnManagerComponent::SpawnItems(const FVector& Location)
 
 	// 코인 무조건 스폰
 	ItemInitializeBeforeSpawn(EItemType::EIT_Coin, GetRandomVector(Location));
-
-	ItemInitializeBeforeSpawn(EItemType::EIT_HealthPotion, GetRandomVector(Location));
-	ItemInitializeBeforeSpawn(EItemType::EIT_ManaPotion, GetRandomVector(Location));
 	ItemInitializeBeforeSpawn(EItemType::EIT_Armour, GetRandomVector(Location));
 	ItemInitializeBeforeSpawn(EItemType::EIT_Accessories, GetRandomVector(Location));
 
-	if (FMath::RandRange(1, 100) < 30)
+	if (FMath::RandRange(1, 100) < 50)
 	{
 		const int8 RandNum = FMath::RandRange(0, 1);
 		if (RandNum)
@@ -55,7 +52,7 @@ void UItemSpawnManagerComponent::SpawnItems(const FVector& Location)
 			ItemInitializeBeforeSpawn(EItemType::EIT_ManaPotion, GetRandomVector(Location));
 		}
 	}
-	if (FMath::RandRange(1, 100) < 30)
+	if (FMath::RandRange(1, 100) < 50)
 	{
 		const int8 RandNum = FMath::RandRange(0, 1);
 		if (RandNum)
@@ -159,12 +156,12 @@ void UItemSpawnManagerComponent::ArmourStatRandomInitialize(FItemInfo& Info)
 	{
 		Info.ItemStatArr[1] = (FMath::RandRange(10, 30) / 10.f);
 	}
-	// ExtraMP
+	// MaxHP
 	if (StatBit & (1 << 2))
 	{
-		Info.ItemStatArr[2] = (FMath::RandRange(5, 20) * 10);
+		Info.ItemStatArr[2] = (FMath::RandRange(3, 20) * 10);
 	}
-	// ExtraHP
+	// MaxMP
 	if (StatBit & (1 << 3))
 	{
 		Info.ItemStatArr[3] = (FMath::RandRange(10, 30) * 10);
@@ -222,7 +219,7 @@ void UItemSpawnManagerComponent::AccessoriesStatRandomInitialize(FItemInfo& Info
 	// AttackSpeed
 	if (StatBit & (1 << 2))
 	{
-		Info.ItemStatArr[2] = (FMath::RandRange(10, 20) / 10.f);
+		Info.ItemStatArr[2] = (FMath::RandRange(11, 20) / 10.f);
 	}
 }
 

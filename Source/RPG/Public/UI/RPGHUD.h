@@ -19,6 +19,7 @@ class UDataTable;
 class URPGItemSlotMenuWidget;
 class URPGStatTextBoxWidget;
 struct FItemInfo;
+struct FCharacterStats;
 
 UCLASS()
 class RPG_API ARPGHUD : public AHUD
@@ -106,7 +107,9 @@ protected:
 	UFUNCTION()
 	void OnUseOrEquipButtonClicked();
 
-	void EquipOrUnequipItem();
+	void EquipItem(const int32& UniqueNum);
+
+	void UnequipItem(const int32& UniqueNum);
 
 	UFUNCTION()
 	void OnDiscardButtonClicked();
@@ -121,6 +124,14 @@ public:
 protected:
 
 	void HideItemStatTextBox();
+
+public:
+
+	void ToggleStatInfoWidget();
+
+	void UpdateStatCharacterStatText(const FCharacterStats& Stats);
+
+	void UpdateStatEquippedItemStatText(const FCharacterStats& Stats);
 
 private:
 
@@ -173,11 +184,11 @@ private:
 
 	bool bIsItemSlotMenuWidgetOn = false;
 
-	int32 SelectedItemUniqueNum;
+	int32 SelectedItemUniqueNum = -1;
 
-	int32 EquippedArmourUnieuqNum;
+	int32 EquippedArmourUnieuqNum = -1;
 
-	int32 EquippedAccessoriesUnieuqNum;
+	int32 EquippedAccessoriesUnieuqNum = -1;
 
 	// 아이템 스탯 정보창
 	UPROPERTY(EditAnywhere, Category = "HUD")
@@ -185,4 +196,6 @@ private:
 
 	UPROPERTY()
 	URPGStatTextBoxWidget* ItemStatBoxWidget;
+
+	bool bIsStatInfoWidgetOn = false;
 };

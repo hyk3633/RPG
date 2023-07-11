@@ -103,5 +103,6 @@ void URPGInventoryWidget::ClearEquipmentSlot(const EItemType ItemType)
 	else if (ItemType == EItemType::EIT_Accessories)
 	{
 		AccessoriesSlotIcon->SetBrushFromMaterial(nullptr);
+		AccessoriesSlotIcon->SetBrushTintColor(FSlateColor(FColor(0, 0, 0, 0)));
 	}
 }
