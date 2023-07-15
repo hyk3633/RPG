@@ -43,6 +43,7 @@ void ARPGSorcererPlayerCharacter::PostInitializeComponents()
 
 	SetAbilityCooldownTime(10, 12, 15, 30);
 	SetAbilityManaUsage(30, 50, 100, 150);
+	SetSkillPowerCorrectionValues(0.f, 2.f, 1.3f, 0.f);
 }
 
 void ARPGSorcererPlayerCharacter::BeginPlay()
@@ -148,6 +149,8 @@ void ARPGSorcererPlayerCharacter::AimingPoseOffMulticast_Implementation()
 	if (SAnimInstance) SAnimInstance->AimingPoseOff();
 }
 
+/** --------------------------- 일반 공격 --------------------------- */
+
 void ARPGSorcererPlayerCharacter::CastNormalAttack()
 {
 	Super::CastNormalAttack();
@@ -189,10 +192,12 @@ void ARPGSorcererPlayerCharacter::SpawnNormalProjectile()
 	ARPGBaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGBaseProjectile>(PrimaryPorjectile, FTransform(SpawnDirection, SpawnPoint), this, this);
 	if (Projectile)
 	{
-		Projectile->SetProjectileData(FProjectileData(true, 50, 1, 1000, 32));
+		Projectile->SetProjectileData(FProjectileData(true, GetStrikingPower(), 1, 1000, 32));
 		Projectile->FinishSpawning(FTransform(SpawnDirection, SpawnPoint));
 	}
 }
+
+/** --------------------------- Q 스킬 --------------------------- */
 
 void ARPGSorcererPlayerCharacter::FireRestrictionBall(ENotifyCode NotifyCode)
 {
@@ -225,10 +230,12 @@ void ARPGSorcererPlayerCharacter::SpawnRestrictionProjectile()
 
 	if (Projectile)
 	{
-		Projectile->SetProjectileData(FProjectileData(true, 0, 3, 1500, 30, false));
+		Projectile->SetProjectileData(FProjectileData(true, GetSkillPower(EPressedKey::EPK_W), 3, 1500, 30, false));
 		Projectile->FinishSpawning(FTransform(SpawnDirection, SpawnPoint));
 	}
 }
+
+/** --------------------------- W 스킬 --------------------------- */
 
 void ARPGSorcererPlayerCharacter::MeteorliteFall(ENotifyCode NotifyCode)
 {
@@ -268,6 +275,8 @@ void ARPGSorcererPlayerCharacter::SpawnMeteorlietPortalParticleMulticast_Impleme
 		SpawnParticle(MeteorlitePortalParticle, SpawnLocation, SpawnRotation);
 	}
 }
+
+/** --------------------------- E 스킬 --------------------------- */
 
 void ARPGSorcererPlayerCharacter::MeteorShower(ENotifyCode NotifyCode)
 {
@@ -326,11 +335,12 @@ void ARPGSorcererPlayerCharacter::ApplyMeteorDamage()
 		Hits,
 		true
 	);
+	const float Damage = GetSkillPower(EPressedKey::EPK_E);
 	for (FHitResult Hit : Hits)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
 		if (Enemy == nullptr) continue;
-		UGameplayStatics::ApplyDamage(Enemy, 30.f, GetController(), this, UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(Enemy, Damage, GetController(), this, UDamageType::StaticClass());
 	}
 	MeteorDamageCount++;
 }
@@ -348,6 +358,8 @@ void ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle()
 	PSpawnLoc.Z = 500.f;
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorShowerParticle, PSpawnLoc, FRotator::ZeroRotator, true);
 }
+
+/** --------------------------- R 스킬 --------------------------- */
 
 void ARPGSorcererPlayerCharacter::FloatingCharacter(ENotifyCode NotifyCode)
 {

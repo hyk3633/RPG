@@ -14,7 +14,7 @@ void URPGAnimInstance::PlayNormalAttackMontage()
 {
 	if (NormalAttackMontage == nullptr) return;
 	if (IsAnyMontagePlaying()) return;
-	Montage_Play(NormalAttackMontage);
+	Montage_Play(NormalAttackMontage, NormalAttackSpeed);
 }
 
 void URPGAnimInstance::JumpToAttackMontageSection(int32 NewSection)
@@ -48,9 +48,14 @@ void URPGAnimInstance::PlayAbilityMontage(UAnimMontage* AbilityMontage)
 	Montage_Play(AbilityMontage);
 }
 
-bool URPGAnimInstance::GetIsAbilityERMontagePlaying()
+bool URPGAnimInstance::IsAbilityERMontagePlaying()
 {
 	return Montage_IsPlaying(Ability_E_Montage) || Montage_IsPlaying(Ability_R_Montage);
+}
+
+bool URPGAnimInstance::IsNormalAttackMontagePlaying()
+{
+	return Montage_IsPlaying(NormalAttackMontage);
 }
 
 void URPGAnimInstance::PlayDeathMontage()

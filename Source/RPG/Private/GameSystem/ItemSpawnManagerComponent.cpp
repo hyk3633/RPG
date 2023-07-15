@@ -154,7 +154,7 @@ void UItemSpawnManagerComponent::ArmourStatRandomInitialize(FItemInfo& Info)
 	// Dexterity
 	if (StatBit & (1 << 1))
 	{
-		Info.ItemStatArr[1] = (FMath::RandRange(10, 30) / 10.f);
+		Info.ItemStatArr[1] = (FMath::RandRange(11, 30) / 10.f);
 	}
 	// MaxHP
 	if (StatBit & (1 << 2))

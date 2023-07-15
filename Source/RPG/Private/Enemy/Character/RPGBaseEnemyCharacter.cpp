@@ -3,6 +3,7 @@
 #include "Enemy/RPGEnemyAIController.h"
 #include "Enemy/RPGEnemyAnimInstance.h"
 #include "UI/RPGEnemyHealthBarWidget.h"
+#include "Player/RPGPlayerController.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Components/CapsuleComponent.h"
@@ -58,6 +59,25 @@ void ARPGBaseEnemyCharacter::BeginPlay()
 	MyAnimInst = Cast<URPGEnemyAnimInstance>(GetMesh()->GetAnimInstance());
 	MyAnimInst->DOnAttack.AddUFunction(this, FName("Attack"));
 	MyAnimInst->OnMontageEnded.AddDynamic(this, &ARPGBaseEnemyCharacter::OnAttackMontageEnded);
+
+	if (HasAuthority())
+	{
+		InitEnemyData();
+	}
+}
+
+void ARPGBaseEnemyCharacter::InitEnemyData()
+{
+	FEnemyData* EnemyData = GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetEnemyData(EnemyType);
+	if (EnemyData)
+	{
+		Name = EnemyData->Name;
+		MaxHealth = EnemyData->MaxHP;
+		StrikingPower = EnemyData->Stk;
+		DefensivePower = EnemyData->Def;
+		Exp = EnemyData->Exp;
+		Health = MaxHealth;
+	}
 }
 
 void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
@@ -73,14 +93,24 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
-	//PLOG(TEXT("%s Enemy damaged : %f"), *DamagedActor->GetName(), Damage);
+	const int32 FinalDamage = FMath::CeilToInt(CalculateDamage(Damage));
+	PLOG(TEXT("%s Enemy damaged : %d"), *DamagedActor->GetName(), FinalDamage);
+	ARPGPlayerController* AttackerController = Cast<ARPGPlayerController>(InstigatorController);
+	if (AttackerController)
+	{
+		AttackerController->ReceiveDamageInfo(GetMesh()->GetSocketTransform(FName("DamageSocket")).GetLocation(), FinalDamage);
+	}
+	HealthDecrease(FinalDamage);
+}
 
-	HealthDecrease(Damage);
+float ARPGBaseEnemyCharacter::CalculateDamage(const float& Damage)
+{
+	return (Damage * (FMath::RandRange(70, 100))) * (1 - ((DefensivePower * (FMath::RandRange(30, 60) / 10)) / 100));
 }
 
 /** Ã¼·Â */
 
-void ARPGBaseEnemyCharacter::HealthDecrease(const float& Damage)
+void ARPGBaseEnemyCharacter::HealthDecrease(const int32& Damage)
 {
 	Health = FMath::Clamp(Health - Damage, 0, MaxHealth);
 	if (Health == 0)
@@ -307,4 +337,6 @@ void ARPGBaseEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ARPGBaseEnemyCharacter, Health);
+	DOREPLIFETIME(ARPGBaseEnemyCharacter, MaxHealth);
+	DOREPLIFETIME(ARPGBaseEnemyCharacter, Name);
 }

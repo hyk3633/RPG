@@ -30,6 +30,7 @@ void ARPGWarriorPlayerCharacter::PostInitializeComponents()
 
 	SetAbilityCooldownTime(5, 8, 12, 30);
 	SetAbilityManaUsage(15, 30, 80, 150);
+	SetSkillPowerCorrectionValues(1.5f, 0.f, 3.f, 0.f);
 }
 
 void ARPGWarriorPlayerCharacter::BeginPlay()
@@ -143,6 +144,8 @@ void ARPGWarriorPlayerCharacter::OnAbilityEnded(EPressedKey KeyType)
 	}
 }
 
+/** --------------------------- 일반 공격 --------------------------- */
+
 void ARPGWarriorPlayerCharacter::CastNormalAttack()
 {
 	Super::CastNormalAttack();
@@ -175,7 +178,8 @@ void ARPGWarriorPlayerCharacter::NormalAttackLineTrace()
 	);
 	for (FHitResult Hit : NormalAttackHitResults)
 	{
-		UGameplayStatics::ApplyDamage(Hit.GetActor(), 50.f, GetController(), this, UDamageType::StaticClass());
+		PLOG(TEXT("%f"), GetStrikingPower());
+		UGameplayStatics::ApplyDamage(Hit.GetActor(), GetStrikingPower(), GetController(), this, UDamageType::StaticClass());
 		SpawnNormalAttackImpactParticleMulticast(Hit.GetActor()->GetActorLocation());
 	}
 }
@@ -184,6 +188,8 @@ void ARPGWarriorPlayerCharacter::SpawnNormalAttackImpactParticleMulticast_Implem
 {
 	SpawnParticle(NormalAttackImpactParticle, SpawnLocation);
 }
+
+/** --------------------------- Q 스킬 --------------------------- */
 
 void ARPGWarriorPlayerCharacter::Wield(ENotifyCode NotifyCode)
 {
@@ -225,7 +231,7 @@ void ARPGWarriorPlayerCharacter::ApplyWieldEffectToHittedActors()
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
 		if (Enemy)
 		{
-			UGameplayStatics::ApplyDamage(Enemy, 25.f, GetController(), this, UDamageType::StaticClass());
+			UGameplayStatics::ApplyDamage(Enemy, GetSkillPower(EPressedKey::EPK_Q), GetController(), this, UDamageType::StaticClass());
 		}
 		else
 		{
@@ -246,6 +252,8 @@ void ARPGWarriorPlayerCharacter::SpawnWieldImpactParticleMulticast_Implementatio
 		SpawnParticle(WieldImpactParticle, SpawnLocation, GetActorRotation());
 	}
 }
+
+/** --------------------------- W 스킬 --------------------------- */
 
 void ARPGWarriorPlayerCharacter::RevealEnemies(ENotifyCode NotifyCode)
 {
@@ -332,6 +340,8 @@ void ARPGWarriorPlayerCharacter::DeactivateEnforceParticle()
 	}
 }
 
+/** --------------------------- E 스킬 --------------------------- */
+
 void ARPGWarriorPlayerCharacter::Dash(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_W_E_Dash) return;
@@ -391,7 +401,7 @@ void ARPGWarriorPlayerCharacter::SmashDownToEnemies()
 
 		Enemy->LaunchCharacter(Enemy->GetActorForwardVector() * -700.f, false, true);
 		Enemy->FalldownToAllClients();
-		UGameplayStatics::ApplyDamage(Enemy, 50.f, GetController(), this, UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(Enemy, GetSkillPower(EPressedKey::EPK_E), GetController(), this, UDamageType::StaticClass());
 
 		GetWorldTimerManager().SetTimer(EnemyGetupTimer, this, &ARPGWarriorPlayerCharacter::GetupEnemies, 3.f);
 	}
@@ -407,6 +417,8 @@ void ARPGWarriorPlayerCharacter::GetupEnemies()
 		}
 	}
 }
+
+/** --------------------------- E 스킬 --------------------------- */
 
 void ARPGWarriorPlayerCharacter::MoveToTargettedLocation(ENotifyCode NotifyCode)
 {

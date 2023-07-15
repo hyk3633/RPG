@@ -147,7 +147,14 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void GetItemInfoStructClient(const FItemInfo& Info);
 
+public:
+
+	void ReceiveDamageInfo(const FVector_NetQuantize& PopupPosition, const int32& Damage);
+
 protected:
+
+	UFUNCTION(Client, Reliable)
+	void CallHUDPopUpDamageWidgetClient(const FVector_NetQuantize& PopupPosition, const int32 Damage);
 
 	void RightClick_AttackOrSetAbilityPoint();
 

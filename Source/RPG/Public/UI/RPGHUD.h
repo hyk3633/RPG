@@ -20,6 +20,7 @@ class URPGItemSlotMenuWidget;
 class URPGStatTextBoxWidget;
 struct FItemInfo;
 struct FCharacterStats;
+class URPGDamageWidget;
 
 UCLASS()
 class RPG_API ARPGHUD : public AHUD
@@ -133,6 +134,8 @@ public:
 
 	void UpdateStatEquippedItemStatText(const FCharacterStats& Stats);
 
+	void PopUpDamageWidget(const FVector_NetQuantize& PopupPosition, const int32 Damage);
+
 private:
 
 	UPROPERTY(EditAnywhere, Category = "HUD")
@@ -152,7 +155,7 @@ private:
 
 	FTimerHandle OffTimer;
 
-	// 인벤토리
+	/** 인벤토리 */
 
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	TSubclassOf<URPGInventorySlotWidget> ItemSlotClass;
@@ -166,16 +169,16 @@ private:
 	UPROPERTY()
 	TMap<int32, URPGInventorySlotWidget*> ItemSlotMap;
 
-	// 아이템이 저장된 슬롯 갯수
+	/** 아이템이 저장된 슬롯 갯수 */
 	int32 SavedItemSlotCount = 0;
 
-	// 활성화된 슬롯 갯수
+	/** 활성화된 슬롯 갯수 */
 	int32 ActivatedItemSlotNum = 0;
 
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	UDataTable* ItemDataTable;
 
-	// 아이템 슬롯 메뉴 
+	/** 아이템 슬롯 메뉴  */
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	TSubclassOf<URPGItemSlotMenuWidget> ItemSlotMenuClass;
 
@@ -190,7 +193,7 @@ private:
 
 	int32 EquippedAccessoriesUnieuqNum = -1;
 
-	// 아이템 스탯 정보창
+	/** 아이템 스탯 정보창 */
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	TSubclassOf<URPGStatTextBoxWidget> ItemStatBoxClass;
 
@@ -198,4 +201,14 @@ private:
 	URPGStatTextBoxWidget* ItemStatBoxWidget;
 
 	bool bIsStatInfoWidgetOn = false;
+
+	/** 데미지 위젯 */
+
+	UPROPERTY()
+	TSubclassOf<URPGDamageWidget> DamageWidgetClass;
+
+	UPROPERTY()
+	TArray<URPGDamageWidget*> DamageWidgetArr;
+
+	const int32 DamageWidgetNumber = 30;
 };

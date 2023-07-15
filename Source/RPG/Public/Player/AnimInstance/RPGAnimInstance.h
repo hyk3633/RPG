@@ -34,13 +34,17 @@ public:
 
 	void PlayAbilityMontageOfKey();
 
-	bool GetIsAbilityERMontagePlaying();
+	bool IsAbilityERMontagePlaying();
+
+	bool IsNormalAttackMontagePlaying();
 
 	void PlayDeathMontage();
 
 	FORCEINLINE void SetCurrentKeyState(EPressedKey KeyType) { CurrentKeyState = KeyType; }
 	FORCEINLINE EPressedKey GetCurrentKeyState() const { return CurrentKeyState; }
 	FORCEINLINE void SetMaxCombo(const int8 MaxValue) { MaxCombo = MaxValue; }
+	FORCEINLINE void SetJogSpeed(const float NewSpeed) { JogSpeed = NewSpeed; }
+	FORCEINLINE void SetNormalAttackSpeed(const float NewSpeed) { NormalAttackSpeed = NewSpeed; }
 
 	FOnAttackInputCheckDelegate DOnAttackInputCheck;
 
@@ -93,8 +97,13 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Montages")
 	UAnimMontage* Ability_R_Montage;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Aiming", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	EPressedKey CurrentKeyState = EPressedKey::EPK_None;
 
 	int8 MaxCombo;
+
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	float JogSpeed = 1.f;
+
+	float NormalAttackSpeed = 1.f;
 };

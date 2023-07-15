@@ -21,3 +21,21 @@
 #define WLOG(format)		UE_LOG(LogTemp, Warning, TEXT("%s : %s"), *CALLINFO, *FString::Printf(format))
 #define ELOG(format)		UE_LOG(LogTemp, Error, TEXT("%s : %s"), *CALLINFO, *FString::Printf(format))
 #define PLOG(format, ...)	UE_LOG(LogTemp, Warning, TEXT("%s %s"), *CALLINFO, *FString::Printf(format, ##__VA_ARGS__))
+
+static const int32 MAX_DEFENSIVE = 5;
+static const int32 MAX_DEXTERITY = 2;
+static const int32 MAX_MAXHP = 200;
+static const int32 MAX_MAXMP = 300;
+
+static const int32 MIN_DEFENSIVE = 0;
+static const int32 MIN_DEXTERITY = 1;
+static const int32 MIN_MAXHP = 0;
+static const int32 MIN_MAXMP = 0;
+
+static const int32 MAX_STRIKINGPOWER = 5;
+static const int32 MAX_SKILLPOWER = 5;
+static const int32 MAX_ATTACKSPEED = 2;
+
+static const int32 MIN_STRIKINGPOWER = 0;
+static const int32 MIN_SKILLPOWER = 0;
+static const int32 MIN_ATTACKSPEED = 1;

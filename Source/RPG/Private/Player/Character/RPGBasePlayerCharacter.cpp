@@ -2,6 +2,7 @@
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Player/AnimInstance/RPGAnimInstance.h"
 #include "Player/RPGPlayerController.h"
+#include "Player/RPGPlayerState.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
@@ -68,6 +69,7 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	RemainedCooldownTime.Init(0, 4);
 	MaxCooldownTime.Init(0, 4);
 	ManaUsage.Init(0, 4);
+	SkillPowerCorrectionValues.Init(0, 4);
 
 	AttackEndComboState();
 }
@@ -101,19 +103,24 @@ void ARPGBasePlayerCharacter::BeginPlay()
 
 void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
-	//PLOG(TEXT("Player Take Damage : %f"), Damage);
 	if (HasAuthority() && Health)
 	{
-		Health = FMath::Max(Health - Damage, 0.f);
+		const float FinalDamage = CalculateDamage(Damage);
+		Health = FMath::Max(Health - FinalDamage, 0.f);
+		//PLOG(TEXT("Player Take Damage : %f"), FinalDamage);
+		// TODO : 적의 takedamage 수정, 캐릭터 클래스의 applydamage 부분도 스킬별로 공격력에 배율 해서 적용
 		if (Health == 0.f)
 		{
 			TempController = GetController();
-			GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			GetWorldTimerManager().SetTimer(RespawnTimer, this, &ARPGBasePlayerCharacter::PlayerRespawn, 5.f);
 			SetLifeSpan(6.f);
 		}
 	}
+}
+
+float ARPGBasePlayerCharacter::CalculateDamage(const float& Damage)
+{
+	return (Damage * (FMath::RandRange(7, 10))) * (1 - ((DefensivePower * (FMath::RandRange(30, 60) / 10)) / 100));
 }
 
 void ARPGBasePlayerCharacter::OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -137,6 +144,12 @@ void ARPGBasePlayerCharacter::OnTargetingComponentEndOverlap(UPrimitiveComponent
 }
 
 /** --------------------------- 죽음 --------------------------- */
+
+void ARPGBasePlayerCharacter::SetCharacterDeadStateMulticast_Implementation()
+{
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
 
 void ARPGBasePlayerCharacter::PlayerRespawn()
 {
@@ -520,6 +533,8 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
 	}
 }
 
+/** --------------------------- 스킬 쿨타임 계산 --------------------------- */
+
 void ARPGBasePlayerCharacter::AbilityActiveBitSet(EPressedKey KeyType)
 {
 	AbilityActiveBit |= (1 << StaticCast<int8>(KeyType));
@@ -572,31 +587,131 @@ bool ARPGBasePlayerCharacter::IsAbilityAvailable(EPressedKey KeyType)
 	return (bIsActive && bIsCooldownEnd);
 }
 
-bool ARPGBasePlayerCharacter::GetIsAnyMontagePlaying() const
+bool ARPGBasePlayerCharacter::IsAnyMontagePlaying() const
 {
 	if (RPGAnimInstance == nullptr) return false;
 	return RPGAnimInstance->IsAnyMontagePlaying();
 }
 
-bool ARPGBasePlayerCharacter::GetAbilityERMontagePlaying()
+bool ARPGBasePlayerCharacter::IsNormalAttackMontagePlaying() const
 {
 	if (RPGAnimInstance == nullptr) return false;
-	return RPGAnimInstance->GetIsAbilityERMontagePlaying();
+	return RPGAnimInstance->IsNormalAttackMontagePlaying();
 }
 
-void ARPGBasePlayerCharacter::SetCharacterArmourStats(const float Def, const float Dex, const int32 ExHP, const int32 ExMP)
+bool ARPGBasePlayerCharacter::AbilityERMontagePlaying()
 {
-	DefenseivePower += Def;
-	Dexterity += Dex;
-	MaxHealth += ExHP;
-	MaxMana += ExMP;
+	if (RPGAnimInstance == nullptr) return false;
+	return RPGAnimInstance->IsAbilityERMontagePlaying();
 }
 
-void ARPGBasePlayerCharacter::SetCharacterAccessoriesStats(const float Stk, const float Skp, const float Atks)
+/** --------------------------- 캐릭터 스탯 설정 --------------------------- */
+
+void ARPGBasePlayerCharacter::InitCharacterStats(const FCharacterStats& NewStats)
+{
+	DefensivePower	= NewStats.DefenseivePower;
+	Dexterity		= NewStats.Dexterity;
+	MaxHealth		= NewStats.MaxHP;
+	MaxMana			= NewStats.MaxMP;
+	StrikingPower	= NewStats.StrikingPower;
+	SkillPower		= NewStats.SkillPower;
+	AttackSpeed		= NewStats.AttackSpeed;
+}
+
+void ARPGBasePlayerCharacter::SetCharacterArmourStats(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
+{
+	SetCharacterArmourStatsServer(Def, Dex, MxHP, MxMP);
+}
+
+bool ARPGBasePlayerCharacter::SetCharacterArmourStatsServer_Validate(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
+{
+	if (Def < MIN_DEFENSIVE || Def > MAX_DEFENSIVE) return false;
+	if (Dex < MIN_DEXTERITY || Dex > MAX_DEXTERITY) return false;
+	if (MxHP < MIN_MAXHP || MxHP > MAX_MAXHP) return false;
+	if (MxMP < MIN_MAXMP || MxMP > MAX_MAXMP) return false;
+	return true;
+}
+
+void ARPGBasePlayerCharacter::SetCharacterArmourStatsServer_Implementation(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
+{
+	DefensivePower += Def;
+	Dexterity += Dex;
+	MaxHealth += MxHP;
+	MaxMana += MxMP;
+}
+
+void ARPGBasePlayerCharacter::OnRep_Dexterity()
+{
+	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->SetJogSpeed(Dexterity);
+}
+
+void ARPGBasePlayerCharacter::SetCharacterAccessoriesStats(const float& Stk, const float& Skp, const float& Atks)
+{
+	SetCharacterAccessoriesStatsServer(Stk, Skp, Atks);
+}
+
+bool ARPGBasePlayerCharacter::SetCharacterAccessoriesStatsServer_Validate(const float& Stk, const float& Skp, const float& Atks)
+{
+	if (Stk < MIN_STRIKINGPOWER || Stk > MAX_STRIKINGPOWER) return false;
+	if (Skp < MIN_SKILLPOWER || Skp > MAX_SKILLPOWER) return false;
+	if (Atks < MIN_ATTACKSPEED || Atks > MAX_ATTACKSPEED) return false;
+	return true;
+}
+
+void ARPGBasePlayerCharacter::SetCharacterAccessoriesStatsServer_Implementation(const float& Stk, const float& Skp, const float& Atks)
 {
 	StrikingPower += Stk;
 	SkillPower += Skp;
 	AttackSpeed += Atks;
+}
+
+void ARPGBasePlayerCharacter::OnRep_AttackSpeed()
+{
+	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->SetNormalAttackSpeed(AttackSpeed);
+}
+
+void ARPGBasePlayerCharacter::SubtractCharacterArmourStats(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
+{
+	SubtractCharacterArmourStatsServer(Def, Dex, MxHP, MxMP);
+}
+
+bool ARPGBasePlayerCharacter::SubtractCharacterArmourStatsServer_Validate(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
+{
+	if (Def < MIN_DEFENSIVE || Def > MAX_DEFENSIVE) return false;
+	if (Dex < MIN_DEXTERITY || Dex > MAX_DEXTERITY) return false;
+	if (MxHP < MIN_MAXHP || MxHP > MAX_MAXHP) return false;
+	if (MxMP < MIN_MAXMP || MxMP > MAX_MAXMP) return false;
+	return true;
+}
+
+void ARPGBasePlayerCharacter::SubtractCharacterArmourStatsServer_Implementation(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
+{
+	DefensivePower -= Def;
+	Dexterity -= Dex;
+	MaxHealth -= MxHP;
+	MaxMana -= MxMP;
+}
+
+void ARPGBasePlayerCharacter::SubtractCharacterAccessoriesStats(const float& Stk, const float& Skp, const float& Atks)
+{
+	SubtractCharacterAccessoriesStatsServer(Stk, Skp, Atks);
+}
+
+bool ARPGBasePlayerCharacter::SubtractCharacterAccessoriesStatsServer_Validate(const float& Stk, const float& Skp, const float& Atks)
+{
+	if (Stk < MIN_STRIKINGPOWER || Stk > MAX_STRIKINGPOWER) return false;
+	if (Skp < MIN_SKILLPOWER || Skp > MAX_SKILLPOWER) return false;
+	if (Atks < MIN_ATTACKSPEED || Atks > MAX_ATTACKSPEED) return false;
+	return true;
+}
+
+void ARPGBasePlayerCharacter::SubtractCharacterAccessoriesStatsServer_Implementation(const float& Stk, const float& Skp, const float& Atks)
+{
+	StrikingPower -= Stk;
+	SkillPower -= Skp;
+	AttackSpeed -= Atks;
 }
 
 void ARPGBasePlayerCharacter::OnRep_MaxHP()
@@ -609,7 +724,7 @@ void ARPGBasePlayerCharacter::OnRep_MaxMP()
 	DOnChangeManaPercentage.Broadcast(Mana / (MaxMana + MaxMP));
 }
 
-void ARPGBasePlayerCharacter::SetAbilityCooldownTime(int8 QTime, int8 WTime, int8 ETime, int8 RTime)
+void ARPGBasePlayerCharacter::SetAbilityCooldownTime(const int8& QTime, const int8& WTime, const int8& ETime, const int8& RTime)
 {
 	MaxCooldownTime[0] = QTime;
 	MaxCooldownTime[1] = WTime;
@@ -617,12 +732,20 @@ void ARPGBasePlayerCharacter::SetAbilityCooldownTime(int8 QTime, int8 WTime, int
 	MaxCooldownTime[3] = RTime;
 }
 
-void ARPGBasePlayerCharacter::SetAbilityManaUsage(int32 QUsage, int32 WUsage, int32 EUsage, int32 RUsage)
+void ARPGBasePlayerCharacter::SetAbilityManaUsage(const int32& QUsage, const int32& WUsage, const int32& EUsage, const int32& RUsage)
 {
 	ManaUsage[0] = QUsage;
 	ManaUsage[1] = WUsage;
 	ManaUsage[2] = EUsage;
 	ManaUsage[3] = RUsage;
+}
+
+void ARPGBasePlayerCharacter::SetSkillPowerCorrectionValues(const float& QPower, const float& WPower, const float& EPower, const float& RPower)
+{
+	SkillPowerCorrectionValues[0] = QPower;
+	SkillPowerCorrectionValues[1] = WPower;
+	SkillPowerCorrectionValues[2] = EPower;
+	SkillPowerCorrectionValues[3] = RPower;
 }
 
 void ARPGBasePlayerCharacter::GetTargetingCompOverlappingEnemies(TArray<AActor*>& Enemies)

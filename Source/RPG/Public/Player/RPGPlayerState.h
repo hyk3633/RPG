@@ -15,6 +15,7 @@ USTRUCT(Atomic)
 struct FCharacterStats
 {
 	GENERATED_BODY()
+
 public:
 
 	UPROPERTY()
@@ -38,8 +39,8 @@ public:
 	UPROPERTY()
 	float AttackSpeed;
 
-	FCharacterStats() : DefenseivePower(0), Dexterity(1), MaxMP(0), MaxHP(0), StrikingPower(0), SkillPower(0), AttackSpeed(1) {}
-	FCharacterStats& operator=(const FCharacterStats& Other) 
+	FCharacterStats() : DefenseivePower(1), Dexterity(1), MaxMP(0), MaxHP(0), StrikingPower(1), SkillPower(1), AttackSpeed(1) {}
+	FCharacterStats& operator=(const FCharacterStats& Other)
 	{
 		if (this == &Other) return *this;
 		DefenseivePower = Other.DefenseivePower;

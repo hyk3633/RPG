@@ -6,6 +6,7 @@
 #include "UI/RPGItemSlotMenuWidget.h"
 #include "UI/RPGStatTextBoxWidget.h"
 #include "UI/RPGStatInfoWidget.h"
+#include "UI/RPGDamageWidget.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Player/RPGPlayerController.h"
 #include "Item/RPGItem.h"
@@ -24,6 +25,11 @@ ARPGHUD::ARPGHUD()
 
 	static ConstructorHelpers::FObjectFinder<UMaterialInstance> Obj_CooldownProgress(TEXT("/Game/_Assets/Materials/Circular/MI_ClockProgress.MI_ClockProgress"));
 	if (Obj_CooldownProgress.Succeeded()) ClockProgressMatInst = Obj_CooldownProgress.Object;
+
+	static ConstructorHelpers::FClassFinder<UUserWidget> DamageWidgetAsset(TEXT("WidgetBlueprint'/Game/_Assets/Blueprints/HUD/WBP_DamageWidget.WBP_DamageWidget_C'"));
+	if (DamageWidgetAsset.Succeeded()) { DamageWidgetClass = DamageWidgetAsset.Class; }
+
+	DamageWidgetArr.Init(nullptr, DamageWidgetNumber);
 }
 
 void ARPGHUD::PostInitializeComponents()
@@ -64,6 +70,17 @@ void ARPGHUD::InitHUD()
 		ItemStatBoxWidget = CreateWidget<URPGStatTextBoxWidget>(GetOwningPlayerController(), ItemStatBoxClass);
 		ItemStatBoxWidget->SetVisibility(ESlateVisibility::Hidden);
 		ItemStatBoxWidget->AddToViewport(1);
+	}
+
+	if (DamageWidgetClass)
+	{
+		for (int32 Idx = 0; Idx < DamageWidgetNumber; Idx++)
+		{
+			URPGDamageWidget* DamageWidget = CreateWidget<URPGDamageWidget>(GetOwningPlayerController(), DamageWidgetClass);
+			DamageWidget->InitDamageWidget();
+			DamageWidgetArr[Idx] = DamageWidget;
+			DamageWidget->AddToViewport();
+		}
 	}
 
 	DrawOverlay();
@@ -540,4 +557,20 @@ void ARPGHUD::UpdateStatCharacterStatText(const FCharacterStats& Stats)
 void ARPGHUD::UpdateStatEquippedItemStatText(const FCharacterStats& Stats)
 {
 	GameplayInterface->StatInfoWidget->UpdateStatEquippedItemStatText(Stats);
+}
+
+void ARPGHUD::PopUpDamageWidget(const FVector_NetQuantize& PopupPosition, const int32 Damage)
+{
+	FVector2D ScreenLocation;
+	GetOwningPlayerController()->ProjectWorldLocationToScreen(PopupPosition, ScreenLocation);
+
+	for (int32 Idx = 0; Idx < DamageWidgetNumber; Idx++)
+	{
+		if (DamageWidgetArr[Idx]->IsWidgetUsable())
+		{
+			DamageWidgetArr[Idx]->SetPositionInViewport(ScreenLocation);
+			DamageWidgetArr[Idx]->SetDamageTextAndPopup(Damage);
+			return;
+		}
+	}
 }

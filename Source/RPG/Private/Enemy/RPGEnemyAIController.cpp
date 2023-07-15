@@ -67,6 +67,7 @@ void ARPGEnemyAIController::FindClosestPlayer()
 	if (ClosestTarget)
 	{
 		SetTarget(ClosestTarget);
+		SetFocus(ClosestTarget);
 	}
 }
 
@@ -75,7 +76,6 @@ void ARPGEnemyAIController::SetTarget(APawn* TargetToSet)
 	if (BBComp)
 	{
 		BBComp->SetValueAsObject(FName("Target"), TargetToSet);
-		SetFocus(TargetToSet);
 	}
 }
 

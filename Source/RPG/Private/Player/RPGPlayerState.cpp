@@ -77,7 +77,6 @@ void ARPGPlayerState::UnequipItem(const int32& UniqueNum)
 
 void ARPGPlayerState::UpdateEquippedItemStats(const FItemInfo* Info, const bool bIsEquip)
 {
-	// TODO : 레벨 업 시스템
 	if (Info->ItemType == EItemType::EIT_Armour)
 	{
 		EquippedItemStats.DefenseivePower	= bIsEquip ? Info->ItemStatArr[0] : 0;

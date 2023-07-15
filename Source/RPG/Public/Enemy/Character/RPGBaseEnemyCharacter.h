@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Enums/EnemyType.h"
 #include "RPGBaseEnemyCharacter.generated.h"
 
 class ARPGEnemyAIController;
@@ -35,12 +36,16 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	void InitEnemyData();
+
 	UFUNCTION()
 	void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 
+	float CalculateDamage(const float& Damage);
+
 	/** 체력 */
 
-	void HealthDecrease(const float& Damage);
+	void HealthDecrease(const int32& Damage);
 
 	UFUNCTION()
 	void OnRep_Health();
@@ -125,8 +130,6 @@ public:
 
 	/** 행동 정지, 해제 */
 
-public:
-
 	void StopActionToAllClients();
 
 protected:
@@ -148,6 +151,8 @@ protected:
 	UPROPERTY()
 	ARPGEnemyAIController* MyController;
 
+	EEnemyType EnemyType;
+
 private:
 
 	UPROPERTY()
@@ -161,10 +166,22 @@ private:
 
 	FTimerHandle HealthBarTimer;
 
-	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleInstanceOnly, Category = "Enemy | Status")
-	float Health = 10.f;
+	/** 캐릭터 스탯 */
 
-	float MaxHealth = 300.f;
+	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleInstanceOnly, Category = "Enemy | Status")
+	float Health;
+
+	UPROPERTY(Replicated)
+	float MaxHealth;
+
+	UPROPERTY(Replicated)
+	FString Name;
+
+	float StrikingPower;
+
+	float DefensivePower;
+
+	int32 Exp;
 
 	FTimerHandle DestroyTimer;
 

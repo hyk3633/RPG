@@ -44,6 +44,8 @@ protected:
 	UFUNCTION()
 	virtual void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 
+	float CalculateDamage(const float& Damage);
+
 	UFUNCTION()
 	void OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
@@ -52,9 +54,8 @@ protected:
 
 	/** ---------- 죽음 ---------- */
 
-	AController* TempController;
-
-	FTimerHandle RespawnTimer;
+	UFUNCTION(NetMulticast, Reliable)
+	void SetCharacterDeadStateMulticast();
 
 	void PlayerRespawn();
 
@@ -200,14 +201,49 @@ public: /** ---------- 반환 및 설정 함수 ---------- */
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
 	FORCEINLINE int8 GetAbilityCooldownBit() const { return AbilityCooldownBit; }
+	FORCEINLINE float GetStrikingPower() const { return StrikingPower; }
+	FORCEINLINE float GetSkillPower(const EPressedKey KeyType) const { return SkillPower + SkillPowerCorrectionValues[StaticCast<int8>(KeyType)]; }
 	float GetCooldownPercentage(int8 Bit) const;
 	bool IsAbilityAvailable(EPressedKey KeyType);
-	bool GetIsAnyMontagePlaying() const;
-	bool GetAbilityERMontagePlaying();
-	void SetCharacterArmourStats(const float Def, const float Dex, const int32 ExHP, const int32 ExMP);
-	void SetCharacterAccessoriesStats(const float Stk, const float Skp, const float Atks);
+	bool IsAnyMontagePlaying() const;
+	bool IsNormalAttackMontagePlaying() const;
+	bool AbilityERMontagePlaying();
+
+	/** ---------- 캐릭터 스탯 설정 ---------- */
+
+	void InitCharacterStats(const FCharacterStats& NewStats);
+
+	void SetCharacterArmourStats(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP);
+
+	void SetCharacterAccessoriesStats(const float& Stk, const float& Skp, const float& Atks);
 	
 protected:
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SetCharacterArmourStatsServer(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP);
+
+	UFUNCTION()
+	void OnRep_Dexterity();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SetCharacterAccessoriesStatsServer(const float& Stk, const float& Skp, const float& Atks);
+
+	UFUNCTION()
+	void OnRep_AttackSpeed();
+
+public:
+
+	void SubtractCharacterArmourStats(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP);
+
+	void SubtractCharacterAccessoriesStats(const float& Stk, const float& Skp, const float& Atks);
+
+protected:
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SubtractCharacterArmourStatsServer(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SubtractCharacterAccessoriesStatsServer(const float& Stk, const float& Skp, const float& Atks);
 
 	UFUNCTION()
 	void OnRep_MaxHP();
@@ -215,9 +251,11 @@ protected:
 	UFUNCTION()
 	void OnRep_MaxMP();
 
-	void SetAbilityCooldownTime(int8 QTime, int8 WTime, int8 ETime, int8 RTime);
+	void SetAbilityCooldownTime(const int8& QTime, const int8& WTime, const int8& ETime, const int8& RTime);
 
-	void SetAbilityManaUsage(int32 QUsage, int32 WUsage, int32 EUsage, int32 RUsage);
+	void SetAbilityManaUsage(const int32& QUsage, const int32& WUsage, const int32& EUsage, const int32& RUsage);
+
+	void SetSkillPowerCorrectionValues(const float& QPower, const float& WPower, const float& EPower, const float& RPower);
 	
 	void GetTargetingCompOverlappingEnemies(TArray<AActor*>& Enemies);
 
@@ -280,7 +318,7 @@ private:
 	/** 서버 전용 스탯 */
 
 	UPROPERTY()
-	float DefenseivePower;
+	float DefensivePower;
 
 	UPROPERTY()
 	float StrikingPower;
@@ -298,10 +336,10 @@ private:
 
 	/** 멀티캐스트 스탯 */
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_Dexterity)
 	float Dexterity;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_AttackSpeed)
 	float AttackSpeed;
 
 	/** 이동 */
@@ -324,8 +362,6 @@ protected:
 
 	int32 MaxCombo = 4;
 
-protected:
-
 	bool bIsAttacking = false;
 	bool bCanNextCombo = false;
 	int32 CurrentCombo = 0;
@@ -342,4 +378,13 @@ protected:
 
 	TArray<float> MaxCooldownTime;
 
+	/** 리스폰 */
+
+	AController* TempController;
+
+	FTimerHandle RespawnTimer;
+
+	/** 스킬 공격력 보정 값 */
+
+	TArray<float> SkillPowerCorrectionValues;
 };

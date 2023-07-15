@@ -4,6 +4,7 @@
 #include "Player/RPGPlayerState.h"
 #include "Item/RPGItem.h"
 #include "UI/RPGHUD.h"
+#include "UI/RPGDamageWidget.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Enums/PressedKey.h"
@@ -96,6 +97,11 @@ void ARPGPlayerController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 
 	MyCharacter = Cast<ARPGBasePlayerCharacter>(InPawn);
+
+	if (HasAuthority())
+	{
+		UpdateCharacterStat();
+	}
 }
 
 void ARPGPlayerController::OnRep_MyCharacter()
@@ -200,7 +206,7 @@ void ARPGPlayerController::LeftClickAction_StopMove()
 void ARPGPlayerController::LeftClickAction_SetPath()
 {
 	if (MyCharacter == nullptr) return;
-	if (MyCharacter->GetAbilityERMontagePlaying()) return;
+	if (MyCharacter->AbilityERMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -320,7 +326,6 @@ void ARPGPlayerController::EquipItem(const int32& UniqueNum)
 	FItemInfo ItemInfo;
 	const bool bIsExist = GetPlayerState<ARPGPlayerState>()->GetItemStatInfo(UniqueNum, ItemInfo);
 
-	// Validate 함수 추가
 	if (IsValid(MyCharacter) && bIsExist)
 	{
 		if (ItemInfo.ItemType == EItemType::EIT_Armour)
@@ -351,16 +356,15 @@ void ARPGPlayerController::UnequipItem(const int32& UniqueNum)
 	FItemInfo ItemInfo;
 	const bool bIsExist = GetPlayerState<ARPGPlayerState>()->GetItemStatInfo(UniqueNum, ItemInfo);
 
-	// Validate 함수 추가
 	if (IsValid(MyCharacter) && bIsExist)
 	{
 		if (ItemInfo.ItemType == EItemType::EIT_Armour)
 		{
-			MyCharacter->SetCharacterArmourStats(-ItemInfo.ItemStatArr[0], -ItemInfo.ItemStatArr[1], -ItemInfo.ItemStatArr[2], -ItemInfo.ItemStatArr[3]);
+			MyCharacter->SubtractCharacterArmourStats(ItemInfo.ItemStatArr[0], ItemInfo.ItemStatArr[1], ItemInfo.ItemStatArr[2], ItemInfo.ItemStatArr[3]);
 		}
 		else
 		{
-			MyCharacter->SetCharacterAccessoriesStats(-ItemInfo.ItemStatArr[0], -ItemInfo.ItemStatArr[1], -ItemInfo.ItemStatArr[2]);
+			MyCharacter->SubtractCharacterAccessoriesStats(ItemInfo.ItemStatArr[0], ItemInfo.ItemStatArr[1], ItemInfo.ItemStatArr[2]);
 		}
 	}
 
@@ -413,6 +417,10 @@ void ARPGPlayerController::UpdateCharacterStatServer_Implementation()
 void ARPGPlayerController::UpdateCharacterStat()
 {
 	const FCharacterStats& Stats = GetPlayerState<ARPGPlayerState>()->GetCurrentCharacterStats();
+	if (MyCharacter)
+	{
+		MyCharacter->InitCharacterStats(Stats);
+	}
 	UpdateCharacterStatClient(Stats);
 }
 
@@ -485,11 +493,28 @@ void ARPGPlayerController::GetItemInfoStructClient_Implementation(const FItemInf
 	}
 }
 
+/** -------------- 데미지 수치 위젯 띄우기 -------------- */
+
+void ARPGPlayerController::ReceiveDamageInfo(const FVector_NetQuantize& PopupPosition, const int32& Damage)
+{
+	CallHUDPopUpDamageWidgetClient(PopupPosition, Damage);
+}
+
+void ARPGPlayerController::CallHUDPopUpDamageWidgetClient_Implementation(const FVector_NetQuantize& PopupPosition, const int32 Damage)
+{
+	if (RPGHUD)
+	{
+		RPGHUD->PopUpDamageWidget(PopupPosition, Damage);
+		WLOG(TEXT("DamageWidget"));
+	}
+}
+
 /** -------------- 오른쪽 클릭 : 스킬 타격 위치 지정, 일반 공격 -------------- */
 
 void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 {
-	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr) return;
+	if (MyCharacter->IsAnyMontagePlaying() && !MyCharacter->IsNormalAttackMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -505,7 +530,7 @@ void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 
 void ARPGPlayerController::QPressedAction_Cast()
 {
-	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -519,7 +544,7 @@ void ARPGPlayerController::QPressedAction_Cast()
 
 void ARPGPlayerController::WPressedAction_Cast()
 {
-	if (bIsInventoryOn || MyCharacter == nullptr && MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr && MyCharacter->IsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -533,7 +558,7 @@ void ARPGPlayerController::WPressedAction_Cast()
 
 void ARPGPlayerController::EPressedAction_Cast()
 {
-	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -547,7 +572,7 @@ void ARPGPlayerController::EPressedAction_Cast()
 
 void ARPGPlayerController::RPressedAction_Cast()
 {
-	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -563,7 +588,7 @@ void ARPGPlayerController::RPressedAction_Cast()
 
 void ARPGPlayerController::IPressedAction_ToggleInventory()
 {
-	if (RPGHUD == nullptr || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (RPGHUD == nullptr || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -580,7 +605,7 @@ void ARPGPlayerController::IPressedAction_ToggleInventory()
 
 void ARPGPlayerController::SPressedAction_ToggleStatInfo()
 {
-	if (RPGHUD == nullptr || MyCharacter == nullptr || MyCharacter->GetIsAnyMontagePlaying()) return;
+	if (RPGHUD == nullptr || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{
