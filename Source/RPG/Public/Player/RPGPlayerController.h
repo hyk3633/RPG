@@ -33,6 +33,8 @@ protected:
 
 	virtual void OnPossess(APawn* InPawn) override;
 
+	void ReloadCharacterAndEquipmentStat();
+
 	UFUNCTION()
 	void OnRep_MyCharacter();
 

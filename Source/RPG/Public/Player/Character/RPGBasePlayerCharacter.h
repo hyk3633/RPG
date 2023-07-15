@@ -61,9 +61,6 @@ protected:
 
 	void PlayerDie();
 
-	UFUNCTION()
-	void AfterDeath();
-
 	/** ---------- 체력 ---------- */
 
 	UFUNCTION()
@@ -207,7 +204,7 @@ public: /** ---------- 반환 및 설정 함수 ---------- */
 	bool IsAbilityAvailable(EPressedKey KeyType);
 	bool IsAnyMontagePlaying() const;
 	bool IsNormalAttackMontagePlaying() const;
-	bool AbilityERMontagePlaying();
+	bool IsAbilityERMontagePlaying();
 
 	/** ---------- 캐릭터 스탯 설정 ---------- */
 

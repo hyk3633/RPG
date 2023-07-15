@@ -192,7 +192,7 @@ void ARPGSorcererPlayerCharacter::SpawnNormalProjectile()
 	ARPGBaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGBaseProjectile>(PrimaryPorjectile, FTransform(SpawnDirection, SpawnPoint), this, this);
 	if (Projectile)
 	{
-		Projectile->SetProjectileData(FProjectileData(true, GetStrikingPower(), 1, 1000, 32));
+		Projectile->SetProjectileData(FProjectileData(true, 100*GetStrikingPower(), 1, 1000, 32));
 		Projectile->FinishSpawning(FTransform(SpawnDirection, SpawnPoint));
 	}
 }

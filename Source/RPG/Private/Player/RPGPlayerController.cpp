@@ -100,7 +100,20 @@ void ARPGPlayerController::OnPossess(APawn* InPawn)
 
 	if (HasAuthority())
 	{
-		UpdateCharacterStat();
+		ReloadCharacterAndEquipmentStat();
+	}
+}
+
+void ARPGPlayerController::ReloadCharacterAndEquipmentStat()
+{
+	if (MyCharacter)
+	{
+		const FCharacterStats& Stats = GetPlayerState<ARPGPlayerState>()->GetCurrentCharacterStats();
+		MyCharacter->InitCharacterStats(Stats);
+
+		const FCharacterStats& EquipmentStats = GetPlayerState<ARPGPlayerState>()->GetEquippedItemStats();
+		MyCharacter->SetCharacterArmourStats(EquipmentStats.DefenseivePower, EquipmentStats.Dexterity, EquipmentStats.MaxHP, EquipmentStats.MaxMP);
+		MyCharacter->SetCharacterAccessoriesStats(EquipmentStats.StrikingPower, EquipmentStats.SkillPower, EquipmentStats.AttackSpeed);
 	}
 }
 
@@ -124,14 +137,17 @@ void ARPGPlayerController::OnRep_MyCharacter()
 		RPGHUD->ReloadHUD();
 	}
 
-	if (RPGHUD)
-	{
-		// TODO : 시작 시 초기화
-	}
-
 	if (MyCharacter)
 	{
 		MyCharacter->ResetHealthManaUI();
+	}
+
+	bIsInventoryOn = false;
+
+	if (TracedItem)
+	{
+		TracedItem->SetRenderCustomDepthOff();
+		TracedItem = nullptr;
 	}
 }
 
@@ -206,7 +222,7 @@ void ARPGPlayerController::LeftClickAction_StopMove()
 void ARPGPlayerController::LeftClickAction_SetPath()
 {
 	if (MyCharacter == nullptr) return;
-	if (MyCharacter->AbilityERMontagePlaying()) return;
+	if (MyCharacter->IsAbilityERMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
 	{

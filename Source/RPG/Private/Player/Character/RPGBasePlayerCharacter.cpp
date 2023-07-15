@@ -95,7 +95,6 @@ void ARPGBasePlayerCharacter::BeginPlay()
 	{
 		RPGAnimInstance->DOnAttackInputCheck.AddUFunction(this, FName("CastNormalAttack"));
 		RPGAnimInstance->DOnAttackEnded.AddUFunction(this, FName("OnAttackMontageEnded"));
-		RPGAnimInstance->DOnDeathEnded.AddUFunction(this, FName("AfterDeath"));
 		RPGAnimInstance->DOnAbilityMontageEnded.AddUFunction(this, FName("OnAbilityEnded"));
 		RPGAnimInstance->SetMaxCombo(MaxCombo);
 	}
@@ -108,10 +107,10 @@ void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, 
 		const float FinalDamage = CalculateDamage(Damage);
 		Health = FMath::Max(Health - FinalDamage, 0.f);
 		//PLOG(TEXT("Player Take Damage : %f"), FinalDamage);
-		// TODO : 적의 takedamage 수정, 캐릭터 클래스의 applydamage 부분도 스킬별로 공격력에 배율 해서 적용
 		if (Health == 0.f)
 		{
 			TempController = GetController();
+			SetCharacterDeadStateMulticast();
 			GetWorldTimerManager().SetTimer(RespawnTimer, this, &ARPGBasePlayerCharacter::PlayerRespawn, 5.f);
 			SetLifeSpan(6.f);
 		}
@@ -149,6 +148,7 @@ void ARPGBasePlayerCharacter::SetCharacterDeadStateMulticast_Implementation()
 {
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMovementComponent()->Deactivate();
 }
 
 void ARPGBasePlayerCharacter::PlayerRespawn()
@@ -161,11 +161,6 @@ void ARPGBasePlayerCharacter::PlayerDie()
 {
 	if (RPGAnimInstance == nullptr) return;
 	RPGAnimInstance->PlayDeathMontage();
-}
-
-void ARPGBasePlayerCharacter::AfterDeath()
-{
-	GetMovementComponent()->Deactivate();
 }
 
 /** --------------------------- 체력, 마나 --------------------------- */
@@ -599,7 +594,7 @@ bool ARPGBasePlayerCharacter::IsNormalAttackMontagePlaying() const
 	return RPGAnimInstance->IsNormalAttackMontagePlaying();
 }
 
-bool ARPGBasePlayerCharacter::AbilityERMontagePlaying()
+bool ARPGBasePlayerCharacter::IsAbilityERMontagePlaying()
 {
 	if (RPGAnimInstance == nullptr) return false;
 	return RPGAnimInstance->IsAbilityERMontagePlaying();

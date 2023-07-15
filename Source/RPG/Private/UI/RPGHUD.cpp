@@ -105,8 +105,14 @@ void ARPGHUD::ReloadHUD()
 {
 	CastPawnAndBindFunctions();
 
+	SelectedItemUniqueNum = -1;
+	bIsStatInfoWidgetOn = false;
+	bIsItemSlotMenuWidgetOn = false;
+
 	GameplayInterface->StatInfoWidget->SetVisibility(ESlateVisibility::Hidden);
 	GameplayInterface->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
+	ItemStatBoxWidget->SetVisibility(ESlateVisibility::Hidden);
+	ItemSlotMenuWidget->SetVisibility(ESlateVisibility::Hidden);
 	GameplayInterface->SetVisibility(ESlateVisibility::Visible);
 }
 
