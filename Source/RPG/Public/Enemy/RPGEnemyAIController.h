@@ -44,10 +44,17 @@ public:
 
 	void SetIsRestrained(const bool bIsRestrained);
 
+	void SetSuckedIn(const bool bIsSuckedIn);
+
+	bool GetSuckedIn() const;
+
 protected:
 
 	UFUNCTION()
 	void CharacterDead();
+
+	UFUNCTION()
+	void CharacterActivate();
 
 private:
 
@@ -65,5 +72,4 @@ private:
 
 	UPROPERTY()
 	UBlackboardComponent* BBComp;
-
 };

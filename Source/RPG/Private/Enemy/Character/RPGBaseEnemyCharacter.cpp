@@ -1,5 +1,6 @@
 
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
+#include "Enemy/RPGEnemyFormComponent.h"
 #include "Enemy/RPGEnemyAIController.h"
 #include "Enemy/RPGEnemyAnimInstance.h"
 #include "UI/RPGEnemyHealthBarWidget.h"
@@ -20,16 +21,23 @@ ARPGBaseEnemyCharacter::ARPGBaseEnemyCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
-	GetMesh()->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECollisionResponse::ECR_Ignore);
-	GetMesh()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
-	GetMesh()->CustomDepthStencilValue = 251;
+	bReplicates = true;
+	SetReplicateMovement(true);
 
-	GetCapsuleComponent()->SetCollisionObjectType(ECC_EnemyBody);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECollisionResponse::ECR_Block);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Block);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECollisionResponse::ECR_Ignore);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
+	AutoPossessAI = EAutoPossessAI::Spawned;
+
+	GetMesh()->SetCollisionProfileName(FName("DeactivatedEnemyMesh"));
+	GetMesh()->SetRelativeLocation(FVector(0, 0, -90));
+	GetMesh()->SetRelativeRotation(FRotator(0, -90, 0));
+	GetMesh()->CustomDepthStencilValue = 251;
+	GetMesh()->SetVisibility(false);
+	GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+	GetMesh()->SetGenerateOverlapEvents(true);
+
+	GetCapsuleComponent()->SetCollisionProfileName(FName("DeactivatedEnemyCapsule"));
+
+	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon Skeletal Mesh"));
+	WeaponMesh->SetVisibility(false);
 
 	HealthBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Health Bar Widget"));
 	static ConstructorHelpers::FClassFinder<UUserWidget> WidgetAsset(TEXT("WidgetBlueprint'/Game/_Assets/Blueprints/HUD/WBP_EnemyHealthBar.WBP_EnemyHealthBar_C'"));
@@ -39,7 +47,77 @@ ARPGBaseEnemyCharacter::ARPGBaseEnemyCharacter()
 	HealthBarWidget->SetDrawSize(FVector2D(200.f, 25.f));
 	HealthBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidget->SetVisibility(false);
+}
 
+void ARPGBaseEnemyCharacter::SetEnemyAssets(const FEnemyAssets& NewEnemyAssets)
+{
+	EnemyAssets = NewEnemyAssets;
+	SetMeshAndController();
+}
+
+void ARPGBaseEnemyCharacter::SetMeshAndController()
+{
+	GetMesh()->SetSkeletalMesh(EnemyAssets.BodyMesh);
+	GetMesh()->SetAnimInstanceClass(EnemyAssets.AnimInstance);
+	InitAnimInstance();
+	AIControllerClass = EnemyAssets.AIController;
+
+	if (EnemyAssets.WeaponMesh_Skeletal)
+	{
+		WeaponMesh->SetSkeletalMeshAsset(EnemyAssets.WeaponMesh_Skeletal);
+		WeaponMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, EnemyAssets.SocketName);
+	}
+}
+
+void ARPGBaseEnemyCharacter::OnRep_EnemyAssets()
+{
+	SetMeshAndController();
+	if (EnemyAssets.WeaponMesh_Static)
+	{
+		AttachWeaponStaticMesh(EnemyAssets.WeaponMesh_Static, EnemyAssets.SocketName);
+	}
+}
+
+void ARPGBaseEnemyCharacter::InitAnimInstance()
+{
+	MyAnimInst = Cast<URPGEnemyAnimInstance>(GetMesh()->GetAnimInstance());
+	if (HasAuthority())
+	{
+		MyAnimInst->BindFunction();
+		MyAnimInst->DOnAttack.AddUFunction(this, FName("Attack"));
+		MyAnimInst->DOnAttackEnded.AddUFunction(this, FName("OnAttackMontageEnded"));
+	}
+}
+
+void ARPGBaseEnemyCharacter::ActivateEnemy()
+{
+	Health = MaxHealth;
+	DOnActivate.Broadcast();
+	bIsActivated = true;
+	SetCollisionActivate();
+}
+
+void ARPGBaseEnemyCharacter::OnRep_bIsActivated()
+{
+	if (bIsActivated)
+	{
+		GetMesh()->SetVisibility(true);
+		WeaponMesh->SetVisibility(true);
+		MyAnimInst->CancelMontage();
+	}
+}
+
+void ARPGBaseEnemyCharacter::SetCollisionActivate()
+{
+	GetMesh()->SetCollisionProfileName(FName("ActivatedEnemyMesh"));
+	GetCapsuleComponent()->SetCollisionProfileName(FName("ActivatedEnemyCapsule"));
+}
+
+void ARPGBaseEnemyCharacter::AttachWeaponStaticMesh(UStaticMesh* NewMesh, FName SocketName)
+{
+	UStaticMeshComponent* WeaponStaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon Static Mesh"));
+	WeaponStaticMeshComponent->SetStaticMesh(NewMesh);
+	WeaponStaticMeshComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, SocketName);
 }
 
 void ARPGBaseEnemyCharacter::PostInitializeComponents()
@@ -55,29 +133,6 @@ void ARPGBaseEnemyCharacter::BeginPlay()
 
 	ProgressBar = Cast<URPGEnemyHealthBarWidget>(HealthBarWidget->GetWidget());
 	if (ProgressBar) ProgressBar->EnemyHealthProgressBar->SetPercent(1.f);
-
-	MyAnimInst = Cast<URPGEnemyAnimInstance>(GetMesh()->GetAnimInstance());
-	MyAnimInst->DOnAttack.AddUFunction(this, FName("Attack"));
-	MyAnimInst->OnMontageEnded.AddDynamic(this, &ARPGBaseEnemyCharacter::OnAttackMontageEnded);
-
-	if (HasAuthority())
-	{
-		InitEnemyData();
-	}
-}
-
-void ARPGBaseEnemyCharacter::InitEnemyData()
-{
-	FEnemyData* EnemyData = GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetEnemyData(EnemyType);
-	if (EnemyData)
-	{
-		Name = EnemyData->Name;
-		MaxHealth = EnemyData->MaxHP;
-		StrikingPower = EnemyData->Stk;
-		DefensivePower = EnemyData->Def;
-		Exp = EnemyData->Exp;
-		Health = MaxHealth;
-	}
 }
 
 void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
@@ -94,7 +149,7 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
 	const int32 FinalDamage = FMath::CeilToInt(CalculateDamage(Damage));
-	PLOG(TEXT("%s Enemy damaged : %d"), *DamagedActor->GetName(), FinalDamage);
+	//PLOG(TEXT("%s Enemy damaged : %d"), *DamagedActor->GetName(), FinalDamage);
 	ARPGPlayerController* AttackerController = Cast<ARPGPlayerController>(InstigatorController);
 	if (AttackerController)
 	{
@@ -115,11 +170,11 @@ void ARPGBaseEnemyCharacter::HealthDecrease(const int32& Damage)
 	Health = FMath::Clamp(Health - Damage, 0, MaxHealth);
 	if (Health == 0)
 	{
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Ignore);
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 		DOnDeath.Broadcast();
+		DisableSuckedInMulticast();
+		SetCollisionDeactivate();
 		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->SpawnItems(GetActorLocation());
-		GetWorldTimerManager().SetTimer(DestroyTimer, this, &ARPGBaseEnemyCharacter::DestroySelf, 3.f, false);
+		bIsActivated = false;
 	}
 }
 
@@ -131,18 +186,32 @@ void ARPGBaseEnemyCharacter::OnRep_Health()
 void ARPGBaseEnemyCharacter::OnHealthChanged()
 {
 	if (ProgressBar == nullptr) return;
-
+	
 	ProgressBar->EnemyHealthProgressBar->SetPercent(Health / MaxHealth);
 
-	if (Health > 0)
+	if (Health > 0 && Health < MaxHealth)
 	{
 		HealthBarWidget->SetVisibility(true);
 		GetWorldTimerManager().SetTimer(HealthBarTimer, this, &ARPGBaseEnemyCharacter::HealthBarVisibilityOff, 60.f);
 	}
-	else
+	else if(Health == 0)
 	{
+		GetWorldTimerManager().SetTimer(HideMeshTimer, this, &ARPGBaseEnemyCharacter::HideMesh, 5.f);
+		SetCollisionDeactivate();
 		EnemyDeath();
 	}
+}
+
+void ARPGBaseEnemyCharacter::HideMesh()
+{
+	GetMesh()->SetVisibility(false);
+	WeaponMesh->SetVisibility(false);
+}
+
+void ARPGBaseEnemyCharacter::SetCollisionDeactivate()
+{
+	GetMesh()->SetCollisionProfileName(FName("DeactivatedEnemyMesh"));
+	GetCapsuleComponent()->SetCollisionProfileName(FName("DeactivatedEnemyCapsule"));
 }
 
 void ARPGBaseEnemyCharacter::HealthBarVisibilityOff()
@@ -155,45 +224,47 @@ void ARPGBaseEnemyCharacter::HealthBarVisibilityOff()
 void ARPGBaseEnemyCharacter::EnemyDeath()
 {
 	OffRenderCustomDepthEffect();
-
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerAttack, ECollisionResponse::ECR_Ignore);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 	HealthBarWidget->SetVisibility(false);
 	MyAnimInst->PlayDeathMontage();
-}
-
-void ARPGBaseEnemyCharacter::DestroySelf()
-{
-	Destroy();
 }
 
 /** 공격 */
 
 void ARPGBaseEnemyCharacter::BTTask_Attack()
 {
-	AttackMulticast();
+	PlayMeleeAttackMontageMulticast();
 }
 
-void ARPGBaseEnemyCharacter::AttackMulticast_Implementation()
-{
-	PlayAttackMontage();
-}
-
-void ARPGBaseEnemyCharacter::PlayAttackMontage()
+void ARPGBaseEnemyCharacter::PlayMeleeAttackMontageMulticast_Implementation()
 {
 	if (MyAnimInst == nullptr) return;
-	MyAnimInst->PlayAttackMontage();
+	MyAnimInst->PlayMeleeAttackMontage();
 }
 
-void ARPGBaseEnemyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+void ARPGBaseEnemyCharacter::Attack()
 {
-	if (Montage == MyAnimInst->GetAttackMontage())
+	if (EnemyForm)
 	{
-		DOnAttackEnd.Broadcast();
+		EnemyForm->MeleeAttack(this);
 	}
 }
 
+void ARPGBaseEnemyCharacter::OnAttackMontageEnded()
+{
+	DOnAttackEnd.Broadcast();
+}
+
 /** 반환 함수 */
+
+bool ARPGBaseEnemyCharacter::GetSuckedIn() const
+{
+	return MyController->GetSuckedIn();
+}
+
+APawn* ARPGBaseEnemyCharacter::GetTarget() const
+{
+	return MyController->GetTarget();
+}
 
 bool ARPGBaseEnemyCharacter::GetIsInAir() const
 {
@@ -204,6 +275,7 @@ bool ARPGBaseEnemyCharacter::GetIsInAir() const
 
 void ARPGBaseEnemyCharacter::FalldownToAllClients()
 {
+	GetWorldTimerManager().SetTimer(FalldownTimer, this, &ARPGBaseEnemyCharacter::GetupToAllClients, 3.f);
 	FalldownMulticast();
 }
 
@@ -261,19 +333,11 @@ void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffect()
 	GetMesh()->SetRenderCustomDepth(false);
 }
 
-/** 즉사 */
-
-void ARPGBaseEnemyCharacter::InstanceDeath()
-{
-	HealthDecrease(MaxHealth);
-
-	OffRenderCustomDepthEffect();
-}
-
 /** 블랙홀 상호작용 */
 
 void ARPGBaseEnemyCharacter::EnableSuckedInToAllClients()
 {
+	MyController->SetSuckedIn(true);
 	EnableSuckedInMulticast();
 }
 
@@ -286,8 +350,23 @@ void ARPGBaseEnemyCharacter::EnableSuckedIn()
 {
 	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Falling);
 	GetCharacterMovement()->GravityScale = 0.f;
+}
 
-	OffRenderCustomDepthEffect();
+void ARPGBaseEnemyCharacter::DisableSuckedInToAllClients()
+{
+	MyController->SetSuckedIn(false);
+	DisableSuckedInMulticast();
+}
+
+void ARPGBaseEnemyCharacter::DisableSuckedInMulticast_Implementation()
+{
+	DisableSuckedIn();
+}
+
+void ARPGBaseEnemyCharacter::DisableSuckedIn()
+{
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	GetCharacterMovement()->GravityScale = 1.f;
 }
 
 /** 행동 정지, 해제 */
@@ -339,4 +418,6 @@ void ARPGBaseEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 	DOREPLIFETIME(ARPGBaseEnemyCharacter, Health);
 	DOREPLIFETIME(ARPGBaseEnemyCharacter, MaxHealth);
 	DOREPLIFETIME(ARPGBaseEnemyCharacter, Name);
+	DOREPLIFETIME(ARPGBaseEnemyCharacter, EnemyAssets);
+	DOREPLIFETIME(ARPGBaseEnemyCharacter, bIsActivated);
 }

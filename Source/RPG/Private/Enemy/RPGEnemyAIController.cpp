@@ -28,8 +28,9 @@ void ARPGEnemyAIController::OnPossess(APawn* InPawn)
 	{
 		MyCharacter->SetAIController(this);
 		MyCharacter->DOnDeath.AddUFunction(this, FName("CharacterDead"));
+		MyCharacter->DOnActivate.AddUFunction(this, FName("CharacterActivate"));
 	}
-
+	
 	if (BBAsset)
 	{
 		if (!UseBlackboard(BBAsset, BBComp) || !InPawn) ELOG(TEXT("Failed Blackboard"));
@@ -38,6 +39,11 @@ void ARPGEnemyAIController::OnPossess(APawn* InPawn)
 	if (BTAsset)
 	{
 		if (!RunBehaviorTree(BTAsset)) ELOG(TEXT("Failed Behaviortree"));
+	}
+
+	if (BBComp)
+	{
+		BBComp->SetValueAsBool(FName("IsDead"), true);
 	}
 }
 
@@ -67,7 +73,6 @@ void ARPGEnemyAIController::FindClosestPlayer()
 	if (ClosestTarget)
 	{
 		SetTarget(ClosestTarget);
-		SetFocus(ClosestTarget);
 	}
 }
 
@@ -77,6 +82,7 @@ void ARPGEnemyAIController::SetTarget(APawn* TargetToSet)
 	{
 		BBComp->SetValueAsObject(FName("Target"), TargetToSet);
 	}
+	SetFocus(TargetToSet);
 }
 
 APawn* ARPGEnemyAIController::GetTarget() const
@@ -104,11 +110,40 @@ void ARPGEnemyAIController::SetIsRestrained(const bool bIsRestrained)
 	}
 }
 
+void ARPGEnemyAIController::SetSuckedIn(const bool bIsSuckedIn)
+{
+	if (BBComp)
+	{
+		BBComp->SetValueAsBool(FName("IsSuckedIn"), bIsSuckedIn);
+	}
+}
+
+bool ARPGEnemyAIController::GetSuckedIn() const
+{
+	if (BBComp)
+	{
+		return BBComp->GetValueAsBool(FName("IsSuckedIn"));
+	}
+	else return false;
+}
+
 void ARPGEnemyAIController::CharacterDead()
 {
 	if (BBComp)
 	{
 		BBComp->SetValueAsBool(FName("IsDead"), true);
+	}
+	SetFocus(nullptr);
+}
+
+void ARPGEnemyAIController::CharacterActivate()
+{
+	if (BBComp)
+	{
+		BBComp->SetValueAsBool(FName("IsDead"), false);
+		BBComp->SetValueAsBool(FName("IsRestrained"), false);
+		BBComp->SetValueAsBool(FName("IsFalldown"), false);
+		BBComp->SetValueAsObject(FName("Target"), nullptr);
 	}
 }
 

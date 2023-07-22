@@ -4,38 +4,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Enums/ItemType.h"
+#include "Structs/ItemInfo.h"
 #include "Containers/Union.h"
 #include "RPGItem.generated.h"
 
 class UWidgetComponent;
-
-USTRUCT(Atomic)
-struct FItemInfo
-{
-    GENERATED_BODY()
-public:
-
-    UPROPERTY()
-    EItemType ItemType;
-
-    UPROPERTY()
-    FString ItemName;
-
-    UPROPERTY()
-    TArray<float> ItemStatArr;
-
-    FItemInfo() : ItemType(EItemType::EIT_MAX), ItemName(FString(TEXT(""))) {}
-    FItemInfo& operator=(const FItemInfo& Other)
-    {
-        if (this == &Other) return *this;
-
-        ItemType = Other.ItemType;
-        ItemName = Other.ItemName;
-        ItemStatArr = Other.ItemStatArr;
-
-        return *this;
-    }
-};
 
 UCLASS()
 class RPG_API ARPGItem : public AActor

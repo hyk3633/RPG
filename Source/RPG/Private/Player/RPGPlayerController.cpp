@@ -521,7 +521,6 @@ void ARPGPlayerController::CallHUDPopUpDamageWidgetClient_Implementation(const F
 	if (RPGHUD)
 	{
 		RPGHUD->PopUpDamageWidget(PopupPosition, Damage);
-		WLOG(TEXT("DamageWidget"));
 	}
 }
 

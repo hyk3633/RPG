@@ -122,6 +122,11 @@ float ARPGBasePlayerCharacter::CalculateDamage(const float& Damage)
 	return (Damage * (FMath::RandRange(7, 10))) * (1 - ((DefensivePower * (FMath::RandRange(30, 60) / 10)) / 100));
 }
 
+void ARPGBasePlayerCharacter::ApplyDamageToEnemy(APawn* TargetEnemy, const float& Damage)
+{
+	UGameplayStatics::ApplyDamage(TargetEnemy, Damage, GetController(), this, UDamageType::StaticClass());
+}
+
 void ARPGBasePlayerCharacter::OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(OtherActor);
@@ -140,6 +145,12 @@ void ARPGBasePlayerCharacter::OnTargetingComponentEndOverlap(UPrimitiveComponent
 		Enemy->OffRenderCustomDepthEffect();
 		OutlinedEnemies.Remove(Enemy);
 	}
+}
+
+void ARPGBasePlayerCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	Health = MaxHealth;
 }
 
 /** --------------------------- Á×À½ --------------------------- */
@@ -568,6 +579,11 @@ void ARPGBasePlayerCharacter::SpawnParticle(UParticleSystem* Particle, const FVe
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Particle, SpawnLoc, SpawnRot);
 	}
+}
+
+float ARPGBasePlayerCharacter::GetSkillPower(EPressedKey KeyType)
+{
+	return SkillPower + SkillPowerCorrectionValues[StaticCast<int8>(KeyType)];
 }
 
 float ARPGBasePlayerCharacter::GetCooldownPercentage(int8 Bit) const

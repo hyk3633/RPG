@@ -113,8 +113,6 @@ protected:
 
 	void SmashDownToEnemies();
 
-	void GetupEnemies();
-
 	/** R 스킬 함수 */
 	UFUNCTION()
 	void MoveToTargettedLocation(ENotifyCode NotifyCode);
@@ -131,8 +129,6 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void RebirthServer();
 
-	void OneShotKill();
-
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 private:
@@ -142,7 +138,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Character | Particle | Normal")
 	UParticleSystem* NormalAttackImpactParticle;
 
-	TArray<FHitResult> NormalAttackHitResults;
+	TArray<FHitResult> NormalAttackHits;
 
 	/** Q 스킬 */
 
@@ -174,14 +170,5 @@ private:
 
 	UPROPERTY(Replicated)
 	TArray<ARPGBaseEnemyCharacter*> CDepthEnemies;
-
-	/** E 스킬 */
-
-	UPROPERTY(Replicated)
-	TArray<ARPGBaseEnemyCharacter*> SmashedEnemies;
-
-	FTimerHandle EnemyGetupTimer;
-
-	/** R 스킬 */
 
 };

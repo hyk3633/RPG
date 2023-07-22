@@ -5,6 +5,10 @@
 #include "GameFramework/GameModeBase.h"
 #include "Engine/DataTable.h"
 #include "Enums/EnemyType.h"
+#include "Enums/ProjectileType.h"
+#include "Structs/EnemyInfo.h"
+#include "Structs/EnemyAssets.h"
+#include "Structs/ProjectileInfo.h"
 #include "RPGGameModeBase.generated.h"
 
 /**
@@ -14,32 +18,8 @@
 class UWorldGridManagerComponent;
 class UItemSpawnManagerComponent;
 class UDataTable;
+class AEnemyPooler;
 struct FItemInfo;
-
-USTRUCT(BlueprintType)
-struct FEnemyData : public FTableRowBase
-{
-	GENERATED_BODY()
-
-public:
-
-	FEnemyData() : Name(""), Stk(1.f), Def(1.f), MaxHP(100), Exp(10) {}
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	FString Name;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	float Stk;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	float Def;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	int32 MaxHP;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	int32 Exp;
-};
 
 UCLASS()
 class RPG_API ARPGGameModeBase : public AGameModeBase
@@ -62,7 +42,18 @@ public:
 
 	void DropItem(const FItemInfo& Info, const FVector& Location);
 
-	FEnemyData* GetEnemyData(const EEnemyType Type);
+	FEnemyInfo* GetEnemyInfo(const EEnemyType Type);
+
+	FEnemyAssets* GetEnemyAssets(const EEnemyType Type);
+
+	FProjectileInfo* GetProjectileInfo(const EProjectileType Type);
+
+protected:
+
+	UFUNCTION()
+	void EnemyRespawnDelay();
+
+	void EnemyRespawn();
 
 private:
 
@@ -73,6 +64,17 @@ private:
 	UItemSpawnManagerComponent* ItemSpawnManager;
 
 	UPROPERTY()
-	UDataTable* ItemDataTable;
+	UDataTable* EnemyInfoDataTable;
+
+	UPROPERTY()
+	UDataTable* EnemyAssetsDataTable;
+
+	UPROPERTY()
+	UDataTable* ProjectileInfoDataTable;
+
+	UPROPERTY()
+	TMap<int32, AEnemyPooler*> EnemyPoolerMap;
+
+	FTimerHandle EnemyRespawnTimer;
 
 };

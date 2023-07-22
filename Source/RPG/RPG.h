@@ -15,6 +15,7 @@
 #define ECC_CursorTrace			ECollisionChannel::ECC_GameTraceChannel9
 #define ECC_GroundTrace			ECollisionChannel::ECC_GameTraceChannel10
 
+
 #define CALLINFO			(FString(__FUNCTION__) + TEXT("(")+FString::FromInt(__LINE__) + TEXT(")")) 
 
 #define CF()				UE_LOG(LogTemp, Warning, TEXT("%s"), *CALLINFO)

@@ -28,20 +28,19 @@ protected:
 
 	virtual void BeginPlay() override;
 
+public:
+
+	virtual void BTTask_Attack() override;
+
+protected:
+
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayRangedAttackMontageMulticast();
+
 	virtual void Attack() override;
-
-	void AnimNotify_LineTraceOnSocket();
-
-	void LineTraceOnSocket();
-
-	void SpawnProjectile(const FVector& SpawnLocation, const FRotator& SpawnRotation);
 
 private:
 
-	UPROPERTY(EditAnywhere, Category = "Bow")
-	USkeletalMeshComponent* BowMesh;
 	
-	UPROPERTY(EditAnywhere, Category = "Projectile")
-	TSubclassOf<ARPGBaseProjectile> ProjectileClass;
 
 };

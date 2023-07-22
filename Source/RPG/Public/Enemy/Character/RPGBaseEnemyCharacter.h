@@ -3,9 +3,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Enums/EnemyType.h"
+#include "Enums/EnemyAttackType.h"
+#include "Structs/EnemyAssets.h"
 #include "RPGBaseEnemyCharacter.generated.h"
 
+class URPGEnemyFormComponent;
 class ARPGEnemyAIController;
 class URPGEnemyAnimInstance;
 class UWidgetComponent;
@@ -13,9 +15,10 @@ class URPGEnemyHealthBarWidget;
 
 DECLARE_MULTICAST_DELEGATE(FDelegateOnAttackEnd);
 DECLARE_MULTICAST_DELEGATE(FOnDeathDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnActivateDelegate);
 DECLARE_MULTICAST_DELEGATE_OneParam(FDelegateOnHealthChanged, float HealthPercentage);
 
-UCLASS(Abstract)
+UCLASS()
 class RPG_API ARPGBaseEnemyCharacter : public ACharacter
 {
 	GENERATED_BODY()
@@ -24,19 +27,40 @@ public:
 
 	ARPGBaseEnemyCharacter();
 
+	void SetEnemyAssets(const FEnemyAssets& NewEnemyAssets);
+
+	void ActivateEnemy();
+
+protected:
+
+	void SetMeshAndController();
+
+	UFUNCTION()
+	void OnRep_EnemyAssets();
+	
+	void InitAnimInstance();
+
+	UFUNCTION()
+	void OnRep_bIsActivated();
+
+	void SetCollisionActivate();
+
+public:
+
 	virtual void Tick(float DeltaTime) override;
 
 	FDelegateOnAttackEnd DOnAttackEnd;
 	FOnDeathDelegate DOnDeath;
 	FDelegateOnHealthChanged DOnHealthChanged;
+	FOnActivateDelegate DOnActivate;
 
-protected:
+	friend URPGEnemyFormComponent;
+
+	void AttachWeaponStaticMesh(UStaticMesh* NewMesh, FName SocketName);
 
 	virtual void PostInitializeComponents() override;
 
 	virtual void BeginPlay() override;
-
-	void InitEnemyData();
 
 	UFUNCTION()
 	void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
@@ -52,36 +76,41 @@ protected:
 
 	void OnHealthChanged();
 
+	void HideMesh();
+
+	void SetCollisionDeactivate();
+
 	void HealthBarVisibilityOff();
 
 	/** 죽음 */
 
 	void EnemyDeath();
 
-	void DestroySelf();
-
 public: /** 공격 */
 
-	void BTTask_Attack();
+	virtual void BTTask_Attack();
 
 protected:
 
 	UFUNCTION(NetMulticast, Reliable)
-	void AttackMulticast();
-
-	void PlayAttackMontage();
+	void PlayMeleeAttackMontageMulticast();
 
 	UFUNCTION()
-	virtual void Attack() PURE_VIRTUAL(ARPGBaseEnemyCharacter::Attack, );
+	virtual void Attack();
 
 	UFUNCTION()
-	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	void OnAttackMontageEnded();
 
 public:
 
 	/** 설정 반환 함수 */
 
 	FORCEINLINE void SetAIController(ARPGEnemyAIController* AICont) { MyController = AICont; }
+	FORCEINLINE URPGEnemyAnimInstance* GetAnimInstance() const { return MyAnimInst; }
+	FORCEINLINE bool GetIsActivated() const { return bIsActivated; }
+	bool GetSuckedIn() const;
+
+	APawn* GetTarget() const;
 
 	bool GetIsInAir() const;
 
@@ -114,19 +143,26 @@ public:
 	void OnRenderCustomDepthEffect(int8 StencilValue);
 
 	void OffRenderCustomDepthEffect();
-	
-	/** 즉사 */
-
-	void InstanceDeath();
 
 	/** 블랙홀 상호작용 */
 
 	void EnableSuckedInToAllClients();
 
+	void DisableSuckedInToAllClients();
+
+protected:
+
 	UFUNCTION(NetMulticast, Reliable)
 	void EnableSuckedInMulticast();
 
 	void EnableSuckedIn();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void DisableSuckedInMulticast();
+
+	void DisableSuckedIn();
+
+public:
 
 	/** 행동 정지, 해제 */
 
@@ -151,12 +187,18 @@ protected:
 	UPROPERTY()
 	ARPGEnemyAIController* MyController;
 
-	EEnemyType EnemyType;
+	UPROPERTY()
+	URPGEnemyFormComponent* EnemyForm;
+
+	UPROPERTY()
+	URPGEnemyAnimInstance* MyAnimInst;
+
+	EEnemyAttackType AttackType;
 
 private:
 
 	UPROPERTY()
-	URPGEnemyAnimInstance* MyAnimInst;
+	USkeletalMeshComponent* WeaponMesh;
 
 	UPROPERTY(EditAnywhere)
 	UWidgetComponent* HealthBarWidget;
@@ -164,7 +206,16 @@ private:
 	UPROPERTY()
 	URPGEnemyHealthBarWidget* ProgressBar;
 
+	UPROPERTY(ReplicatedUsing = OnRep_EnemyAssets)
+	FEnemyAssets EnemyAssets;
+
 	FTimerHandle HealthBarTimer;
+
+	FTimerHandle RestrictionTimer;
+
+	FTimerHandle HideMeshTimer;
+
+	FTimerHandle FalldownTimer;
 
 	/** 캐릭터 스탯 */
 
@@ -183,7 +234,6 @@ private:
 
 	int32 Exp;
 
-	FTimerHandle DestroyTimer;
-
-	FTimerHandle RestrictionTimer;
+	UPROPERTY(ReplicatedUsing = OnRep_bIsActivated)
+	bool bIsActivated = false;
 };

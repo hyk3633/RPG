@@ -4,7 +4,7 @@
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "AIController.h"
-
+#include "../RPG.h"
 UBTTask_Attack::UBTTask_Attack()
 {
 	bNotifyTick = true;
@@ -12,6 +12,7 @@ UBTTask_Attack::UBTTask_Attack()
 	NodeName = TEXT("Attack");
 
 	bIsAttacking = true;
+	bIsAborted = false;
 }
 
 EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -20,10 +21,8 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 	if (OwnerEnemy)
 	{
 		OwnerEnemy->BTTask_Attack();
-
-		OwnerEnemy->DOnAttackEnd.AddLambda([this]() -> void {
-			bIsAttacking = false;
-		});
+		OwnerEnemy->DOnAttackEnd.AddLambda([this]() -> void { bIsAttacking = false; });
+		OwnerEnemy->DOnDeath.AddLambda([this]() -> void { bIsAborted = true; });
 
 		return EBTNodeResult::InProgress;
 	}
@@ -39,5 +38,10 @@ void UBTTask_Attack::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 	{
 		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 		bIsAttacking = true;
+	}
+	if (bIsAborted)
+	{
+		FinishLatentTask(OwnerComp, EBTNodeResult::Aborted);
+		bIsAborted = false;
 	}
 }

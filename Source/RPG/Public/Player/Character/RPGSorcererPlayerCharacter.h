@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Enums/NotifyCode.h"
+#include "Enums/ProjectileType.h"
 #include "RPGSorcererPlayerCharacter.generated.h"
 
 /**
@@ -13,6 +14,7 @@
 class ARPGBaseProjectile;
 class ARPGRestrictionProjectile;
 class ARPGBlackhole;
+class UProjectilePoolerComponent;
 
 UCLASS()
 class RPG_API ARPGSorcererPlayerCharacter : public ARPGBasePlayerCharacter
@@ -57,6 +59,8 @@ protected:
 	void SpawnNormalProjectileServer();
 
 	void SpawnNormalProjectile();
+
+	void SpawnProjectile(const EProjectileType Type, const FVector& SpawnLocation, const FRotator& SpawnRotation);
 
 	/** Ability Q */
 
@@ -154,6 +158,15 @@ protected:
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 protected:
+
+	UPROPERTY()
+	UProjectilePoolerComponent* PrimaryProjPooler;
+
+	UPROPERTY()
+	UProjectilePoolerComponent* RestrictionProjPooler;
+
+	UPROPERTY()
+	UProjectilePoolerComponent* MeteorliteProjPooler;
 
 	/** 일반 공격 */
 

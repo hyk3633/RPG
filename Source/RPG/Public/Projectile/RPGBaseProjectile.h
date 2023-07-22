@@ -2,58 +2,24 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Structs/ProjectileInfo.h"
 #include "GameFramework/Actor.h"
 #include "RPGBaseProjectile.generated.h"
 
 class USphereComponent;
 class UProjectileMovementComponent;
 
-USTRUCT()
-struct FProjectileData
+UENUM()
+enum class EParticleType : uint8
 {
-	GENERATED_USTRUCT_BODY()
+	EPT_CharacterImpact,
+	EPT_WorldImpact,
+	EPT_NoImpact,
 
-	UPROPERTY()
-	bool bIsPlayers;
-
-	UPROPERTY()
-	int32 Damage;
-
-	UPROPERTY()
-	float ExpireTime;
-
-	UPROPERTY()
-	int32 InitialSpeed;
-
-	UPROPERTY()
-	int32 CollisionRadius;
-
-	UPROPERTY()
-	bool bIsExplosive;
-
-	UPROPERTY()
-	int32 ExplosionRadius;
-
-	FProjectileData()
-	{
-		bIsPlayers = false;
-		bIsExplosive = false;
-		Damage = 50;
-		ExpireTime = 1.f;
-		InitialSpeed = 5000;
-		ExplosionRadius = 300;
-	}
-
-	FProjectileData(bool _IsPlayers, int32 _Damage, float _ExpireTime, int32 _InitialSpeed, int32 _CollisionRadius, bool _IsExplosive = false, int32 _ExplosionRadius = 0) : 
-		bIsPlayers(_IsPlayers), 
-		Damage(_Damage), 
-		ExpireTime(_ExpireTime), 
-		InitialSpeed(_InitialSpeed), 
-		CollisionRadius(_CollisionRadius),
-		bIsExplosive(_IsExplosive), 
-		ExplosionRadius(_ExplosionRadius)
-	{}
+	EPT_MAX
 };
+
+DECLARE_DELEGATE(DeactivateProjectileDelegate)
 
 UCLASS()
 class RPG_API ARPGBaseProjectile : public AActor
@@ -64,13 +30,17 @@ public:
 
 	ARPGBaseProjectile();
 
-	void SetProjectileData(const FProjectileData& ProjData);
+	void SetProjectileInfo(const FProjectileInfo& ProjData);
 
-	virtual void Tick(float DeltaTime) override;
+	void SetProjectileDamage(const float NewDamage);
+
+	void ActivateProjectileToAllClients();
 
 	void DeactivateProjectileToAllClients();
 
 	void ReflectProjectileFromAllClients();
+
+	DeactivateProjectileDelegate DDeactivateProjectile;
 
 protected:
 
@@ -84,14 +54,24 @@ protected:
 	void ExpireProjectile();
 
 	UFUNCTION(NetMulticast, Reliable)
+	void SpawnParticleMulticast(EParticleType Type, const FVector_NetQuantize& SpawnLocation, const FRotator& SpawnRotation);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void ActivateProjectileMulticast();
+
+	void ActivateProjectile();
+
+	UFUNCTION(NetMulticast, Reliable)
 	void DeactivateProjectileMulticast();
 
 	void DeactivateProjectile();
 
-	UFUNCTION(NetMulticast, Reliable)
-	void ReflectedProjectileMulticast();
+	UFUNCTION(Server, Reliable)
+	void ReflectedProjectileServer();
 
 	void ReflectedProjectile();
+
+	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 protected:
 
@@ -126,13 +106,7 @@ private:
 
 	FTimerHandle ExpireTimer;
 
-	bool bIsExplosive;
+	FProjectileInfo ProjInfo;
 
 	int32 Damage;
-
-	int32 InitialSpeed;
-
-	float ExpireTime;
-
-	int32 ExplosionRadius;
 };

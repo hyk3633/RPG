@@ -18,13 +18,17 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	void SuckingUpEnemies();
+	FORCEINLINE void SetDamage(const float& NewDamage) { Damage = NewDamage; }
 
 protected:
+
+	void SuckingUpEnemies();
 
 	virtual void BeginPlay() override;
 
 	void InitiateSuckingUpEnemies();
+
+	void ApplyDamageToEnemies();
 
 	void ExpireBlackhole();
 
@@ -37,7 +41,11 @@ private:
 
 	FTimerHandle ExpireTimer;
 
-	float ExpireTime = 2.f;
+	float ExpireTime = 3.f;
 
 	bool bBlackholeOn = true;
+
+	FTimerHandle DamageTimer;
+
+	float Damage = 1.f;
 };

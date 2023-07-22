@@ -2,14 +2,13 @@
 #include "Enemy/Character/RPGRangedEnemyCharacter.h"
 #include "Enemy/RPGEnemyAIController.h"
 #include "Enemy/RPGEnemyAnimInstance.h"
-#include "Projectile/RPGBaseProjectile.h"
+#include "Enemy/RPGEnemyFormComponent.h"
+#include "Enums/EnemyAttackType.h"
 #include "../RPG.h"
-#include "Engine/SkeletalMeshSocket.h"
 
 ARPGRangedEnemyCharacter::ARPGRangedEnemyCharacter()
 {
-	BowMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Bow Mesh"));
-	BowMesh->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("Socket_Bow"));
+	
 }
 
 void ARPGRangedEnemyCharacter::Tick(float DeltaTime)
@@ -27,52 +26,34 @@ void ARPGRangedEnemyCharacter::BeginPlay()
 	Super::BeginPlay();
 }
 
-void ARPGRangedEnemyCharacter::Attack()
+void ARPGRangedEnemyCharacter::BTTask_Attack()
 {
-	AnimNotify_LineTraceOnSocket();
-}
-
-void ARPGRangedEnemyCharacter::AnimNotify_LineTraceOnSocket()
-{
-	if(HasAuthority()) LineTraceOnSocket();
-}
-
-void ARPGRangedEnemyCharacter::LineTraceOnSocket()
-{
-	const USkeletalMeshSocket* BowSocket = BowMesh->GetSocketByName(FName("Bow_Root"));
-	if (BowSocket == nullptr) return;
-
-	const FVector TraceStart = BowSocket->GetSocketLocation(BowMesh);
-	FVector TraceEnd = TraceStart;
-	APawn* TargetToAttack = MyController->GetTarget();
-	if (TargetToAttack)
+	if (AttackType == EEnemyAttackType::EEAT_Hybrid && GetDistanceTo(MyController->GetTarget()) < 100.f)
 	{
-		TraceEnd += (TargetToAttack->GetActorLocation() - TraceStart);
+		PlayMeleeAttackMontageMulticast();
 	}
 	else
 	{
-		TraceEnd += GetActorForwardVector() * 15000.f;
-	}
-
-	FHitResult HitResult;
-	GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_EnemyAttack);
-	if (HitResult.bBlockingHit)
-	{
-		FRotator FireRotation = (HitResult.ImpactPoint - TraceStart).Rotation();
-		FireRotation.Pitch = 0.f;
-		SpawnProjectile(TraceStart, FireRotation);
+		PlayRangedAttackMontageMulticast();
 	}
 }
 
-void ARPGRangedEnemyCharacter::SpawnProjectile(const FVector& SpawnLocation, const FRotator& SpawnRotation)
+void ARPGRangedEnemyCharacter::PlayRangedAttackMontageMulticast_Implementation()
 {
-	if (ProjectileClass == nullptr) return;
-	
-	const FTransform SpawnTransform = FTransform(SpawnRotation, SpawnLocation);
-	ARPGBaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGBaseProjectile>(ProjectileClass, SpawnTransform, this, this);
-	if (Projectile)
+	if (MyAnimInst == nullptr) return;
+	MyAnimInst->PlayRangedAttackMontage();
+}
+
+void ARPGRangedEnemyCharacter::Attack()
+{
+	if (EnemyForm == nullptr) return;
+
+	if (AttackType == EEnemyAttackType::EEAT_Hybrid)
 	{
-		Projectile->SetProjectileData(FProjectileData(false, 50, 3, 1000, 8));
-		Projectile->FinishSpawning(SpawnTransform);
+		EnemyForm->MeleeAttack(this);
+	}
+	else
+	{
+		EnemyForm->RangedAttack(this);
 	}
 }

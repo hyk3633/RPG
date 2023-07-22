@@ -6,6 +6,7 @@
 #include "RPGEnemyAnimInstance.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnAttackDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnAttackEndedDelegate);
 
 /**
  * 
@@ -20,13 +21,21 @@ class RPG_API URPGEnemyAnimInstance : public UAnimInstance
 	
 public:
 
-	void PlayAttackMontage();
+	void BindFunction();
+
+	void PlayMeleeAttackMontage();
+
+	void PlayRangedAttackMontage();
 
 	void PlayDeathMontage();
 
 	void PlayGetupMontage();
 
+	void CancelMontage();
+
 	FOnAttackDelegate DOnAttack;
+
+	FOnAttackEndedDelegate DOnAttackEnded;
 
 	friend ARPGBaseEnemyCharacter;
 
@@ -35,13 +44,19 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_Attack();
 
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
 private:
 
 	UPROPERTY()
 	ARPGBaseEnemyCharacter* MyCharacter;
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
-	UAnimMontage* AttackMontage;
+	UAnimMontage* MeleeAttackMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* RangedAttackMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
 	UAnimMontage* DeathMontage;
@@ -57,9 +72,5 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Status", meta = (AllowPrivateAccess = "true"))
 	bool bIsDead;
-
-public:
-
-	FORCEINLINE UAnimMontage* GetAttackMontage() const { return AttackMontage; }
 
 };

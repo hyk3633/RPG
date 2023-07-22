@@ -13,6 +13,8 @@
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
 
+#include "DrawDebugHelpers.h"
+
 ARPGWarriorPlayerCharacter::ARPGWarriorPlayerCharacter()
 {
 	
@@ -21,7 +23,6 @@ ARPGWarriorPlayerCharacter::ARPGWarriorPlayerCharacter()
 void ARPGWarriorPlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void ARPGWarriorPlayerCharacter::PostInitializeComponents()
@@ -173,14 +174,17 @@ void ARPGWarriorPlayerCharacter::NormalAttackLineTrace()
 		false,
 		TArray<AActor*>(),
 		EDrawDebugTrace::None,
-		NormalAttackHitResults,
+		NormalAttackHits,
 		true
 	);
-	for (FHitResult Hit : NormalAttackHitResults)
+
+	for (FHitResult Hit : NormalAttackHits)
 	{
-		PLOG(TEXT("%f"), GetStrikingPower());
-		UGameplayStatics::ApplyDamage(Hit.GetActor(), GetStrikingPower(), GetController(), this, UDamageType::StaticClass());
-		SpawnNormalAttackImpactParticleMulticast(Hit.GetActor()->GetActorLocation());
+		if (IsValid(Hit.GetActor()))
+		{
+			UGameplayStatics::ApplyDamage(Hit.GetActor(), GetStrikingPower(), GetController(), this, UDamageType::StaticClass());
+			SpawnNormalAttackImpactParticleMulticast(Hit.GetActor()->GetActorLocation());
+		}
 	}
 }
 
@@ -229,10 +233,7 @@ void ARPGWarriorPlayerCharacter::ApplyWieldEffectToHittedActors()
 	for (FHitResult Hit : AbilityHitResults)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
-		if (Enemy)
-		{
-			UGameplayStatics::ApplyDamage(Enemy, GetSkillPower(EPressedKey::EPK_Q), GetController(), this, UDamageType::StaticClass());
-		}
+		if (IsValid(Enemy)) ApplyDamageToEnemy(Enemy, GetSkillPower(EPressedKey::EPK_Q));
 		else
 		{
 			ARPGBaseProjectile* Proj = Cast<ARPGBaseProjectile>(Hit.GetActor());
@@ -278,8 +279,7 @@ void ARPGWarriorPlayerCharacter::ActivateReflect()
 	for (FHitResult Hit : AbilityHitResults)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
-		if (Enemy == nullptr || IsValid(Enemy) == false) continue;
-		CDepthEnemies.Add(Enemy);
+		if (IsValid(Enemy)) CDepthEnemies.Add(Enemy);
 	}
 	GetCapsuleComponent()->SetGenerateOverlapEvents(true);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECR_Overlap);
@@ -298,10 +298,7 @@ void ARPGWarriorPlayerCharacter::EnemyCustomDepthOn()
 {
 	for (ARPGBaseEnemyCharacter* Enemy : CDepthEnemies)
 	{
-		if (IsValid(Enemy))
-		{
-			Enemy->OnRenderCustomDepthEffect(10);
-		}
+		if (IsValid(Enemy)) Enemy->OnRenderCustomDepthEffect(10);
 	}
 	GetWorldTimerManager().SetTimer(DeactivateRevealEnemiesTimer, this, &ARPGWarriorPlayerCharacter::DeactivateRevealEnemies, 15.f);
 }
@@ -310,7 +307,7 @@ void ARPGWarriorPlayerCharacter::DeactivateRevealEnemies()
 {
 	for (ARPGBaseEnemyCharacter* Enemy : CDepthEnemies)
 	{
-		Enemy->OffRenderCustomDepthEffect();
+		if(IsValid(Enemy)) Enemy->OffRenderCustomDepthEffect();
 	}
 }
 
@@ -392,33 +389,19 @@ void ARPGWarriorPlayerCharacter::SmashDownServer_Implementation()
 
 void ARPGWarriorPlayerCharacter::SmashDownToEnemies()
 {
-	SmashedEnemies.Empty();
 	for (FHitResult Hit : AbilityHitResults)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
-		if (Enemy == nullptr || IsValid(Enemy) == false) continue;
-		SmashedEnemies.Add(Enemy);
-
-		Enemy->LaunchCharacter(Enemy->GetActorForwardVector() * -700.f, false, true);
-		Enemy->FalldownToAllClients();
-		UGameplayStatics::ApplyDamage(Enemy, GetSkillPower(EPressedKey::EPK_E), GetController(), this, UDamageType::StaticClass());
-
-		GetWorldTimerManager().SetTimer(EnemyGetupTimer, this, &ARPGWarriorPlayerCharacter::GetupEnemies, 3.f);
-	}
-}
-
-void ARPGWarriorPlayerCharacter::GetupEnemies()
-{
-	for (ARPGBaseEnemyCharacter* Enemy : SmashedEnemies)
-	{
 		if (IsValid(Enemy))
 		{
-			Enemy->GetupToAllClients();
+			Enemy->LaunchCharacter(Enemy->GetActorForwardVector() * -700.f, false, true);
+			Enemy->FalldownToAllClients();
+			ApplyDamageToEnemy(Enemy, GetSkillPower(EPressedKey::EPK_E));
 		}
 	}
 }
 
-/** --------------------------- E 스킬 --------------------------- */
+/** --------------------------- R 스킬 --------------------------- */
 
 void ARPGWarriorPlayerCharacter::MoveToTargettedLocation(ENotifyCode NotifyCode)
 {
@@ -456,17 +439,14 @@ void ARPGWarriorPlayerCharacter::Rebirth(ENotifyCode NotifyCode)
 void ARPGWarriorPlayerCharacter::RebirthServer_Implementation()
 {
 	SphereTrace(GetActorLocation(), GetActorLocation(), 600.f);
-	OneShotKill();
-}
-
-void ARPGWarriorPlayerCharacter::OneShotKill()
-{
 	for (FHitResult Hit : AbilityHitResults)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
-		if (Enemy)
+		if (IsValid(Enemy))
 		{
-			Enemy->InstanceDeath();
+			Enemy->LaunchCharacter(Enemy->GetActorForwardVector() * -700.f, false, true);
+			Enemy->FalldownToAllClients();
+			ApplyDamageToEnemy(Enemy, GetSkillPower(EPressedKey::EPK_R));
 		}
 	}
 }
@@ -477,5 +457,4 @@ void ARPGWarriorPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProp
 
 	DOREPLIFETIME_CONDITION(ARPGWarriorPlayerCharacter, bReflectOn, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ARPGWarriorPlayerCharacter, CDepthEnemies, COND_OwnerOnly);
-	DOREPLIFETIME_CONDITION(ARPGWarriorPlayerCharacter, SmashedEnemies, COND_OwnerOnly);
 }

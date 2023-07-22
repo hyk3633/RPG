@@ -3,10 +3,11 @@
 #include "Player/Character/RPGSorcererPlayerCharacter.h"
 #include "Player/AnimInstance/RPGAnimInstance.h"
 #include "Player/AnimInstance/RPGSorcererAnimInstance.h"
+#include "Player/CharacterAbility/RPGBlackhole.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "Projectile/RPGBaseProjectile.h"
 #include "Projectile/RPGRestrictionProjectile.h"
-#include "Player/CharacterAbility/RPGBlackhole.h"
+#include "GameSystem/ProjectilePoolerComponent.h"
 #include "../RPG.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -23,6 +24,12 @@
 ARPGSorcererPlayerCharacter::ARPGSorcererPlayerCharacter()
 {
 	MaxCombo = 4;
+
+	PrimaryProjPooler = CreateDefaultSubobject<UProjectilePoolerComponent>(TEXT("Primary Projectile Pooler"));
+
+	RestrictionProjPooler = CreateDefaultSubobject<UProjectilePoolerComponent>(TEXT("Restriction Projectile Pooler"));
+
+	MeteorliteProjPooler = CreateDefaultSubobject<UProjectilePoolerComponent>(TEXT("Meteorlite Projectile Pooler"));
 }
 
 void ARPGSorcererPlayerCharacter::Tick(float DeltaTime)
@@ -59,6 +66,13 @@ void ARPGSorcererPlayerCharacter::BeginPlay()
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("SummonBlackhole"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("BlackholeEnd"));
 		GetRPGAnimInstance()->DMontageNotify.AddUFunction(this, FName("BlackholeBeamOn"));
+	}
+
+	if (HasAuthority())
+	{
+		PrimaryProjPooler->CreatePool(PrimaryPorjectile, 50, EProjectileType::EPT_Sorcerer_Primary);
+		RestrictionProjPooler->CreatePool(RestrictionPorjectile, 5, EProjectileType::EPT_Sorcerer_Restriction);
+		MeteorliteProjPooler->CreatePool(MeteorlitePorjectile, 5, EProjectileType::EPT_Sorcerer_Meteorlite);
 	}
 }
 
@@ -155,7 +169,7 @@ void ARPGSorcererPlayerCharacter::CastNormalAttack()
 {
 	Super::CastNormalAttack();
 
-	if (IsLocallyControlled() && PrimaryPorjectile)
+	if (IsLocallyControlled())
 	{
 		SpawnNormalProjectileServer();
 	}
@@ -169,13 +183,14 @@ void ARPGSorcererPlayerCharacter::SpawnNormalProjectileServer_Implementation()
 void ARPGSorcererPlayerCharacter::SpawnNormalProjectile()
 {
 	FVector SpawnPoint;
+
 	if (GetCurrentCombo() % 2 == 0)
 	{
-		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L2")).GetLocation();
+		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_R2")).GetLocation();
 	}
 	else
 	{
-		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_R2")).GetLocation();
+		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L2")).GetLocation();
 	}
 
 	FRotator SpawnDirection;
@@ -189,11 +204,30 @@ void ARPGSorcererPlayerCharacter::SpawnNormalProjectile()
 		SpawnDirection = (FVector(TargetingHitResult.ImpactPoint.X, TargetingHitResult.ImpactPoint.Y, SpawnPoint.Z) - SpawnPoint).Rotation();
 	}
 
-	ARPGBaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGBaseProjectile>(PrimaryPorjectile, FTransform(SpawnDirection, SpawnPoint), this, this);
+	SpawnProjectile(EProjectileType::EPT_Sorcerer_Primary, SpawnPoint, SpawnDirection);
+}
+
+void ARPGSorcererPlayerCharacter::SpawnProjectile(const EProjectileType Type, const FVector& SpawnLocation, const FRotator& SpawnRotation)
+{
+	ARPGBaseProjectile* Projectile = nullptr;
+	if (Type == EProjectileType::EPT_Sorcerer_Primary)
+	{
+		Projectile = PrimaryProjPooler->GetPooledProjectile(this, GetStrikingPower());
+	}
+	else if (Type == EProjectileType::EPT_Sorcerer_Restriction)
+	{
+		Projectile = RestrictionProjPooler->GetPooledProjectile(this, GetSkillPower(EPressedKey::EPK_Q));
+	}
+	else if (Type == EProjectileType::EPT_Sorcerer_Meteorlite)
+	{
+		Projectile = MeteorliteProjPooler->GetPooledProjectile(this, GetSkillPower(EPressedKey::EPK_W));
+	}
+
 	if (Projectile)
 	{
-		Projectile->SetProjectileData(FProjectileData(true, 100*GetStrikingPower(), 1, 1000, 32));
-		Projectile->FinishSpawning(FTransform(SpawnDirection, SpawnPoint));
+		Projectile->SetActorLocation(SpawnLocation);
+		Projectile->SetActorRotation(SpawnRotation);
+		Projectile->ActivateProjectileToAllClients();
 	}
 }
 
@@ -219,20 +253,7 @@ void ARPGSorcererPlayerCharacter::SpawnRestrictionProjectile()
 	FVector SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L")).GetLocation();
 	FRotator SpawnDirection = (TargetingHitResult.ImpactPoint - SpawnPoint).Rotation();
 
-	ARPGRestrictionProjectile* Projectile = 
-		GetWorld()->SpawnActorDeferred<ARPGRestrictionProjectile>
-		(
-			RestrictionPorjectile, 
-			FTransform(SpawnDirection, SpawnPoint),
-			this, 
-			this
-		);
-
-	if (Projectile)
-	{
-		Projectile->SetProjectileData(FProjectileData(true, GetSkillPower(EPressedKey::EPK_W), 3, 1500, 30, false));
-		Projectile->FinishSpawning(FTransform(SpawnDirection, SpawnPoint));
-	}
+	SpawnProjectile(EProjectileType::EPT_Sorcerer_Restriction, SpawnPoint, SpawnDirection);
 }
 
 /** --------------------------- W ½ºÅ³ --------------------------- */
@@ -255,17 +276,11 @@ void ARPGSorcererPlayerCharacter::MeteorliteFallServer_Implementation()
 void ARPGSorcererPlayerCharacter::SpawnMeteorProjectile()
 {
 	const FVector SpawnPoint = GetActorLocation() + (GetActorUpVector() * 300.f);
-	const FRotator SpawnRotation = (TargetingHitResult.ImpactPoint - SpawnPoint).Rotation();
-	const FTransform SpanwTransform(SpawnRotation, SpawnPoint);
+	const FRotator SpawnDirection = (TargetingHitResult.ImpactPoint - SpawnPoint).Rotation();
 	
-	SpawnMeteorlietPortalParticleMulticast(SpawnPoint, SpawnRotation);
+	SpawnMeteorlietPortalParticleMulticast(SpawnPoint, SpawnDirection);
 
-	ARPGBaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGBaseProjectile>(MeteorlitePorjectile, SpanwTransform, this, this);
-	if (Projectile)
-	{
-		Projectile->SetProjectileData(FProjectileData(true, 600, 1, 1000, 200, true, 350));
-		Projectile->FinishSpawning(SpanwTransform);
-	}
+	SpawnProjectile(EProjectileType::EPT_Sorcerer_Meteorlite, SpawnPoint, SpawnDirection);
 }
 
 void ARPGSorcererPlayerCharacter::SpawnMeteorlietPortalParticleMulticast_Implementation(const FVector_NetQuantize& SpawnLocation, const FRotator& SpawnRotation)
@@ -339,8 +354,8 @@ void ARPGSorcererPlayerCharacter::ApplyMeteorDamage()
 	for (FHitResult Hit : Hits)
 	{
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
-		if (Enemy == nullptr) continue;
-		UGameplayStatics::ApplyDamage(Enemy, Damage, GetController(), this, UDamageType::StaticClass());
+		if (Enemy == nullptr || Enemy->GetIsActivated() == false) continue;
+		ApplyDamageToEnemy(Enemy, Damage);
 	}
 	MeteorDamageCount++;
 }
@@ -415,7 +430,8 @@ void ARPGSorcererPlayerCharacter::SpawnBlackhole()
 		if (BlackholeClass == nullptr) return;
 		FVector Location = TargetingHitResult.ImpactPoint;
 		Location.Z += 300.f;
-		GetWorld()->SpawnActor<ARPGBlackhole>(BlackholeClass, Location, FRotator::ZeroRotator);
+		ARPGBlackhole* Blackhole = GetWorld()->SpawnActor<ARPGBlackhole>(BlackholeClass, Location, FRotator::ZeroRotator);
+		if (Blackhole) Blackhole->SetDamage(GetSkillPower(EPressedKey::EPK_R));
 	}
 	else
 	{

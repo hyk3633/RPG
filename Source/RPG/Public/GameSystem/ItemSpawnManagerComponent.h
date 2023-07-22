@@ -4,33 +4,13 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Enums/ItemType.h"
+#include "Structs/ItemOptionTableRow.h"
+#include "Structs/ItemInfo.h"
 #include "Engine/DataTable.h"
 #include "ItemSpawnManagerComponent.generated.h"
 
 class ARPGItem;
 class UDataTable;
-struct FItemInfo;
-
-USTRUCT(BlueprintType)
-struct FItemOptionTableRow : public FTableRowBase
-{
-	GENERATED_BODY()
-
-public:
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	FString ItemName;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	UMaterial* ItemIcon;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	UStaticMesh* ItemMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	TArray<FString> PropertyNames;
-
-};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class RPG_API UItemSpawnManagerComponent : public UActorComponent

@@ -46,11 +46,15 @@ protected:
 
 	float CalculateDamage(const float& Damage);
 
+	void ApplyDamageToEnemy(APawn* TargetEnemy, const float& Damage);
+
 	UFUNCTION()
 	void OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
 	void OnTargetingComponentEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	virtual void PossessedBy(AController* NewController) override;
 
 	/** ---------- 죽음 ---------- */
 
@@ -199,7 +203,7 @@ public: /** ---------- 반환 및 설정 함수 ---------- */
 	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
 	FORCEINLINE int8 GetAbilityCooldownBit() const { return AbilityCooldownBit; }
 	FORCEINLINE float GetStrikingPower() const { return StrikingPower; }
-	FORCEINLINE float GetSkillPower(const EPressedKey KeyType) const { return SkillPower + SkillPowerCorrectionValues[StaticCast<int8>(KeyType)]; }
+	float GetSkillPower(EPressedKey KeyType);
 	float GetCooldownPercentage(int8 Bit) const;
 	bool IsAbilityAvailable(EPressedKey KeyType);
 	bool IsAnyMontagePlaying() const;
@@ -299,10 +303,10 @@ private:
 	/** 스탯 */
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, Category = "Character | Status")
-	float Health = 200.f;
+	float Health;
 
 	UPROPERTY(VisibleAnywhere, Category = "Character | Status")
-	float MaxHealth = 200.f;
+	float MaxHealth = 50.f;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Mana, Category = "Character | Status")
 	float Mana = 100.f;
