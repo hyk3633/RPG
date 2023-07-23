@@ -4,6 +4,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
 #include "Enums/ItemType.h"
+#include "Structs/StatInfo.h"
+#include "Structs/ItemInfo.h"
 #include "RPGHUD.generated.h"
 
 /**
@@ -18,8 +20,6 @@ class ARPGItem;
 class UDataTable;
 class URPGItemSlotMenuWidget;
 class URPGStatTextBoxWidget;
-struct FItemInfo;
-struct FCharacterStats;
 class URPGDamageWidget;
 
 UCLASS()
@@ -130,9 +130,9 @@ public:
 
 	void ToggleStatInfoWidget();
 
-	void UpdateStatCharacterStatText(const FCharacterStats& Stats);
+	void UpdateStatCharacterStatText(const FStatInfo& Stats);
 
-	void UpdateStatEquippedItemStatText(const FCharacterStats& Stats);
+	void UpdateStatEquippedItemStatText(const FStatInfo& Stats);
 
 	void PopUpDamageWidget(const FVector_NetQuantize& PopupPosition, const int32 Damage);
 

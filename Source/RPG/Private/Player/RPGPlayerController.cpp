@@ -108,12 +108,12 @@ void ARPGPlayerController::ReloadCharacterAndEquipmentStat()
 {
 	if (MyCharacter)
 	{
-		const FCharacterStats& Stats = GetPlayerState<ARPGPlayerState>()->GetCurrentCharacterStats();
+		const FStatInfo& Stats = GetPlayerState<ARPGPlayerState>()->GetCurrentCharacterStats();
 		MyCharacter->InitCharacterStats(Stats);
 
-		const FCharacterStats& EquipmentStats = GetPlayerState<ARPGPlayerState>()->GetEquippedItemStats();
-		MyCharacter->SetCharacterArmourStats(EquipmentStats.DefenseivePower, EquipmentStats.Dexterity, EquipmentStats.MaxHP, EquipmentStats.MaxMP);
-		MyCharacter->SetCharacterAccessoriesStats(EquipmentStats.StrikingPower, EquipmentStats.SkillPower, EquipmentStats.AttackSpeed);
+		const FStatInfo& EquipmentStats = GetPlayerState<ARPGPlayerState>()->GetEquippedItemStats();
+		MyCharacter->SetEquipmentArmourStats(EquipmentStats.DefenseivePower, EquipmentStats.Dexterity, EquipmentStats.MaxHP, EquipmentStats.MaxMP);
+		MyCharacter->SetEquipmentAccessoriesStats(EquipmentStats.StrikingPower, EquipmentStats.SkillPower, EquipmentStats.AttackSpeed);
 	}
 }
 
@@ -346,11 +346,11 @@ void ARPGPlayerController::EquipItem(const int32& UniqueNum)
 	{
 		if (ItemInfo.ItemType == EItemType::EIT_Armour)
 		{
-			MyCharacter->SetCharacterArmourStats(ItemInfo.ItemStatArr[0], ItemInfo.ItemStatArr[1], ItemInfo.ItemStatArr[2], ItemInfo.ItemStatArr[3]);
+			MyCharacter->SetEquipmentArmourStats(ItemInfo.ItemStatArr[0], ItemInfo.ItemStatArr[1], ItemInfo.ItemStatArr[2], ItemInfo.ItemStatArr[3]);
 		}
 		else
 		{
-			MyCharacter->SetCharacterAccessoriesStats(ItemInfo.ItemStatArr[0], ItemInfo.ItemStatArr[1], ItemInfo.ItemStatArr[2]);
+			MyCharacter->SetEquipmentAccessoriesStats(ItemInfo.ItemStatArr[0], ItemInfo.ItemStatArr[1], ItemInfo.ItemStatArr[2]);
 		}
 	}
 }
@@ -376,11 +376,11 @@ void ARPGPlayerController::UnequipItem(const int32& UniqueNum)
 	{
 		if (ItemInfo.ItemType == EItemType::EIT_Armour)
 		{
-			MyCharacter->SubtractCharacterArmourStats(ItemInfo.ItemStatArr[0], ItemInfo.ItemStatArr[1], ItemInfo.ItemStatArr[2], ItemInfo.ItemStatArr[3]);
+			MyCharacter->InitializeEquipmentArmourStats();
 		}
 		else
 		{
-			MyCharacter->SubtractCharacterAccessoriesStats(ItemInfo.ItemStatArr[0], ItemInfo.ItemStatArr[1], ItemInfo.ItemStatArr[2]);
+			MyCharacter->InitializeEquipmentAccessoriesStats();
 		}
 	}
 
@@ -432,7 +432,7 @@ void ARPGPlayerController::UpdateCharacterStatServer_Implementation()
 
 void ARPGPlayerController::UpdateCharacterStat()
 {
-	const FCharacterStats& Stats = GetPlayerState<ARPGPlayerState>()->GetCurrentCharacterStats();
+	const FStatInfo& Stats = GetPlayerState<ARPGPlayerState>()->GetCurrentCharacterStats();
 	if (MyCharacter)
 	{
 		MyCharacter->InitCharacterStats(Stats);
@@ -440,12 +440,12 @@ void ARPGPlayerController::UpdateCharacterStat()
 	UpdateCharacterStatClient(Stats);
 }
 
-void ARPGPlayerController::UpdateCharacterStatClient_Implementation(const FCharacterStats& Stats)
+void ARPGPlayerController::UpdateCharacterStatClient_Implementation(const FStatInfo& Stats)
 {
 	CallHUDUpdateCharacterStatText(Stats);
 }
 
-void ARPGPlayerController::CallHUDUpdateCharacterStatText(const FCharacterStats& Stats)
+void ARPGPlayerController::CallHUDUpdateCharacterStatText(const FStatInfo& Stats)
 {
 	if (RPGHUD)
 	{
@@ -467,16 +467,16 @@ void ARPGPlayerController::UpdateEquippedItemStatServer_Implementation()
 
 void ARPGPlayerController::UpdateEquippedItemStat()
 {
-	const FCharacterStats& EquippedItemStat = GetPlayerState<ARPGPlayerState>()->GetEquippedItemStats();
+	const FStatInfo& EquippedItemStat = GetPlayerState<ARPGPlayerState>()->GetEquippedItemStats();
 	UpdateEquippedItemStatClient(EquippedItemStat);
 }
 
-void ARPGPlayerController::UpdateEquippedItemStatClient_Implementation(const FCharacterStats& Info)
+void ARPGPlayerController::UpdateEquippedItemStatClient_Implementation(const FStatInfo& Info)
 {
 	CallHUDUpdateEquippedItemStatText(Info);
 }
 
-void ARPGPlayerController::CallHUDUpdateEquippedItemStatText(const FCharacterStats& Info)
+void ARPGPlayerController::CallHUDUpdateEquippedItemStatText(const FStatInfo& Info)
 {
 	if (RPGHUD)
 	{

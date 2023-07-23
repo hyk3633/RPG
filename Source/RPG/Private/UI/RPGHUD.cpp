@@ -555,12 +555,12 @@ void ARPGHUD::ToggleStatInfoWidget()
 	}
 }
 
-void ARPGHUD::UpdateStatCharacterStatText(const FCharacterStats& Stats)
+void ARPGHUD::UpdateStatCharacterStatText(const FStatInfo& Stats)
 {
 	GameplayInterface->StatInfoWidget->UpdateStatCharacterStatText(Stats);
 }
 
-void ARPGHUD::UpdateStatEquippedItemStatText(const FCharacterStats& Stats)
+void ARPGHUD::UpdateStatEquippedItemStatText(const FStatInfo& Stats)
 {
 	GameplayInterface->StatInfoWidget->UpdateStatEquippedItemStatText(Stats);
 }

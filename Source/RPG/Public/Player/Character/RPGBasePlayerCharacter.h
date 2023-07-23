@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Enums/PressedKey.h"
+#include "Structs/StatInfo.h"
 #include "RPGBasePlayerCharacter.generated.h"
 
 class ARPGPlayerController;
@@ -202,7 +203,7 @@ public: /** ---------- 반환 및 설정 함수 ---------- */
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
 	FORCEINLINE int8 GetAbilityCooldownBit() const { return AbilityCooldownBit; }
-	FORCEINLINE float GetStrikingPower() const { return StrikingPower; }
+	FORCEINLINE float GetStrikingPower() const { return CharacterStrikingPower + EquipmentStrikingPower; }
 	float GetSkillPower(EPressedKey KeyType);
 	float GetCooldownPercentage(int8 Bit) const;
 	bool IsAbilityAvailable(EPressedKey KeyType);
@@ -212,45 +213,57 @@ public: /** ---------- 반환 및 설정 함수 ---------- */
 
 	/** ---------- 캐릭터 스탯 설정 ---------- */
 
-	void InitCharacterStats(const FCharacterStats& NewStats);
+	void InitCharacterStats(const FStatInfo& NewStats);
 
-	void SetCharacterArmourStats(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP);
+	void SetEquipmentArmourStats(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP);
 
-	void SetCharacterAccessoriesStats(const float& Stk, const float& Skp, const float& Atks);
+	void SetEquipmentAccessoriesStats(const float& Stk, const float& Skp, const float& Atks);
 	
 protected:
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void SetCharacterArmourStatsServer(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP);
+	void SetEquipmentArmourStatsServer(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP);
 
 	UFUNCTION()
-	void OnRep_Dexterity();
+	void OnRep_CharacterDexterity();
+
+	UFUNCTION()
+	void OnRep_EquipmentDexterity();
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void SetCharacterAccessoriesStatsServer(const float& Stk, const float& Skp, const float& Atks);
+	void SetEquipmentAccessoriesStatsServer(const float& Stk, const float& Skp, const float& Atks);
 
 	UFUNCTION()
-	void OnRep_AttackSpeed();
+	void OnRep_CharacterAttackSpeed();
+
+	UFUNCTION()
+	void OnRep_EquipmentAttackSpeed();
 
 public:
 
-	void SubtractCharacterArmourStats(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP);
+	void InitializeEquipmentArmourStats();
 
-	void SubtractCharacterAccessoriesStats(const float& Stk, const float& Skp, const float& Atks);
+	void InitializeEquipmentAccessoriesStats();
 
 protected:
 
-	UFUNCTION(Server, Reliable, WithValidation)
-	void SubtractCharacterArmourStatsServer(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP);
+	UFUNCTION(Server, Reliable)
+	void InitializeEquipmentArmourStatsServer();
 
-	UFUNCTION(Server, Reliable, WithValidation)
-	void SubtractCharacterAccessoriesStatsServer(const float& Stk, const float& Skp, const float& Atks);
-
-	UFUNCTION()
-	void OnRep_MaxHP();
+	UFUNCTION(Server, Reliable)
+	void InitializeEquipmentAccessoriesStatsServer();
 
 	UFUNCTION()
-	void OnRep_MaxMP();
+	void OnRep_CharacterMaxHP();
+
+	UFUNCTION()
+	void OnRep_EquipmentMaxHP();
+
+	UFUNCTION()
+	void OnRep_CharacterMaxMP();
+
+	UFUNCTION()
+	void OnRep_EquipmentMaxMP();
 
 	void SetAbilityCooldownTime(const int8& QTime, const int8& WTime, const int8& ETime, const int8& RTime);
 
@@ -305,43 +318,52 @@ private:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, Category = "Character | Status")
 	float Health;
 
-	UPROPERTY(VisibleAnywhere, Category = "Character | Status")
-	float MaxHealth = 50.f;
-
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Mana, Category = "Character | Status")
 	float Mana = 100.f;
-
-	UPROPERTY(VisibleAnywhere, Category = "Character | Status")
-	float MaxMana = 100.f;
 
 	TArray<int32> ManaUsage;
 
 	/** 서버 전용 스탯 */
 
-	UPROPERTY()
-	float DefensivePower;
+	float CharacterDefensivePower;
 
-	UPROPERTY()
-	float StrikingPower;
+	float EquipmentDefensivePower;
 
-	UPROPERTY()
-	float SkillPower;
+	float CharacterStrikingPower;
+
+	float EquipmentStrikingPower;
+
+	float CharacterSkillPower;
+
+	float EquipmentSkillPower;
 
 	/** 서버, 클라이언트 스탯 */
 
-	UPROPERTY(ReplicatedUsing = OnRep_MaxHP)
-	int32 MaxHP;
+	UPROPERTY(ReplicatedUsing = OnRep_CharacterMaxHP)
+	int32 CharacterMaxHP;
 
-	UPROPERTY(Replicated = OnRep_MaxMP)
-	int32 MaxMP;
+	UPROPERTY(ReplicatedUsing = OnRep_EquipmentMaxHP)
+	int32 EquipmentMaxHP;
+
+	UPROPERTY(Replicated = OnRep_CharacterMaxMP)
+	int32 CharacterMaxMP;
+
+	UPROPERTY(Replicated = OnRep_EquipmentMaxMP)
+	int32 EquipmentMaxMP;
 
 	/** 멀티캐스트 스탯 */
 
-	UPROPERTY(ReplicatedUsing = OnRep_Dexterity)
-	float Dexterity;
+	UPROPERTY(ReplicatedUsing = OnRep_CharacterDexterity)
+	float CharacterDexterity;
 
-	UPROPERTY(ReplicatedUsing = OnRep_AttackSpeed)
-	float AttackSpeed;
+	UPROPERTY(ReplicatedUsing = OnRep_EquipmentDexterity)
+	float EquipmentDexterity;
+
+	UPROPERTY(ReplicatedUsing = OnRep_CharacterAttackSpeed)
+	float CharacterAttackSpeed;
+
+	UPROPERTY(ReplicatedUsing = OnRep_EquipmentAttackSpeed)
+	float EquipmentAttackSpeed;
 
 	/** 이동 */
 

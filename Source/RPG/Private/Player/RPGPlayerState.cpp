@@ -8,9 +8,12 @@ void ARPGPlayerState::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	// 0번은 체력 포션, 1번은 마나 포션
-	CharacterStats = FCharacterStats();
+	CharacterStats = FStatInfo();
+	CharacterStats.DefenseivePower = 1.f;
+	CharacterStats.StrikingPower = 1.f;
+	CharacterStats.SkillPower = 1.f;
 
-	EquippedItemStats = FCharacterStats();
+	EquippedItemStats = FStatInfo();
 	EquippedItemStats.Dexterity = 0;
 	EquippedItemStats.AttackSpeed = 0;
 

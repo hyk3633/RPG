@@ -50,7 +50,7 @@ void ARPGSorcererPlayerCharacter::PostInitializeComponents()
 
 	SetAbilityCooldownTime(10, 12, 15, 30);
 	SetAbilityManaUsage(30, 50, 100, 150);
-	SetSkillPowerCorrectionValues(0.f, 2.f, 1.3f, 0.f);
+	SetSkillPowerCorrectionValues(0.f, 2.f, 1.3f, -0.5f);
 }
 
 void ARPGSorcererPlayerCharacter::BeginPlay()
@@ -213,6 +213,7 @@ void ARPGSorcererPlayerCharacter::SpawnProjectile(const EProjectileType Type, co
 	if (Type == EProjectileType::EPT_Sorcerer_Primary)
 	{
 		Projectile = PrimaryProjPooler->GetPooledProjectile(this, GetStrikingPower());
+
 	}
 	else if (Type == EProjectileType::EPT_Sorcerer_Restriction)
 	{
@@ -437,7 +438,7 @@ void ARPGSorcererPlayerCharacter::SpawnBlackhole()
 	{
 		FVector Location = TargetingHitResult.ImpactPoint;
 		Location.Z += 300.f;
-		SpawnParticle(BlackholeParticle, Location);
+		SpawnParticle(BlackholeParticle, Location, FRotator(0, 0, 180));
 	}
 }
 

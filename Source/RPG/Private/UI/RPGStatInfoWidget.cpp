@@ -3,7 +3,7 @@
 #include "Player/RPGPlayerState.h"
 #include "Components/TextBlock.h"
 
-void URPGStatInfoWidget::UpdateStatCharacterStatText(const FCharacterStats& Stats)
+void URPGStatInfoWidget::UpdateStatCharacterStatText(const FStatInfo& Stats)
 {
 	UpdateTextBlock(DefCharacterText, Stats.DefenseivePower);
 	UpdateTextBlock(DexCharacterText, Stats.Dexterity);
@@ -14,7 +14,7 @@ void URPGStatInfoWidget::UpdateStatCharacterStatText(const FCharacterStats& Stat
 	UpdateTextBlock(AtksCharacterText, Stats.AttackSpeed);
 }
 
-void URPGStatInfoWidget::UpdateStatEquippedItemStatText(const FCharacterStats& Stats)
+void URPGStatInfoWidget::UpdateStatEquippedItemStatText(const FStatInfo& Stats)
 {
 	UpdateTextBlock(DefItemText, Stats.DefenseivePower, true);
 	UpdateTextBlock(DexItemText, Stats.Dexterity, true);

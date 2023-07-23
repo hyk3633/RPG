@@ -4,55 +4,13 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
 #include "Enums/ItemType.h"
+#include "Structs/StatInfo.h"
 #include "Item/RPGItem.h"
 #include "RPGPlayerState.generated.h"
 
 /**
  * 
  */
-
-USTRUCT(Atomic)
-struct FCharacterStats
-{
-	GENERATED_BODY()
-
-public:
-
-	UPROPERTY()
-	float DefenseivePower;
-
-	UPROPERTY()
-	float Dexterity;
-
-	UPROPERTY()
-	int32 MaxMP;
-
-	UPROPERTY()
-	int32 MaxHP;
-
-	UPROPERTY()
-	float StrikingPower;
-
-	UPROPERTY()
-	float SkillPower;
-
-	UPROPERTY()
-	float AttackSpeed;
-
-	FCharacterStats() : DefenseivePower(1), Dexterity(1), MaxMP(0), MaxHP(0), StrikingPower(1), SkillPower(1), AttackSpeed(1) {}
-	FCharacterStats& operator=(const FCharacterStats& Other)
-	{
-		if (this == &Other) return *this;
-		DefenseivePower = Other.DefenseivePower;
-		Dexterity = Other.Dexterity;
-		MaxMP = Other.MaxMP;
-		MaxHP = Other.MaxHP;
-		StrikingPower = Other.StrikingPower;
-		SkillPower = Other.SkillPower;
-		AttackSpeed = Other.AttackSpeed;
-		return *this;
-	}
-};
 
 UCLASS()
 class RPG_API ARPGPlayerState : public APlayerState
@@ -84,8 +42,8 @@ public:
 	FORCEINLINE int32 GetLastItemArrayNumber() { return CurrentItemUniqueNum; }
 	FORCEINLINE int32 GetCoins() const { return Coins; }
 	int32 GetItemCount(const int32& UniqueNum) const;
-	FORCEINLINE const FCharacterStats& GetCurrentCharacterStats() { return CharacterStats; }
-	FORCEINLINE const FCharacterStats& GetEquippedItemStats() { return EquippedItemStats; }
+	FORCEINLINE const FStatInfo& GetCurrentCharacterStats() { return CharacterStats; }
+	FORCEINLINE const FStatInfo& GetEquippedItemStats() { return EquippedItemStats; }
 	const bool GetItemStatInfo(const int32 UniqueNum, FItemInfo& Info);
 	const bool IsEquippedItem(const int32& UniqueNum) { return (UniqueNum == EquippedArmourUniqueNum || UniqueNum == EquippedAccessoriesUniqueNum); }
 
@@ -109,7 +67,7 @@ private:
 
 	int32 EquippedAccessoriesUniqueNum = -1;
 
-	FCharacterStats CharacterStats;
+	FStatInfo CharacterStats;
 
-	FCharacterStats EquippedItemStats;
+	FStatInfo EquippedItemStats;
 };

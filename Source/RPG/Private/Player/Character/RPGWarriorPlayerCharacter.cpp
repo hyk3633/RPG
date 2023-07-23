@@ -31,7 +31,7 @@ void ARPGWarriorPlayerCharacter::PostInitializeComponents()
 
 	SetAbilityCooldownTime(5, 8, 12, 30);
 	SetAbilityManaUsage(15, 30, 80, 150);
-	SetSkillPowerCorrectionValues(1.5f, 0.f, 3.f, 0.f);
+	SetSkillPowerCorrectionValues(1.5f, 0.f, 3.f, 5.f);
 }
 
 void ARPGWarriorPlayerCharacter::BeginPlay()

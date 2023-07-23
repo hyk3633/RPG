@@ -2,6 +2,7 @@
 #include "GameSystem/ProjectilePoolerComponent.h"
 #include "Projectile/RPGBaseProjectile.h"
 #include "../RPGGameModeBase.h"
+#include "../RPG.h"
 
 UProjectilePoolerComponent::UProjectilePoolerComponent()
 {

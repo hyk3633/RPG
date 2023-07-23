@@ -19,10 +19,6 @@ ARPGBaseProjectile::ARPGBaseProjectile()
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Collision Component"));
 	SetRootComponent(CollisionComponent);
 	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	CollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECollisionResponse::ECR_Ignore);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Ignore);
 
 	BodyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body Mesh"));
 	BodyMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);

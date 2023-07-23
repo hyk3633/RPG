@@ -119,7 +119,7 @@ void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, 
 
 float ARPGBasePlayerCharacter::CalculateDamage(const float& Damage)
 {
-	return (Damage * (FMath::RandRange(7, 10))) * (1 - ((DefensivePower * (FMath::RandRange(30, 60) / 10)) / 100));
+	return (Damage * (FMath::RandRange(7, 10))) * (1 - ((CharacterDefensivePower + EquipmentDefensivePower) * (FMath::RandRange(30, 60) / 10)) / 100);
 }
 
 void ARPGBasePlayerCharacter::ApplyDamageToEnemy(APawn* TargetEnemy, const float& Damage)
@@ -150,7 +150,6 @@ void ARPGBasePlayerCharacter::OnTargetingComponentEndOverlap(UPrimitiveComponent
 void ARPGBasePlayerCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-	Health = MaxHealth;
 }
 
 /** --------------------------- Á×À½ --------------------------- */
@@ -180,7 +179,7 @@ void ARPGBasePlayerCharacter::OnRep_Health()
 {
 	if (IsLocallyControlled())
 	{
-		DOnChangeHealthPercentage.Broadcast(Health / (MaxHealth + MaxHP));
+		DOnChangeHealthPercentage.Broadcast(Health / (CharacterMaxHP + EquipmentMaxHP));
 	}
 	if (Health == 0.f)
 	{
@@ -191,14 +190,14 @@ void ARPGBasePlayerCharacter::OnRep_Health()
 void ARPGBasePlayerCharacter::UsingMana(EPressedKey KeyType)
 {
 	const int8 Index = StaticCast<int8>(KeyType);
-	Mana = FMath::Clamp(Mana - ManaUsage[Index], 0, MaxMana);
+	Mana = FMath::Clamp(Mana - ManaUsage[Index], 0, (CharacterMaxMP + EquipmentMaxMP));
 }
 
 void ARPGBasePlayerCharacter::OnRep_Mana()
 {
 	if (IsLocallyControlled())
 	{
-		DOnChangeManaPercentage.Broadcast(Mana / (MaxMana + MaxMP));
+		DOnChangeManaPercentage.Broadcast(Mana / (CharacterMaxMP + EquipmentMaxMP));
 	}
 }
 
@@ -206,19 +205,19 @@ void ARPGBasePlayerCharacter::ResetHealthManaUI()
 {
 	if (IsLocallyControlled())
 	{
-		DOnChangeHealthPercentage.Broadcast(Health / (MaxHealth + MaxHP));
-		DOnChangeManaPercentage.Broadcast(Mana / (MaxMana + MaxMP));
+		DOnChangeHealthPercentage.Broadcast(Health / (CharacterMaxHP + EquipmentMaxHP));
+		DOnChangeManaPercentage.Broadcast(Mana / (CharacterMaxMP + EquipmentMaxMP));
 	}
 }
 
 void ARPGBasePlayerCharacter::RecoveryHealth(const int32 RecoveryAmount)
 {
-	Health = FMath::Clamp(Health + RecoveryAmount, 0, MaxHealth);
+	Health = FMath::Clamp(Health + RecoveryAmount, 0, (CharacterMaxHP + EquipmentMaxHP));
 }
 
 void ARPGBasePlayerCharacter::RecoveryMana(const int32 RecoveryAmount)
 {
-	Mana = FMath::Clamp(Mana + RecoveryAmount, 0, MaxMana);
+	Mana = FMath::Clamp(Mana + RecoveryAmount, 0, (CharacterMaxMP + EquipmentMaxMP));
 }
 
 void ARPGBasePlayerCharacter::Tick(float DeltaTime)
@@ -583,7 +582,7 @@ void ARPGBasePlayerCharacter::SpawnParticle(UParticleSystem* Particle, const FVe
 
 float ARPGBasePlayerCharacter::GetSkillPower(EPressedKey KeyType)
 {
-	return SkillPower + SkillPowerCorrectionValues[StaticCast<int8>(KeyType)];
+	return (CharacterSkillPower + EquipmentSkillPower) + SkillPowerCorrectionValues[StaticCast<int8>(KeyType)];
 }
 
 float ARPGBasePlayerCharacter::GetCooldownPercentage(int8 Bit) const
@@ -618,23 +617,23 @@ bool ARPGBasePlayerCharacter::IsAbilityERMontagePlaying()
 
 /** --------------------------- Ä³¸¯ÅÍ ½ºÅÈ ¼³Á¤ --------------------------- */
 
-void ARPGBasePlayerCharacter::InitCharacterStats(const FCharacterStats& NewStats)
+void ARPGBasePlayerCharacter::InitCharacterStats(const FStatInfo& NewStats)
 {
-	DefensivePower	= NewStats.DefenseivePower;
-	Dexterity		= NewStats.Dexterity;
-	MaxHealth		= NewStats.MaxHP;
-	MaxMana			= NewStats.MaxMP;
-	StrikingPower	= NewStats.StrikingPower;
-	SkillPower		= NewStats.SkillPower;
-	AttackSpeed		= NewStats.AttackSpeed;
+	CharacterDefensivePower = NewStats.DefenseivePower;
+	CharacterDexterity		= NewStats.Dexterity;
+	CharacterMaxHP			= NewStats.MaxHP;
+	CharacterMaxMP			= NewStats.MaxMP;
+	CharacterStrikingPower	= NewStats.StrikingPower;
+	CharacterSkillPower		= NewStats.SkillPower;
+	CharacterAttackSpeed	= NewStats.AttackSpeed;
 }
 
-void ARPGBasePlayerCharacter::SetCharacterArmourStats(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
+void ARPGBasePlayerCharacter::SetEquipmentArmourStats(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
 {
-	SetCharacterArmourStatsServer(Def, Dex, MxHP, MxMP);
+	SetEquipmentArmourStatsServer(Def, Dex, MxHP, MxMP);
 }
 
-bool ARPGBasePlayerCharacter::SetCharacterArmourStatsServer_Validate(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
+bool ARPGBasePlayerCharacter::SetEquipmentArmourStatsServer_Validate(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
 {
 	if (Def < MIN_DEFENSIVE || Def > MAX_DEFENSIVE) return false;
 	if (Dex < MIN_DEXTERITY || Dex > MAX_DEXTERITY) return false;
@@ -643,26 +642,52 @@ bool ARPGBasePlayerCharacter::SetCharacterArmourStatsServer_Validate(const float
 	return true;
 }
 
-void ARPGBasePlayerCharacter::SetCharacterArmourStatsServer_Implementation(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
+void ARPGBasePlayerCharacter::SetEquipmentArmourStatsServer_Implementation(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
 {
-	DefensivePower += Def;
-	Dexterity += Dex;
-	MaxHealth += MxHP;
-	MaxMana += MxMP;
+	EquipmentDefensivePower = Def;
+	EquipmentDexterity		= Dex;
+	EquipmentMaxHP			= MxHP;
+	EquipmentMaxMP			= MxMP;
 }
 
-void ARPGBasePlayerCharacter::OnRep_Dexterity()
+void ARPGBasePlayerCharacter::OnRep_CharacterDexterity()
 {
 	if (RPGAnimInstance == nullptr) return;
-	RPGAnimInstance->SetJogSpeed(Dexterity);
+	RPGAnimInstance->SetJogSpeed(CharacterDexterity + EquipmentDexterity);
 }
 
-void ARPGBasePlayerCharacter::SetCharacterAccessoriesStats(const float& Stk, const float& Skp, const float& Atks)
+void ARPGBasePlayerCharacter::OnRep_EquipmentDexterity()
 {
-	SetCharacterAccessoriesStatsServer(Stk, Skp, Atks);
+	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->SetJogSpeed(CharacterDexterity + EquipmentDexterity);
 }
 
-bool ARPGBasePlayerCharacter::SetCharacterAccessoriesStatsServer_Validate(const float& Stk, const float& Skp, const float& Atks)
+void ARPGBasePlayerCharacter::OnRep_CharacterMaxHP()
+{
+	DOnChangeHealthPercentage.Broadcast(Health / (CharacterMaxHP + EquipmentMaxHP));
+}
+
+void ARPGBasePlayerCharacter::OnRep_EquipmentMaxHP()
+{
+	DOnChangeHealthPercentage.Broadcast(Health / (CharacterMaxHP + EquipmentMaxHP));
+}
+
+void ARPGBasePlayerCharacter::OnRep_CharacterMaxMP()
+{
+	DOnChangeManaPercentage.Broadcast(Mana / (CharacterMaxMP + EquipmentMaxMP));
+}
+
+void ARPGBasePlayerCharacter::OnRep_EquipmentMaxMP()
+{
+	DOnChangeManaPercentage.Broadcast(Mana / (CharacterMaxMP + EquipmentMaxMP));
+}
+
+void ARPGBasePlayerCharacter::SetEquipmentAccessoriesStats(const float& Stk, const float& Skp, const float& Atks)
+{
+	SetEquipmentAccessoriesStatsServer(Stk, Skp, Atks);
+}
+
+bool ARPGBasePlayerCharacter::SetEquipmentAccessoriesStatsServer_Validate(const float& Stk, const float& Skp, const float& Atks)
 {
 	if (Stk < MIN_STRIKINGPOWER || Stk > MAX_STRIKINGPOWER) return false;
 	if (Skp < MIN_SKILLPOWER || Skp > MAX_SKILLPOWER) return false;
@@ -670,69 +695,48 @@ bool ARPGBasePlayerCharacter::SetCharacterAccessoriesStatsServer_Validate(const 
 	return true;
 }
 
-void ARPGBasePlayerCharacter::SetCharacterAccessoriesStatsServer_Implementation(const float& Stk, const float& Skp, const float& Atks)
+void ARPGBasePlayerCharacter::SetEquipmentAccessoriesStatsServer_Implementation(const float& Stk, const float& Skp, const float& Atks)
 {
-	StrikingPower += Stk;
-	SkillPower += Skp;
-	AttackSpeed += Atks;
+	EquipmentStrikingPower	= Stk;
+	EquipmentSkillPower		= Skp;
+	EquipmentAttackSpeed	= Atks;
 }
 
-void ARPGBasePlayerCharacter::OnRep_AttackSpeed()
+void ARPGBasePlayerCharacter::OnRep_CharacterAttackSpeed()
 {
 	if (RPGAnimInstance == nullptr) return;
-	RPGAnimInstance->SetNormalAttackSpeed(AttackSpeed);
+	RPGAnimInstance->SetNormalAttackSpeed(CharacterAttackSpeed + EquipmentAttackSpeed);
 }
 
-void ARPGBasePlayerCharacter::SubtractCharacterArmourStats(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
+void ARPGBasePlayerCharacter::OnRep_EquipmentAttackSpeed()
 {
-	SubtractCharacterArmourStatsServer(Def, Dex, MxHP, MxMP);
+	if (RPGAnimInstance == nullptr) return;
+	RPGAnimInstance->SetNormalAttackSpeed(CharacterAttackSpeed + EquipmentAttackSpeed);
 }
 
-bool ARPGBasePlayerCharacter::SubtractCharacterArmourStatsServer_Validate(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
+void ARPGBasePlayerCharacter::InitializeEquipmentArmourStats()
 {
-	if (Def < MIN_DEFENSIVE || Def > MAX_DEFENSIVE) return false;
-	if (Dex < MIN_DEXTERITY || Dex > MAX_DEXTERITY) return false;
-	if (MxHP < MIN_MAXHP || MxHP > MAX_MAXHP) return false;
-	if (MxMP < MIN_MAXMP || MxMP > MAX_MAXMP) return false;
-	return true;
+	InitializeEquipmentArmourStatsServer();
 }
 
-void ARPGBasePlayerCharacter::SubtractCharacterArmourStatsServer_Implementation(const float& Def, const float& Dex, const int32& MxHP, const int32& MxMP)
+void ARPGBasePlayerCharacter::InitializeEquipmentArmourStatsServer_Implementation()
 {
-	DefensivePower -= Def;
-	Dexterity -= Dex;
-	MaxHealth -= MxHP;
-	MaxMana -= MxMP;
+	EquipmentDefensivePower	= 0;
+	EquipmentDexterity		= 0;
+	EquipmentMaxHP			= 0;
+	EquipmentMaxMP			= 0;
 }
 
-void ARPGBasePlayerCharacter::SubtractCharacterAccessoriesStats(const float& Stk, const float& Skp, const float& Atks)
+void ARPGBasePlayerCharacter::InitializeEquipmentAccessoriesStats()
 {
-	SubtractCharacterAccessoriesStatsServer(Stk, Skp, Atks);
+	InitializeEquipmentAccessoriesStatsServer();
 }
 
-bool ARPGBasePlayerCharacter::SubtractCharacterAccessoriesStatsServer_Validate(const float& Stk, const float& Skp, const float& Atks)
+void ARPGBasePlayerCharacter::InitializeEquipmentAccessoriesStatsServer_Implementation()
 {
-	if (Stk < MIN_STRIKINGPOWER || Stk > MAX_STRIKINGPOWER) return false;
-	if (Skp < MIN_SKILLPOWER || Skp > MAX_SKILLPOWER) return false;
-	if (Atks < MIN_ATTACKSPEED || Atks > MAX_ATTACKSPEED) return false;
-	return true;
-}
-
-void ARPGBasePlayerCharacter::SubtractCharacterAccessoriesStatsServer_Implementation(const float& Stk, const float& Skp, const float& Atks)
-{
-	StrikingPower -= Stk;
-	SkillPower -= Skp;
-	AttackSpeed -= Atks;
-}
-
-void ARPGBasePlayerCharacter::OnRep_MaxHP()
-{
-	DOnChangeHealthPercentage.Broadcast(Health / (MaxHealth + MaxHP));
-}
-
-void ARPGBasePlayerCharacter::OnRep_MaxMP()
-{
-	DOnChangeManaPercentage.Broadcast(Mana / (MaxMana + MaxMP));
+	EquipmentStrikingPower	= 0;
+	EquipmentSkillPower		= 0;
+	EquipmentAttackSpeed	= 0;
 }
 
 void ARPGBasePlayerCharacter::SetAbilityCooldownTime(const int8& QTime, const int8& WTime, const int8& ETime, const int8& RTime)
@@ -772,10 +776,14 @@ void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ARPGBasePlayerCharacter, PathY);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Health);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Mana);
-	DOREPLIFETIME(ARPGBasePlayerCharacter, Dexterity);
-	DOREPLIFETIME(ARPGBasePlayerCharacter, AttackSpeed);
-	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, MaxHP, COND_OwnerOnly);
-	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, MaxMP, COND_OwnerOnly);
+	DOREPLIFETIME(ARPGBasePlayerCharacter, CharacterDexterity);
+	DOREPLIFETIME(ARPGBasePlayerCharacter, EquipmentDexterity);
+	DOREPLIFETIME(ARPGBasePlayerCharacter, CharacterAttackSpeed);
+	DOREPLIFETIME(ARPGBasePlayerCharacter, EquipmentAttackSpeed);
+	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, CharacterMaxHP, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, EquipmentMaxHP, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, CharacterMaxMP, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, EquipmentMaxMP, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, AbilityCooldownBit, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, RemainedCooldownTime, COND_OwnerOnly);
 }

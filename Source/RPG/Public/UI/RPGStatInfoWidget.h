@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Structs/StatInfo.h"
 #include "RPGStatInfoWidget.generated.h"
 
 /**
@@ -10,7 +11,6 @@
  */
 
 class UTextBlock;
-struct FCharacterStats;
 
 UCLASS()
 class RPG_API URPGStatInfoWidget : public UUserWidget
@@ -19,9 +19,9 @@ class RPG_API URPGStatInfoWidget : public UUserWidget
 	
 public:
 
-	void UpdateStatCharacterStatText(const FCharacterStats& Stats);
+	void UpdateStatCharacterStatText(const FStatInfo& Stats);
 
-	void UpdateStatEquippedItemStatText(const FCharacterStats& Stats);
+	void UpdateStatEquippedItemStatText(const FStatInfo& Stats);
 
 protected:
 

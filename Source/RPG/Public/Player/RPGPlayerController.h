@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "Structs/StatInfo.h"
 #include "RPGPlayerController.generated.h"
 
 /**
@@ -117,9 +118,9 @@ protected:
 	void UpdateCharacterStat();
 
 	UFUNCTION(Client, Reliable)
-	void UpdateCharacterStatClient(const FCharacterStats& Stats);
+	void UpdateCharacterStatClient(const FStatInfo& Stats);
 
-	void CallHUDUpdateCharacterStatText(const FCharacterStats& Stats);
+	void CallHUDUpdateCharacterStatText(const FStatInfo& Stats);
 
 public:
 
@@ -133,9 +134,9 @@ protected:
 	void UpdateEquippedItemStat();
 
 	UFUNCTION(Client, Reliable)
-	void UpdateEquippedItemStatClient(const FCharacterStats& Info);
+	void UpdateEquippedItemStatClient(const FStatInfo& Info);
 
-	void CallHUDUpdateEquippedItemStatText(const FCharacterStats& Info);
+	void CallHUDUpdateEquippedItemStatText(const FStatInfo& Info);
 
 public:
 
