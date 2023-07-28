@@ -9,6 +9,7 @@
 #include "Structs/EnemyInfo.h"
 #include "Structs/EnemyAssets.h"
 #include "Structs/ProjectileInfo.h"
+#include "Structs/ProjectileAssets.h"
 #include "RPGGameModeBase.generated.h"
 
 /**
@@ -48,6 +49,8 @@ public:
 
 	FProjectileInfo* GetProjectileInfo(const EProjectileType Type);
 
+	FProjectileAssets* GetProjectileAssets(const EProjectileType Type);
+
 protected:
 
 	UFUNCTION()
@@ -71,6 +74,9 @@ private:
 
 	UPROPERTY()
 	UDataTable* ProjectileInfoDataTable;
+
+	UPROPERTY()
+	UDataTable* ProjectileAssetsDataTable;
 
 	UPROPERTY()
 	TMap<int32, AEnemyPooler*> EnemyPoolerMap;

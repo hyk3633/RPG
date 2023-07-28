@@ -345,10 +345,10 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_EquipmentMaxHP)
 	int32 EquipmentMaxHP;
 
-	UPROPERTY(Replicated = OnRep_CharacterMaxMP)
+	UPROPERTY(ReplicatedUsing = OnRep_CharacterMaxMP)
 	int32 CharacterMaxMP;
 
-	UPROPERTY(Replicated = OnRep_EquipmentMaxMP)
+	UPROPERTY(ReplicatedUsing = OnRep_EquipmentMaxMP)
 	int32 EquipmentMaxMP;
 
 	/** 멀티캐스트 스탯 */

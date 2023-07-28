@@ -38,7 +38,7 @@ protected:
 	UFUNCTION()
 	void OnRep_EnemyAssets();
 	
-	void InitAnimInstance();
+	virtual void InitAnimInstance();
 
 	UFUNCTION()
 	void OnRep_bIsActivated();
@@ -93,7 +93,9 @@ public: /** АјАн */
 protected:
 
 	UFUNCTION(NetMulticast, Reliable)
-	void PlayMeleeAttackMontageMulticast();
+	void PlayMeleeAttackEffectMulticast();
+
+	virtual void PlayMeleeAttackEffect();
 
 	UFUNCTION()
 	virtual void Attack();
@@ -180,7 +182,9 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void ResumeActionMulticast();
 
-	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+	void SpawnParticle(UParticleSystem* Particle, const FVector& SpawnLocation, const FRotator& SpawnRotation);
+
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 protected:
 

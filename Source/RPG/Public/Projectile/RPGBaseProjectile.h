@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Structs/ProjectileInfo.h"
+#include "Structs/ProjectileAssets.h"
 #include "GameFramework/Actor.h"
 #include "RPGBaseProjectile.generated.h"
 
@@ -30,15 +31,21 @@ public:
 
 	ARPGBaseProjectile();
 
-	void SetProjectileInfo(const FProjectileInfo& ProjData);
+	void SetProjectileInfo(const FProjectileInfo& NewInfo);
+
+	void SetProjectileAssets(const FProjectileAssets& NewAssets);
 
 	void SetProjectileDamage(const float NewDamage);
 
 	void ActivateProjectileToAllClients();
 
+	virtual void Tick(float DeltaTime) override;
+
 	void DeactivateProjectileToAllClients();
 
 	void ReflectProjectileFromAllClients();
+
+	FORCEINLINE void SetHomingTarget(ACharacter* NewTarget) { TargetCharacter = NewTarget; }
 
 	DeactivateProjectileDelegate DDeactivateProjectile;
 
@@ -89,24 +96,17 @@ private:
 	UPROPERTY()
 	UParticleSystemComponent* BodyParticleComp;
 
-	UPROPERTY(EditAnywhere, Category = "Projectile | Effects")
-	UParticleSystem* BodyParticle;
-
-	UPROPERTY(EditAnywhere, Category = "Projectile | Effects")
-	UParticleSystem* WorldImpactParticle;
-
-	UPROPERTY(EditAnywhere, Category = "Projectile | Effects")
-	UParticleSystem* CharacterImpactParticle;
-
-	UPROPERTY(EditAnywhere, Category = "Projectile | Effects")
-	UParticleSystem* NoImpactParticle;
-
-	UPROPERTY(EditAnywhere, Category = "Projectile | Effects")
-	UParticleSystem* TrailParticle;
-
 	FTimerHandle ExpireTimer;
 
 	FProjectileInfo ProjInfo;
 
+	UPROPERTY(Replicated)
+	FProjectileAssets ProjAssets;
+
 	int32 Damage;
+
+	UPROPERTY()
+	ACharacter* TargetCharacter;
+
+	bool bTrackingOn = false;
 };

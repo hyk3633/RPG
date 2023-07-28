@@ -1,12 +1,10 @@
 
-
-#include "AI/BTTask_Attack.h"
-#include "Enemy/Character/RPGBaseEnemyCharacter.h"
+#include "AI/BTTask_SpecialAttack.h"
+#include "Enemy/Boss/RPGBossEnemyCharacter.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "AIController.h"
-#include "../RPG.h"
 
-UBTTask_Attack::UBTTask_Attack()
+UBTTask_SpecialAttack::UBTTask_SpecialAttack()
 {
 	bNotifyTick = true;
 
@@ -16,13 +14,13 @@ UBTTask_Attack::UBTTask_Attack()
 	bIsAborted = false;
 }
 
-EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+EBTNodeResult::Type UBTTask_SpecialAttack::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	ARPGBaseEnemyCharacter* OwnerEnemy = Cast<ARPGBaseEnemyCharacter>(OwnerComp.GetAIOwner()->GetPawn());
+	ARPGBossEnemyCharacter* OwnerEnemy = Cast<ARPGBossEnemyCharacter>(OwnerComp.GetAIOwner()->GetPawn());
 	if (OwnerEnemy)
 	{
-		OwnerEnemy->BTTask_Attack();
-		OwnerEnemy->DOnAttackEnd.AddLambda([this]() -> void { bIsAttacking = false; });
+		OwnerEnemy->BTTask_SpecialAttack();
+		OwnerEnemy->DOnSpecialAttackEnd.AddLambda([this]() -> void { bIsAttacking = false; });
 		OwnerEnemy->DOnDeath.AddLambda([this]() -> void { bIsAborted = true; });
 
 		return EBTNodeResult::InProgress;
@@ -31,7 +29,7 @@ EBTNodeResult::Type UBTTask_Attack::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 	return EBTNodeResult::Failed;
 }
 
-void UBTTask_Attack::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
+void UBTTask_SpecialAttack::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
 	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
 

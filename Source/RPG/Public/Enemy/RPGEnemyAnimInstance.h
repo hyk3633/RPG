@@ -21,7 +21,7 @@ class RPG_API URPGEnemyAnimInstance : public UAnimInstance
 	
 public:
 
-	void BindFunction();
+	virtual void BindFunction();
 
 	void PlayMeleeAttackMontage();
 

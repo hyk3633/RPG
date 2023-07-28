@@ -4,9 +4,11 @@
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "../RPG.h"
 #include "Components/SphereComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 
 ARPGBaseProjectile::ARPGBaseProjectile()
@@ -48,6 +50,11 @@ void ARPGBaseProjectile::SetProjectileInfo(const FProjectileInfo& NewInfo)
 	CollisionComponent->SetSphereRadius(ProjInfo.CollisionRadius);
 }
 
+void ARPGBaseProjectile::SetProjectileAssets(const FProjectileAssets& NewAssets)
+{
+	ProjAssets = NewAssets;
+}
+
 void ARPGBaseProjectile::SetProjectileDamage(const float NewDamage)
 {
 	Damage = NewDamage;
@@ -62,11 +69,11 @@ void ARPGBaseProjectile::BeginPlay()
 		ProjectileMovementComponent->OnProjectileStop.AddDynamic(this, &ARPGBaseProjectile::OnImpact);
 	}
 
-	if (GetLocalRole() == ENetRole::ROLE_SimulatedProxy && BodyParticle)
+	if (GetLocalRole() == ENetRole::ROLE_SimulatedProxy && ProjAssets.BodyParticle)
 	{
 		BodyParticleComp = UGameplayStatics::SpawnEmitterAttached
 		(
-			BodyParticle,
+			ProjAssets.BodyParticle,
 			CollisionComponent,
 			FName(),
 			GetActorLocation(),
@@ -116,6 +123,12 @@ void ARPGBaseProjectile::ActivateProjectileToAllClients()
 	ActivateProjectileMulticast();
 }
 
+void ARPGBaseProjectile::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+}
+
 void ARPGBaseProjectile::ActivateProjectileMulticast_Implementation()
 {
 	ActivateProjectile();
@@ -132,6 +145,13 @@ void ARPGBaseProjectile::ActivateProjectile()
 		ProjectileMovementComponent->Activate();
 
 		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
+		if (ProjInfo.bIsHoming && IsValid(TargetCharacter))
+		{
+			ProjectileMovementComponent->bIsHomingProjectile = true;
+			ProjectileMovementComponent->HomingTargetComponent = TargetCharacter->GetCapsuleComponent();
+			ProjectileMovementComponent->HomingAccelerationMagnitude = 100.f;
+		}
 	}
 	else
 	{
@@ -150,17 +170,17 @@ void ARPGBaseProjectile::SpawnParticleMulticast_Implementation(EParticleType Typ
 {
 	if (HasAuthority()) return;
 
-	if (Type == EParticleType::EPT_CharacterImpact && CharacterImpactParticle)
+	if (Type == EParticleType::EPT_CharacterImpact && ProjAssets.CharacterImpactParticle)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), CharacterImpactParticle, SpawnLocation, SpawnRotation);
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjAssets.CharacterImpactParticle, SpawnLocation, SpawnRotation);
 	}
-	else if (Type == EParticleType::EPT_WorldImpact && WorldImpactParticle)
+	else if (Type == EParticleType::EPT_WorldImpact && ProjAssets.WorldImpactParticle)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WorldImpactParticle, SpawnLocation, SpawnRotation);
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjAssets.WorldImpactParticle, SpawnLocation, SpawnRotation);
 	}
-	else if (Type == EParticleType::EPT_NoImpact && NoImpactParticle)
+	else if (Type == EParticleType::EPT_NoImpact && ProjAssets.NoImpactParticle)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), NoImpactParticle, SpawnLocation, SpawnRotation);
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjAssets.NoImpactParticle, SpawnLocation, SpawnRotation);
 	}
 }
 
@@ -182,6 +202,12 @@ void ARPGBaseProjectile::DeactivateProjectile()
 		ProjectileMovementComponent->StopMovementImmediately();
 		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		DDeactivateProjectile.ExecuteIfBound();
+
+		if (ProjInfo.bIsHoming && TargetCharacter)
+		{
+			ProjectileMovementComponent->bIsHomingProjectile = false;
+			TargetCharacter = nullptr;
+		}
 	}
 	else
 	{
@@ -225,4 +251,5 @@ void ARPGBaseProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	DOREPLIFETIME(ARPGBaseProjectile, ProjAssets);
 }

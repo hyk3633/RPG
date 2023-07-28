@@ -205,6 +205,8 @@ void ARPGBasePlayerCharacter::ResetHealthManaUI()
 {
 	if (IsLocallyControlled())
 	{
+		Health = CharacterMaxHP + EquipmentMaxHP;
+		Mana = CharacterMaxMP + EquipmentMaxMP;
 		DOnChangeHealthPercentage.Broadcast(Health / (CharacterMaxHP + EquipmentMaxHP));
 		DOnChangeManaPercentage.Broadcast(Mana / (CharacterMaxMP + EquipmentMaxMP));
 	}

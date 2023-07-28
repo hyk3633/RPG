@@ -232,18 +232,25 @@ void ARPGBaseEnemyCharacter::EnemyDeath()
 
 void ARPGBaseEnemyCharacter::BTTask_Attack()
 {
-	PlayMeleeAttackMontageMulticast();
+	PlayMeleeAttackEffectMulticast();
 }
 
-void ARPGBaseEnemyCharacter::PlayMeleeAttackMontageMulticast_Implementation()
+void ARPGBaseEnemyCharacter::PlayMeleeAttackEffectMulticast_Implementation()
 {
-	if (MyAnimInst == nullptr) return;
-	MyAnimInst->PlayMeleeAttackMontage();
+	PlayMeleeAttackEffect();
+}
+
+void ARPGBaseEnemyCharacter::PlayMeleeAttackEffect()
+{
+	if (MyAnimInst)
+	{
+		MyAnimInst->PlayMeleeAttackMontage();
+	}
 }
 
 void ARPGBaseEnemyCharacter::Attack()
 {
-	if (EnemyForm)
+	if (HasAuthority())
 	{
 		EnemyForm->MeleeAttack(this);
 	}
@@ -408,6 +415,14 @@ void ARPGBaseEnemyCharacter::ResumeAction()
 	else
 	{
 		GetMesh()->bPauseAnims = false;
+	}
+}
+
+void ARPGBaseEnemyCharacter::SpawnParticle(UParticleSystem* Particle, const FVector& SpawnLocation, const FRotator& SpawnRotation)
+{
+	if (Particle)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Particle, SpawnLocation, SpawnRotation);
 	}
 }
 

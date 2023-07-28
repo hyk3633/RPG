@@ -10,7 +10,7 @@ struct FProjectileInfo : public FTableRowBase
 
 public:
 
-	FProjectileInfo() : bIsPlayers(false), ExpireTime(1.f), InitialSpeed(5000), CollisionRadius(24), bIsExplosive(false), ExplosionRadius(100) {}
+	FProjectileInfo() : bIsPlayers(false), ExpireTime(1.f), InitialSpeed(5000), CollisionRadius(24), bIsExplosive(false), ExplosionRadius(100), bIsHoming(false) {}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
 	bool bIsPlayers;
@@ -30,6 +30,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
 	int32 ExplosionRadius;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
+	bool bIsHoming;
+
 	FProjectileInfo& operator=(const FProjectileInfo& Other)
 	{
 		bIsPlayers = Other.bIsPlayers;
@@ -37,6 +40,7 @@ public:
 		ExpireTime = Other.ExpireTime;
 		InitialSpeed = Other.InitialSpeed;
 		ExplosionRadius = Other.ExplosionRadius;
+		bIsHoming = Other.bIsHoming;
 
 		return *this;
 	}

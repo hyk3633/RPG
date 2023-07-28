@@ -12,6 +12,8 @@
 class ARPGBaseEnemyCharacter;
 class UBehaviorTreeComponent;
 class UBlackboardComponent;
+class UAIPerceptionComponent;
+class UAISenseConfig_Sight;
 
 UCLASS()
 class RPG_API ARPGEnemyAIController : public AAIController

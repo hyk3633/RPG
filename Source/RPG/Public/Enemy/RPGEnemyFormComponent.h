@@ -51,14 +51,22 @@ public:
 
 	void MeleeAttack(ARPGBaseEnemyCharacter* Attacker);
 
-	void RangedAttack(ARPGBaseEnemyCharacter* Attacker);
+	void RangedAttack(ARPGBaseEnemyCharacter* Attacker, ACharacter* HomingTarget = nullptr);
 
 protected:
 
-	void GetSocketLocationAndSpawn(ARPGBaseEnemyCharacter* Attacker);
+	void GetSocketLocationAndSpawn(ARPGBaseEnemyCharacter* Attacker, ACharacter* HomingTarget = nullptr);
 
-	void SpawnProjectile(ARPGBaseEnemyCharacter* Attacker, const FVector& SpawnLocation, const FRotator& SpawnRotation);
+	void SpawnProjectile(ARPGBaseEnemyCharacter* Attacker, const FVector& SpawnLocation, const FRotator& SpawnRotation, ACharacter* HomingTarget = nullptr);
+
+public:
+
+	void StraightMultiAttack(ARPGBaseEnemyCharacter* Attacker, const FVector& LocationToAttack, TArray<FVector>& ImpactLocation, TArray<FRotator>& ImpactRotation);
 	
+	void SphericalRangeAttack(ARPGBaseEnemyCharacter* Attacker, const int32& Radius, TArray<FVector>& ImpactLocation, TArray<FRotator>& ImpactRotation);
+
+	void RectangularRangeAttack(ARPGBaseEnemyCharacter* Attacker, const int32& Length, TArray<FVector>& ImpactLocation, TArray<FRotator>& ImpactRotation);
+
 private:
 
 	FEnemyInfo EnemyInfo;

@@ -18,6 +18,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
+#include "Materials/MaterialInstanceConstant.h"
 
 #include "DrawDebugHelpers.h"
 
@@ -30,6 +31,9 @@ ARPGSorcererPlayerCharacter::ARPGSorcererPlayerCharacter()
 	RestrictionProjPooler = CreateDefaultSubobject<UProjectilePoolerComponent>(TEXT("Restriction Projectile Pooler"));
 
 	MeteorliteProjPooler = CreateDefaultSubobject<UProjectilePoolerComponent>(TEXT("Meteorlite Projectile Pooler"));
+
+	static ConstructorHelpers::FObjectFinder<UMaterialInstanceConstant> MaterialAsset(TEXT("MaterialInstanceConstant'/Game/_Assets/Materials/Targeting/MI_SorcererTargeting.MI_SorcererTargeting'"));
+	if (MaterialAsset.Succeeded()) { AimCursor->SetMaterial(0, MaterialAsset.Object); }
 }
 
 void ARPGSorcererPlayerCharacter::Tick(float DeltaTime)

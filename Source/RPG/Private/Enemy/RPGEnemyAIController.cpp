@@ -10,7 +10,7 @@
 
 ARPGEnemyAIController::ARPGEnemyAIController()
 {
-	
+
 }
 
 void ARPGEnemyAIController::PostInitializeComponents()
@@ -133,7 +133,6 @@ void ARPGEnemyAIController::CharacterDead()
 	{
 		BBComp->SetValueAsBool(FName("IsDead"), true);
 	}
-	SetFocus(nullptr);
 }
 
 void ARPGEnemyAIController::CharacterActivate()

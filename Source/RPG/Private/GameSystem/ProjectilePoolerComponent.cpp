@@ -19,6 +19,8 @@ void UProjectilePoolerComponent::CreatePool(TSubclassOf<ARPGBaseProjectile> Proj
 
 	const FProjectileInfo& NewProjectileInfo = *GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetProjectileInfo(Type);
 
+	const FProjectileAssets& NewProjectileAssets = *GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetProjectileAssets(Type);
+
 	if (ProjectileClass)
 	{
 		UWorld* World = GetWorld();
@@ -27,6 +29,7 @@ void UProjectilePoolerComponent::CreatePool(TSubclassOf<ARPGBaseProjectile> Proj
 		{
 			ARPGBaseProjectile* Projectile = World->SpawnActorDeferred<ARPGBaseProjectile>(ProjectileClass, FTransform(FRotator().ZeroRotator, FVector().ZeroVector));
 			Projectile->SetProjectileInfo(NewProjectileInfo);
+			Projectile->SetProjectileAssets(NewProjectileAssets);
 			Projectile->DDeactivateProjectile.BindUObject(this, &UProjectilePoolerComponent::AddDeactivatedNum);
 			Projectile->FinishSpawning(FTransform(FRotator().ZeroRotator, FVector().ZeroVector));
 			ProjectileArr[i] = Projectile;

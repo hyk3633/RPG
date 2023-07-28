@@ -12,12 +12,14 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
+#include "Materials/MaterialInstanceConstant.h"
 
 #include "DrawDebugHelpers.h"
 
 ARPGWarriorPlayerCharacter::ARPGWarriorPlayerCharacter()
 {
-	
+	static ConstructorHelpers::FObjectFinder<UMaterialInstanceConstant> MaterialAsset(TEXT("MaterialInstanceConstant'/Game/_Assets/Materials/Targeting/MI_WarriorrTargeting.MI_WarriorrTargeting'"));
+	if (MaterialAsset.Succeeded()) { AimCursor->SetMaterial(0, MaterialAsset.Object); }
 }
 
 void ARPGWarriorPlayerCharacter::Tick(float DeltaTime)

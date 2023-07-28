@@ -35,7 +35,7 @@ public:
 protected:
 
 	UFUNCTION(NetMulticast, Reliable)
-	void PlayRangedAttackMontageMulticast();
+	void PlayRangedAttackEffectMulticast();
 
 	virtual void Attack() override;
 
