@@ -6,7 +6,6 @@
 #include "Player/CharacterAbility/RPGBlackhole.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "Projectile/RPGBaseProjectile.h"
-#include "Projectile/RPGRestrictionProjectile.h"
 #include "GameSystem/ProjectilePoolerComponent.h"
 #include "../RPG.h"
 #include "GameFramework/PlayerController.h"
@@ -74,9 +73,9 @@ void ARPGSorcererPlayerCharacter::BeginPlay()
 
 	if (HasAuthority())
 	{
-		PrimaryProjPooler->CreatePool(PrimaryPorjectile, 50, EProjectileType::EPT_Sorcerer_Primary);
-		RestrictionProjPooler->CreatePool(RestrictionPorjectile, 5, EProjectileType::EPT_Sorcerer_Restriction);
-		MeteorliteProjPooler->CreatePool(MeteorlitePorjectile, 5, EProjectileType::EPT_Sorcerer_Meteorlite);
+		PrimaryProjPooler->CreatePool(ARPGBaseProjectile::StaticClass(), 50, EProjectileType::EPT_Sorcerer_Primary);
+		RestrictionProjPooler->CreatePool(ARPGBaseProjectile::StaticClass(), 5, EProjectileType::EPT_Sorcerer_Restriction);
+		MeteorliteProjPooler->CreatePool(ARPGBaseProjectile::StaticClass(), 5, EProjectileType::EPT_Sorcerer_Meteorlite);
 	}
 }
 

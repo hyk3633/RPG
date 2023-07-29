@@ -118,6 +118,14 @@ void ARPGEnemyAIController::SetSuckedIn(const bool bIsSuckedIn)
 	}
 }
 
+void ARPGEnemyAIController::SetIsStunned(const bool bIsStunned)
+{
+	if (BBComp)
+	{
+		BBComp->SetValueAsBool(FName("IsStunned"), bIsStunned);
+	}
+}
+
 bool ARPGEnemyAIController::GetSuckedIn() const
 {
 	if (BBComp)

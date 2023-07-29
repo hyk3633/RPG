@@ -12,7 +12,6 @@
  */
 
 class ARPGBaseProjectile;
-class ARPGRestrictionProjectile;
 class ARPGBlackhole;
 class UProjectilePoolerComponent;
 
@@ -168,20 +167,7 @@ protected:
 	UPROPERTY()
 	UProjectilePoolerComponent* MeteorliteProjPooler;
 
-	/** 일반 공격 */
-
-	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
-	TSubclassOf<ARPGBaseProjectile> PrimaryPorjectile;
-
-	/** Q 스킬 */
-
-	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
-	TSubclassOf<ARPGRestrictionProjectile> RestrictionPorjectile;
-
 	/** W 스킬 */
-
-	UPROPERTY(EditAnywhere, Category = "Character | Projectile")
-	TSubclassOf<ARPGBaseProjectile> MeteorlitePorjectile;
 
 	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteorlite")
 	UParticleSystem* MeteorliteParticle;

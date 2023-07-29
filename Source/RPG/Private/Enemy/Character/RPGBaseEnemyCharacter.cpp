@@ -5,6 +5,9 @@
 #include "Enemy/RPGEnemyAnimInstance.h"
 #include "UI/RPGEnemyHealthBarWidget.h"
 #include "Player/RPGPlayerController.h"
+#include "DamageType/DamageTypeBase.h"
+#include "DamageType/DamageTypeStunAndPush.h"
+#include "DamageType/DamageTypeRestriction.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Components/CapsuleComponent.h"
@@ -148,19 +151,35 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
-	const int32 FinalDamage = FMath::CeilToInt(CalculateDamage(Damage));
+	if (HasAuthority() == false) return;
+
+	UDamageTypeBase* DT_Base = Cast<UDamageTypeBase>(const_cast<UDamageType*>(DamageType));
+	if (DT_Base == nullptr) return;
+	
+	const int32 FinalDamage = DT_Base->CalculateDamage(Damage, DefensivePower);
+	HealthDecrease(FinalDamage);
 	//PLOG(TEXT("%s Enemy damaged : %d"), *DamagedActor->GetName(), FinalDamage);
+
 	ARPGPlayerController* AttackerController = Cast<ARPGPlayerController>(InstigatorController);
 	if (AttackerController)
 	{
 		AttackerController->ReceiveDamageInfo(GetMesh()->GetSocketTransform(FName("DamageSocket")).GetLocation(), FinalDamage);
 	}
-	HealthDecrease(FinalDamage);
-}
 
-float ARPGBaseEnemyCharacter::CalculateDamage(const float& Damage)
-{
-	return (Damage * (FMath::RandRange(70, 100))) * (1 - ((DefensivePower * (FMath::RandRange(30, 60) / 10)) / 100));
+	if (Health != 0)
+	{
+		UDamageTypeStunAndPush* DT_StunAndPush = Cast<UDamageTypeStunAndPush>(DT_Base);
+		if (DT_StunAndPush)
+		{
+			DT_StunAndPush->GetPushed(DamageCauser, this);
+			FalldownMulticast();
+		}
+		else
+		{
+			UDamageTypeRestriction* DT_Restriction = Cast<UDamageTypeRestriction>(DT_Base);
+			if (DT_Restriction) StopActionMulticast();
+		}
+	}
 }
 
 /** 체력 */
@@ -280,12 +299,6 @@ bool ARPGBaseEnemyCharacter::GetIsInAir() const
 
 /** 기절 */
 
-void ARPGBaseEnemyCharacter::FalldownToAllClients()
-{
-	GetWorldTimerManager().SetTimer(FalldownTimer, this, &ARPGBaseEnemyCharacter::GetupToAllClients, 3.f);
-	FalldownMulticast();
-}
-
 void ARPGBaseEnemyCharacter::FalldownMulticast_Implementation()
 {
 	Falldown();
@@ -295,6 +308,7 @@ void ARPGBaseEnemyCharacter::Falldown()
 {
 	if (HasAuthority())
 	{
+		GetWorldTimerManager().SetTimer(FalldownTimer, this, &ARPGBaseEnemyCharacter::GetupMulticast, 3.f);
 		MyController->SetIsFalldown(true);
 	}
 	else
@@ -304,11 +318,6 @@ void ARPGBaseEnemyCharacter::Falldown()
 }
 
 /** 기상 */
-
-void ARPGBaseEnemyCharacter::GetupToAllClients()
-{
-	GetupMulticast();
-}
 
 void ARPGBaseEnemyCharacter::GetupMulticast_Implementation()
 {
@@ -377,11 +386,6 @@ void ARPGBaseEnemyCharacter::DisableSuckedIn()
 }
 
 /** 행동 정지, 해제 */
-
-void ARPGBaseEnemyCharacter::StopActionToAllClients()
-{
-	StopActionMulticast();
-}
 
 void ARPGBaseEnemyCharacter::StopActionMulticast_Implementation()
 {

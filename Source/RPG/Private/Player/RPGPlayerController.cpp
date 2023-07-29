@@ -114,6 +114,8 @@ void ARPGPlayerController::ReloadCharacterAndEquipmentStat()
 		const FStatInfo& EquipmentStats = GetPlayerState<ARPGPlayerState>()->GetEquippedItemStats();
 		MyCharacter->SetEquipmentArmourStats(EquipmentStats.DefenseivePower, EquipmentStats.Dexterity, EquipmentStats.MaxHP, EquipmentStats.MaxMP);
 		MyCharacter->SetEquipmentAccessoriesStats(EquipmentStats.StrikingPower, EquipmentStats.SkillPower, EquipmentStats.AttackSpeed);
+
+		MyCharacter->ResetHealthMana();
 	}
 }
 

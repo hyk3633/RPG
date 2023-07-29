@@ -27,13 +27,11 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void BTTask_Attack() override;
-
-	FOnSpecialAttackMontageEndDelegate DOnSpecialAttackEnd;
-
 protected:
 
 	void CalculateAimYawAndPitch(float DeltaTime);
+
+	void StunCleared();
 
 	UFUNCTION()
 	void OnRep_AimPitch();
@@ -44,9 +42,17 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void SetAimYawMulticast(const float& NewYaw);
 
-	virtual void InitAnimInstance() override;
+public:
 
-	virtual void PlayMeleeAttackEffect() override;
+	virtual void BTTask_Attack() override;
+
+	FOnSpecialAttackMontageEndDelegate DOnSpecialAttackEnd;
+
+protected:
+
+	virtual void HealthDecrease(const int32& Damage) override;
+
+	virtual void InitAnimInstance() override;
 
 	virtual void Attack() override;
 
@@ -79,6 +85,8 @@ protected:
 
 	UFUNCTION()
 	void Bulldoze(ESpecialAttackType Type);
+
+	virtual void OnAttackMontageEnded() override;
 
 	UFUNCTION()
 	void OnSpecialAttackMontageEnded();
@@ -114,6 +122,14 @@ private:
 
 	float InitYaw = 0.f;
 
+	float StiffTimeLimit = 0.f;
+
+	int32 CumulativeDamage = 0;
+
+	bool bIsStunned = false;
+
+	FTimerHandle StunTimer;
+
 	/** 기본 공격 */
 
 	UPROPERTY()
@@ -125,10 +141,14 @@ private:
 	UPROPERTY()
 	UParticleSystem* PrimaryAttackCharacterImpactParticle;
 
+	FTimerHandle AttackDelayTimer;
+
 	/** 구형 범위 공격 */
 	UPROPERTY()
 	UParticleSystem* RangeAttackImpactParticle;
 
 	FTimerHandle SpecialAttackTimer;
+
+	bool bIsAttacking = false;
 
 };

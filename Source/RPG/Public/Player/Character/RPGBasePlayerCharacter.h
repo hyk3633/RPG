@@ -5,6 +5,7 @@
 #include "GameFramework/Character.h"
 #include "Enums/PressedKey.h"
 #include "Structs/StatInfo.h"
+#include "DamageType/DamageTypeBase.h"
 #include "RPGBasePlayerCharacter.generated.h"
 
 class ARPGPlayerController;
@@ -13,6 +14,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class USphereComponent;
 class ARPGBaseEnemyCharacter;
+class UDamageTypeBase;
 struct FCharacterStats;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnChangeHealthPercentageDelegate, float Percentage);
@@ -45,9 +47,7 @@ protected:
 	UFUNCTION()
 	virtual void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 
-	float CalculateDamage(const float& Damage);
-
-	void ApplyDamageToEnemy(APawn* TargetEnemy, const float& Damage);
+	void ApplyDamageToEnemy(APawn* TargetEnemy, const float& Damage, TSubclassOf<UDamageType> DamageType = UDamageTypeBase::StaticClass());
 
 	UFUNCTION()
 	void OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -77,6 +77,8 @@ protected:
 	void OnRep_Mana();
 
 public:	
+
+	void ResetHealthMana();
 
 	void ResetHealthManaUI();
 

@@ -5,6 +5,7 @@
 #include "Player/AnimInstance/RPGWarriorAnimInstance.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "Projectile/RPGBaseProjectile.h"
+#include "DamageType/DamageTypeStunAndPush.h"
 #include "../RPG.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemlibrary.h"
@@ -396,9 +397,7 @@ void ARPGWarriorPlayerCharacter::SmashDownToEnemies()
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
 		if (IsValid(Enemy))
 		{
-			Enemy->LaunchCharacter(Enemy->GetActorForwardVector() * -700.f, false, true);
-			Enemy->FalldownToAllClients();
-			ApplyDamageToEnemy(Enemy, GetSkillPower(EPressedKey::EPK_E));
+			ApplyDamageToEnemy(Enemy, GetSkillPower(EPressedKey::EPK_E), UDamageTypeStunAndPush::StaticClass());
 		}
 	}
 }
@@ -446,9 +445,7 @@ void ARPGWarriorPlayerCharacter::RebirthServer_Implementation()
 		ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
 		if (IsValid(Enemy))
 		{
-			Enemy->LaunchCharacter(Enemy->GetActorForwardVector() * -700.f, false, true);
-			Enemy->FalldownToAllClients();
-			ApplyDamageToEnemy(Enemy, GetSkillPower(EPressedKey::EPK_R));
+			ApplyDamageToEnemy(Enemy, GetSkillPower(EPressedKey::EPK_R), UDamageTypeStunAndPush::StaticClass());
 		}
 	}
 }

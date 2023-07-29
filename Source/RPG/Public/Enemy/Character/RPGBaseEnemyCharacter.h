@@ -65,11 +65,9 @@ public:
 	UFUNCTION()
 	void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 
-	float CalculateDamage(const float& Damage);
-
 	/** 체력 */
 
-	void HealthDecrease(const int32& Damage);
+	virtual void HealthDecrease(const int32& Damage);
 
 	UFUNCTION()
 	void OnRep_Health();
@@ -101,7 +99,7 @@ protected:
 	virtual void Attack();
 
 	UFUNCTION()
-	void OnAttackMontageEnded();
+	virtual void OnAttackMontageEnded();
 
 public:
 
@@ -116,22 +114,14 @@ public:
 
 	bool GetIsInAir() const;
 
-public: /** 기절 */
-
-	void FalldownToAllClients();
-
 protected:
+
+	/** 기절 상태 및 기절 상태 회복 */
 
 	UFUNCTION(NetMulticast, Reliable)
 	void FalldownMulticast();
 
 	void Falldown();
-
-public: /** 기상 */
-
-	void GetupToAllClients();
-
-protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void GetupMulticast();
@@ -164,13 +154,7 @@ protected:
 
 	void DisableSuckedIn();
 
-public:
-
-	/** 행동 정지, 해제 */
-
-	void StopActionToAllClients();
-
-protected:
+	/** 경직 상태 및 해제 */
 
 	UFUNCTION(NetMulticast, Reliable)
 	void StopActionMulticast();

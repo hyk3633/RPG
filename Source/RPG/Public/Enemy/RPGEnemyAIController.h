@@ -48,6 +48,8 @@ public:
 
 	void SetSuckedIn(const bool bIsSuckedIn);
 
+	void SetIsStunned(const bool bIsStunned);
+
 	bool GetSuckedIn() const;
 
 protected:

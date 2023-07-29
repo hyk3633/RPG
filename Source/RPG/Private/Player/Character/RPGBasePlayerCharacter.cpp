@@ -4,6 +4,7 @@
 #include "Player/RPGPlayerController.h"
 #include "Player/RPGPlayerState.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
+#include "DamageType/DamageTypeStunAndPush.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Camera/CameraComponent.h"
@@ -104,9 +105,13 @@ void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, 
 {
 	if (HasAuthority() && Health)
 	{
-		const float FinalDamage = CalculateDamage(Damage);
+		UDamageTypeBase* DT_Base = Cast<UDamageTypeBase>(const_cast<UDamageType*>(DamageType));
+		if (DT_Base == nullptr) return;
+
+		const int32 FinalDamage = DT_Base->CalculateDamage(Damage, CharacterDefensivePower + EquipmentDefensivePower);
 		Health = FMath::Max(Health - FinalDamage, 0.f);
-		//PLOG(TEXT("Player Take Damage : %f"), FinalDamage);
+		PLOG(TEXT("Player Take Damage : %d"), FinalDamage);
+
 		if (Health == 0.f)
 		{
 			TempController = GetController();
@@ -114,17 +119,21 @@ void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, 
 			GetWorldTimerManager().SetTimer(RespawnTimer, this, &ARPGBasePlayerCharacter::PlayerRespawn, 5.f);
 			SetLifeSpan(6.f);
 		}
+		else
+		{
+			UDamageTypeStunAndPush* DT_StunAndPush = Cast<UDamageTypeStunAndPush>(DT_Base);
+			if (DT_StunAndPush)
+			{
+				DT_StunAndPush->GetPushed(DamageCauser, this);
+				// TODO : 스턴 애니메이션 multicast
+			}
+		}
 	}
 }
 
-float ARPGBasePlayerCharacter::CalculateDamage(const float& Damage)
+void ARPGBasePlayerCharacter::ApplyDamageToEnemy(APawn* TargetEnemy, const float& Damage, TSubclassOf<UDamageType> DamageType)
 {
-	return (Damage * (FMath::RandRange(7, 10))) * (1 - ((CharacterDefensivePower + EquipmentDefensivePower) * (FMath::RandRange(30, 60) / 10)) / 100);
-}
-
-void ARPGBasePlayerCharacter::ApplyDamageToEnemy(APawn* TargetEnemy, const float& Damage)
-{
-	UGameplayStatics::ApplyDamage(TargetEnemy, Damage, GetController(), this, UDamageType::StaticClass());
+	UGameplayStatics::ApplyDamage(TargetEnemy, Damage, GetController(), this, DamageType);
 }
 
 void ARPGBasePlayerCharacter::OnTargetingComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -201,12 +210,16 @@ void ARPGBasePlayerCharacter::OnRep_Mana()
 	}
 }
 
+void ARPGBasePlayerCharacter::ResetHealthMana()
+{
+	Health = CharacterMaxHP + EquipmentMaxHP;
+	Mana = CharacterMaxMP + EquipmentMaxMP;
+}
+
 void ARPGBasePlayerCharacter::ResetHealthManaUI()
 {
 	if (IsLocallyControlled())
 	{
-		Health = CharacterMaxHP + EquipmentMaxHP;
-		Mana = CharacterMaxMP + EquipmentMaxMP;
 		DOnChangeHealthPercentage.Broadcast(Health / (CharacterMaxHP + EquipmentMaxHP));
 		DOnChangeManaPercentage.Broadcast(Mana / (CharacterMaxMP + EquipmentMaxMP));
 	}

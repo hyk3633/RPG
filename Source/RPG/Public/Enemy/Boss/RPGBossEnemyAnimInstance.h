@@ -30,6 +30,7 @@ public:
 
 	bool GetIsTurning() const;
 
+	FORCEINLINE void SetStunned(const bool bIsStunned) { bStunned = bIsStunned; }
 	FORCEINLINE void SetPitch(const float& Pitch) { AimPitch = Pitch; }
 	FORCEINLINE void SetYaw(const float& Yaw) { AimYaw = Yaw; }
 
@@ -60,4 +61,7 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	float AimYaw;
+
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	bool bStunned = false;
 };

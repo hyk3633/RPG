@@ -29,7 +29,6 @@ ARPGBaseProjectile::ARPGBaseProjectile()
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
-	ProjectileMovementComponent->MaxSpeed = 7000.f;
 	ProjectileMovementComponent->ProjectileGravityScale = 0.f;
 	ProjectileMovementComponent->SetAutoActivate(false);
 }
@@ -47,6 +46,7 @@ void ARPGBaseProjectile::SetProjectileInfo(const FProjectileInfo& NewInfo)
 		CollisionComponent->SetCollisionProfileName(FName("EnemyProjectileProfile"));
 	}
 	ProjectileMovementComponent->InitialSpeed = ProjInfo.InitialSpeed;
+	ProjectileMovementComponent->MaxSpeed = ProjInfo.InitialSpeed;
 	CollisionComponent->SetSphereRadius(ProjInfo.CollisionRadius);
 }
 
@@ -100,11 +100,11 @@ void ARPGBaseProjectile::ProcessHitEvent(const FHitResult& HitResult)
 
 	if (ProjInfo.bIsExplosive)
 	{
-		UGameplayStatics::ApplyRadialDamage(this, Damage, GetActorLocation(), ProjInfo.ExplosionRadius, UDamageType::StaticClass(), TArray<AActor*>(), GetOwner(), GetInstigatorController());
+		UGameplayStatics::ApplyRadialDamage(this, Damage, GetActorLocation(), ProjInfo.ExplosionRadius, ProjInfo.DamageType, TArray<AActor*>(), GetOwner(), GetInstigatorController());
 	}
 	else
 	{
-		UGameplayStatics::ApplyDamage(HitResult.GetActor(), Damage, GetInstigatorController(), GetOwner(), UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(HitResult.GetActor(), Damage, GetInstigatorController(), GetOwner(), ProjInfo.DamageType);
 	}
 
 	ACharacter* Character = Cast<ACharacter>(HitResult.GetActor());
@@ -150,7 +150,7 @@ void ARPGBaseProjectile::ActivateProjectile()
 		{
 			ProjectileMovementComponent->bIsHomingProjectile = true;
 			ProjectileMovementComponent->HomingTargetComponent = TargetCharacter->GetCapsuleComponent();
-			ProjectileMovementComponent->HomingAccelerationMagnitude = 100.f;
+			ProjectileMovementComponent->HomingAccelerationMagnitude = 3000.f;
 		}
 	}
 	else

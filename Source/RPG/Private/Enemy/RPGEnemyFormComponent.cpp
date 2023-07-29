@@ -12,6 +12,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "DamageType/DamageTypeStunAndPush.h"
 
 URPGEnemyFormComponent::URPGEnemyFormComponent()
 {
@@ -98,7 +99,7 @@ void URPGEnemyFormComponent::MeleeAttack(ARPGBaseEnemyCharacter* Attacker)
 
 	if (HitResult.bBlockingHit)
 	{
-		UGameplayStatics::ApplyDamage(HitResult.GetActor(), EnemyInfo.StrikingPower, Attacker->GetController(), Attacker, UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(HitResult.GetActor(), EnemyInfo.StrikingPower, Attacker->GetController(), Attacker, nullptr);
 	}
 }
 
@@ -156,7 +157,7 @@ void URPGEnemyFormComponent::StraightMultiAttack(ARPGBaseEnemyCharacter* Attacke
 	{
 		if (Hit.bBlockingHit)
 		{
-			UGameplayStatics::ApplyDamage(Hit.GetActor(), EnemyInfo.StrikingPower, Attacker->GetController(), Attacker, UDamageType::StaticClass());
+			UGameplayStatics::ApplyDamage(Hit.GetActor(), EnemyInfo.StrikingPower, Attacker->GetController(), Attacker, nullptr);
 			ImpactLocation.Add(Hit.ImpactPoint);
 			ImpactRotation.Add(Hit.ImpactNormal.Rotation());
 		}
@@ -184,7 +185,7 @@ void URPGEnemyFormComponent::SphericalRangeAttack(ARPGBaseEnemyCharacter* Attack
 	{
 		if (Hit.bBlockingHit)
 		{
-			UGameplayStatics::ApplyDamage(Hit.GetActor(), EnemyInfo.StrikingPower, Attacker->GetController(), Attacker, UDamageType::StaticClass());
+			UGameplayStatics::ApplyDamage(Hit.GetActor(), EnemyInfo.StrikingPower, Attacker->GetController(), Attacker, UDamageTypeStunAndPush::StaticClass());
 			ImpactLocation.Add(Hit.ImpactPoint);
 			ImpactRotation.Add(Hit.ImpactNormal.Rotation());
 		}
@@ -215,7 +216,7 @@ void URPGEnemyFormComponent::RectangularRangeAttack(ARPGBaseEnemyCharacter* Atta
 	{
 		if (Hit.bBlockingHit)
 		{
-			UGameplayStatics::ApplyDamage(Hit.GetActor(), EnemyInfo.StrikingPower, Attacker->GetController(), Attacker, UDamageType::StaticClass());
+			UGameplayStatics::ApplyDamage(Hit.GetActor(), EnemyInfo.StrikingPower, Attacker->GetController(), Attacker, UDamageTypeStunAndPush::StaticClass());
 			ImpactLocation.Add(Hit.ImpactPoint);
 			ImpactRotation.Add(Hit.ImpactNormal.Rotation());
 		}

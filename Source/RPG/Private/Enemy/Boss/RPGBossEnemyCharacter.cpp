@@ -2,6 +2,7 @@
 #include "Enemy/Boss/RPGBossEnemyCharacter.h"
 #include "Enemy/Boss/RPGBossEnemyAnimInstance.h"
 #include "Enemy/RPGEnemyFormComponent.h"
+#include "Enemy/RPGEnemyAIController.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -50,9 +51,28 @@ ARPGBossEnemyCharacter::ARPGBossEnemyCharacter()
 
 void ARPGBossEnemyCharacter::Tick(float DeltaTime)
 {
-	if (BossAnimInst && HasAuthority())
+	if (HasAuthority() == false) return;
+
+	if (bIsAttacking && BossAnimInst)
 	{
 		CalculateAimYawAndPitch(DeltaTime);
+	}
+
+	if (bIsStunned == false)
+	{
+		StiffTimeLimit += DeltaTime;
+		if (CumulativeDamage >= 500 || StiffTimeLimit > 3.f)
+		{
+			StiffTimeLimit = 0.f;
+			CumulativeDamage = 0;
+			if (CumulativeDamage >= 500)
+			{
+				bIsStunned = true;
+				if (MyController) MyController->SetIsStunned(true);
+				if (BossAnimInst) BossAnimInst->SetStunned(true);
+				GetWorldTimerManager().SetTimer(StunTimer, this, &ARPGBossEnemyCharacter::StunCleared, 3.f);
+			}
+		}
 	}
 }
 
@@ -85,6 +105,13 @@ void ARPGBossEnemyCharacter::CalculateAimYawAndPitch(float DeltaTime)
 	BossAnimInst->SetYaw(AimYaw);
 }
 
+void ARPGBossEnemyCharacter::StunCleared()
+{
+	bIsStunned = false;
+	if (MyController) MyController->SetIsStunned(false);
+	if (BossAnimInst) BossAnimInst->SetStunned(false);
+}
+
 void ARPGBossEnemyCharacter::OnRep_AimPitch()
 {
 	if (BossAnimInst) BossAnimInst->SetPitch(AimPitch);
@@ -103,6 +130,12 @@ void ARPGBossEnemyCharacter::SetAimYawMulticast_Implementation(const float& NewY
 	}
 }
 
+void ARPGBossEnemyCharacter::HealthDecrease(const int32& Damage)
+{
+	Super::HealthDecrease(Damage);
+	CumulativeDamage += Damage;
+}
+
 void ARPGBossEnemyCharacter::InitAnimInstance()
 {
 	Super::InitAnimInstance();
@@ -119,22 +152,12 @@ void ARPGBossEnemyCharacter::InitAnimInstance()
 
 void ARPGBossEnemyCharacter::BTTask_Attack()
 {
+	bIsAttacking = true;
 	if (GetTarget())
 	{
 		TargetLocation = GetTarget()->GetActorLocation();
 	}
-	PlayMeleeAttackEffectMulticast();
-}
-
-void ARPGBossEnemyCharacter::PlayMeleeAttackEffect()
-{
-	Super::PlayMeleeAttackEffect();
-
-	if (HasAuthority()) return;
-
-	const FTransform SocketTransform = GetMesh()->GetSocketTransform(FName("Melee_Socket"));
-	const FRotator AimRotation = (TargetLocation - SocketTransform.GetLocation()).GetSafeNormal().Rotation();
-	SpawnParticle(PrimaryAttackParticle, SocketTransform.GetLocation(), AimRotation);
+	GetWorldTimerManager().SetTimer(AttackDelayTimer, this, &ARPGBossEnemyCharacter::PlayMeleeAttackEffectMulticast, 1.f);
 }
 
 void ARPGBossEnemyCharacter::Attack()
@@ -155,7 +178,8 @@ void ARPGBossEnemyCharacter::Attack()
 		{
 			FHitResult HitResult;
 			const FVector TraceStart = GetMesh()->GetSocketTransform(FName("Melee_Socket")).GetLocation();
-			GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TargetLocation, ECC_GroundTrace);
+			const FVector TraceEnd = GetMesh()->GetSocketTransform(FName("Melee_Socket")).GetRotation().Vector() * 1000;
+			GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_GroundTrace);
 			if (HitResult.bBlockingHit)
 			{
 				SpawnParticleMulticast(PrimaryAttackWorldImpactParticle, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
@@ -174,7 +198,10 @@ void ARPGBossEnemyCharacter::SpawnParticleMulticast_Implementation(UParticleSyst
 
 void ARPGBossEnemyCharacter::BTTask_SpecialAttack()
 {
-	const ESpecialAttackType SpecialAttackType = StaticCast<ESpecialAttackType>(FMath::RandRange(0, 2));
+	bIsAttacking = true;
+
+	//const ESpecialAttackType SpecialAttackType = StaticCast<ESpecialAttackType>(FMath::RandRange(0, 2));
+	const ESpecialAttackType SpecialAttackType = ESpecialAttackType::ESAT_EmitShockWave;
 	
 	if (SpecialAttackType == ESpecialAttackType::ESAT_EmitShockWave)
 	{
@@ -281,10 +308,17 @@ void ARPGBossEnemyCharacter::Bulldoze(ESpecialAttackType Type)
 	}
 }
 
+void ARPGBossEnemyCharacter::OnAttackMontageEnded()
+{
+	Super::OnAttackMontageEnded();
+	if(HasAuthority()) bIsAttacking = false;
+}
+
 void ARPGBossEnemyCharacter::OnSpecialAttackMontageEnded()
 {
 	DOnSpecialAttackEnd.Broadcast();
 	AttackRangeMark->SetVisibility(false);
+	if (HasAuthority()) bIsAttacking = false;
 }
 
 void ARPGBossEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
