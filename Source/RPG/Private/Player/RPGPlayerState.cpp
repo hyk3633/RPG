@@ -12,7 +12,7 @@ void ARPGPlayerState::PostInitializeComponents()
 	CharacterStats.DefenseivePower = 1.f;
 	CharacterStats.StrikingPower = 1.f;
 	CharacterStats.SkillPower = 1.f;
-	CharacterStats.MaxHP = 200;
+	CharacterStats.MaxHP = 500;
 	CharacterStats.MaxMP = 300;
 
 	EquippedItemStats = FStatInfo();

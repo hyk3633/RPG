@@ -95,7 +95,8 @@ void ARPGBasePlayerCharacter::BeginPlay()
 	if (RPGAnimInstance)
 	{
 		RPGAnimInstance->DOnAttackInputCheck.AddUFunction(this, FName("CastNormalAttack"));
-		RPGAnimInstance->DOnAttackEnded.AddUFunction(this, FName("OnAttackMontageEnded"));
+		RPGAnimInstance->DOnAnimMontageEnded.AddUFunction(this, FName("OnAttackMontageEnded"));
+		RPGAnimInstance->DOnAnimMontageEnded.AddUFunction(this, FName("OnStunMontageEnded"));
 		RPGAnimInstance->DOnAbilityMontageEnded.AddUFunction(this, FName("OnAbilityEnded"));
 		RPGAnimInstance->SetMaxCombo(MaxCombo);
 	}
@@ -125,10 +126,37 @@ void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, 
 			if (DT_StunAndPush)
 			{
 				DT_StunAndPush->GetPushed(DamageCauser, this);
-				// TODO : 스턴 애니메이션 multicast
+				bStunned = true;
 			}
 		}
 	}
+}
+
+void ARPGBasePlayerCharacter::OnRep_bStunned()
+{
+	if (bStunned && RPGAnimInstance)
+	{
+		RPGAnimInstance->PlayStunMontage();
+		if (IsLocallyControlled())
+		{
+			CancelAbility();
+			if(bUpdateMovement) StopMove();
+		}
+	}
+}
+
+void ARPGBasePlayerCharacter::OnStunMontageEnded(EMontageEnded MontageType)
+{
+	if (MontageType == EMontageEnded::EME_StunEnded)
+	{
+		bStunned = false;
+		if (IsLocallyControlled()) StunEndServer();
+	}
+}
+
+void ARPGBasePlayerCharacter::StunEndServer_Implementation()
+{
+	bStunned = false;
 }
 
 void ARPGBasePlayerCharacter::ApplyDamageToEnemy(APawn* TargetEnemy, const float& Damage, TSubclassOf<UDamageType> DamageType)
@@ -438,10 +466,13 @@ void ARPGBasePlayerCharacter::TurnTowardAttackPoint()
 	GetCharacterMovement()->FlushServerMoves();
 }
 
-void ARPGBasePlayerCharacter::OnAttackMontageEnded()
+void ARPGBasePlayerCharacter::OnAttackMontageEnded(EMontageEnded MontageType)
 {
-	bIsAttacking = false;
-	AttackEndComboState();
+	if (MontageType == EMontageEnded::EME_AttackEnded)
+	{
+		bIsAttacking = false;
+		AttackEndComboState();
+	}
 }
 
 void ARPGBasePlayerCharacter::AttackEndComboState()
@@ -795,6 +826,7 @@ void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ARPGBasePlayerCharacter, EquipmentDexterity);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, CharacterAttackSpeed);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, EquipmentAttackSpeed);
+	DOREPLIFETIME(ARPGBasePlayerCharacter, bStunned);
 	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, CharacterMaxHP, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, EquipmentMaxHP, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, CharacterMaxMP, COND_OwnerOnly);

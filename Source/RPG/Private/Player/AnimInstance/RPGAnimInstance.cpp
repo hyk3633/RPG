@@ -5,8 +5,7 @@
 
 void URPGAnimInstance::NativeInitializeAnimation()
 {
-	OnMontageEnded.AddDynamic(this, &URPGAnimInstance::OnAttackMontageEnded);
-	OnMontageEnded.AddDynamic(this, &URPGAnimInstance::OnDeathMontageEnded);
+	OnMontageEnded.AddDynamic(this, &URPGAnimInstance::OnAnimMontageEnded);
 	OnMontageEnded.AddDynamic(this, &URPGAnimInstance::OnAbilityMontageEnded);
 }
 
@@ -64,19 +63,26 @@ void URPGAnimInstance::PlayDeathMontage()
 	Montage_Play(DeathMontage);
 }
 
-void URPGAnimInstance::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+void URPGAnimInstance::PlayStunMontage()
+{
+	if (StunMontage == nullptr) return;
+	if (IsAnyMontagePlaying() && !IsNormalAttackMontagePlaying()) return;
+	Montage_Play(StunMontage);
+}
+
+void URPGAnimInstance::OnAnimMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage == NormalAttackMontage)
 	{
-		DOnAttackEnded.Broadcast();
+		DOnAnimMontageEnded.Broadcast(EMontageEnded::EME_AttackEnded);
 	}
-}
-
-void URPGAnimInstance::OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-{
-	if (Montage == DeathMontage)
+	else if (Montage == DeathMontage)
 	{
-		DOnDeathEnded.Broadcast();
+		DOnAnimMontageEnded.Broadcast(EMontageEnded::EME_DeathEnded);
+	}
+	else if (Montage == StunMontage)
+	{
+		DOnAnimMontageEnded.Broadcast(EMontageEnded::EME_StunEnded);
 	}
 }
 

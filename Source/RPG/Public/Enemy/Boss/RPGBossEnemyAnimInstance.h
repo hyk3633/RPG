@@ -20,7 +20,7 @@ class RPG_API URPGBossEnemyAnimInstance : public URPGEnemyAnimInstance
 
 public:
 
-	virtual void BindFunction() override;
+	void BindBossEnemyFunction();
 
 	void PlayEmitShockWaveMontage();
 

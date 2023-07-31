@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Enums/PressedKey.h"
+#include "Enums/MontageEnded.h"
 #include "Structs/StatInfo.h"
 #include "DamageType/DamageTypeBase.h"
 #include "RPGBasePlayerCharacter.generated.h"
@@ -46,6 +47,15 @@ protected:
 
 	UFUNCTION()
 	virtual void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
+
+	UFUNCTION()
+	void OnRep_bStunned();
+
+	UFUNCTION()
+	void OnStunMontageEnded(EMontageEnded MontageType);
+
+	UFUNCTION(Server, Reliable)
+	void StunEndServer();
 
 	void ApplyDamageToEnemy(APawn* TargetEnemy, const float& Damage, TSubclassOf<UDamageType> DamageType = UDamageTypeBase::StaticClass());
 
@@ -132,7 +142,7 @@ protected:
 	void TurnTowardAttackPoint();
 
 	UFUNCTION()
-	void OnAttackMontageEnded();
+	void OnAttackMontageEnded(EMontageEnded MontageType);
 
 	void AttackEndComboState();
 
@@ -206,6 +216,7 @@ public: /** ---------- 반환 및 설정 함수 ---------- */
 	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
 	FORCEINLINE int8 GetAbilityCooldownBit() const { return AbilityCooldownBit; }
 	FORCEINLINE float GetStrikingPower() const { return CharacterStrikingPower + EquipmentStrikingPower; }
+	FORCEINLINE bool GetStunned() const { return bStunned; }
 	float GetSkillPower(EPressedKey KeyType);
 	float GetCooldownPercentage(int8 Bit) const;
 	bool IsAbilityAvailable(EPressedKey KeyType);
@@ -380,6 +391,9 @@ private:
 	FVector NextPoint;
 	FVector NextDirection;
 	int32 PathIdx;
+
+	UPROPERTY(ReplicatedUsing = OnRep_bStunned)
+	bool bStunned = false;
 
 	/** 일반 공격 */
 

@@ -5,6 +5,7 @@
 #include "Animation/AnimInstance.h"
 #include "Enums/PressedKey.h"
 #include "Enums/NotifyCode.h"
+#include "Enums/MontageEnded.h"
 #include "RPGAnimInstance.generated.h"
 
 /**
@@ -12,8 +13,7 @@
  */
 
 DECLARE_MULTICAST_DELEGATE(FOnAttackInputCheckDelegate);
-DECLARE_MULTICAST_DELEGATE(FOnAttackEndedDelegate);
-DECLARE_MULTICAST_DELEGATE(FOnDeathEndedDelegate);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAnimMontageEndedDelegate, EMontageEnded MontageType);
 DECLARE_MULTICAST_DELEGATE_OneParam(FMontageNotifyDelegate, ENotifyCode NotifyCode);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAbilityMontageEndedDelegate, EPressedKey KeyType);
 
@@ -40,6 +40,8 @@ public:
 
 	void PlayDeathMontage();
 
+	void PlayStunMontage();
+
 	FORCEINLINE void SetCurrentKeyState(EPressedKey KeyType) { CurrentKeyState = KeyType; }
 	FORCEINLINE EPressedKey GetCurrentKeyState() const { return CurrentKeyState; }
 	FORCEINLINE void SetMaxCombo(const int8 MaxValue) { MaxCombo = MaxValue; }
@@ -48,9 +50,7 @@ public:
 
 	FOnAttackInputCheckDelegate DOnAttackInputCheck;
 
-	FOnAttackEndedDelegate DOnAttackEnded;
-
-	FOnDeathEndedDelegate DOnDeathEnded;
+	FOnAnimMontageEndedDelegate DOnAnimMontageEnded;
 
 	FMontageNotifyDelegate DMontageNotify;
 
@@ -61,10 +61,7 @@ protected:
 	void PlayAbilityMontage(UAnimMontage* AbilityMontage);
 
 	UFUNCTION()
-	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
-
-	UFUNCTION()
-	void OnDeathMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	void OnAnimMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	UFUNCTION()
 	void OnAbilityMontageEnded(UAnimMontage* Montage, bool bInterrupted);
@@ -96,6 +93,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
 	UAnimMontage* Ability_R_Montage;
+
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* StunMontage;
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	EPressedKey CurrentKeyState = EPressedKey::EPK_None;

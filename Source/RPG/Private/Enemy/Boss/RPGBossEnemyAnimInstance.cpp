@@ -2,11 +2,8 @@
 #include "Enemy/Boss/RPGBossEnemyAnimInstance.h"
 #include "../RPG.h"
 
-
-
-void URPGBossEnemyAnimInstance::BindFunction()
+void URPGBossEnemyAnimInstance::BindBossEnemyFunction()
 {
-	Super::BindFunction();
 	OnMontageEnded.AddDynamic(this, &URPGBossEnemyAnimInstance::OnSpecialAttackMontageEnded);
 }
 

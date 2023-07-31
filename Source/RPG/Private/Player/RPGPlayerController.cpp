@@ -217,13 +217,13 @@ void ARPGPlayerController::SetupInputComponent()
 
 void ARPGPlayerController::LeftClickAction_StopMove()
 {
-	if (MyCharacter == nullptr) return;
+	if (MyCharacter == nullptr || MyCharacter->GetStunned()) return;
 	MyCharacter->StopMove();
 }
 
 void ARPGPlayerController::LeftClickAction_SetPath()
 {
-	if (MyCharacter == nullptr) return;
+	if (MyCharacter == nullptr || MyCharacter->GetStunned()) return;
 	if (MyCharacter->IsAbilityERMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
@@ -530,7 +530,7 @@ void ARPGPlayerController::CallHUDPopUpDamageWidgetClient_Implementation(const F
 
 void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 {
-	if (bIsInventoryOn || MyCharacter == nullptr) return;
+	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->GetStunned()) return;
 	if (MyCharacter->IsAnyMontagePlaying() && !MyCharacter->IsNormalAttackMontagePlaying()) return;
 
 	if (MyCharacter->GetAiming())
@@ -547,7 +547,7 @@ void ARPGPlayerController::RightClick_AttackOrSetAbilityPoint()
 
 void ARPGPlayerController::QPressedAction_Cast()
 {
-	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying() || MyCharacter->GetStunned()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -561,7 +561,7 @@ void ARPGPlayerController::QPressedAction_Cast()
 
 void ARPGPlayerController::WPressedAction_Cast()
 {
-	if (bIsInventoryOn || MyCharacter == nullptr && MyCharacter->IsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr && MyCharacter->IsAnyMontagePlaying() || MyCharacter->GetStunned()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -575,7 +575,7 @@ void ARPGPlayerController::WPressedAction_Cast()
 
 void ARPGPlayerController::EPressedAction_Cast()
 {
-	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying() || MyCharacter->GetStunned()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -589,7 +589,7 @@ void ARPGPlayerController::EPressedAction_Cast()
 
 void ARPGPlayerController::RPressedAction_Cast()
 {
-	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying()) return;
+	if (bIsInventoryOn || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying() || MyCharacter->GetStunned()) return;
 
 	if (MyCharacter->GetAiming())
 	{
@@ -605,7 +605,7 @@ void ARPGPlayerController::RPressedAction_Cast()
 
 void ARPGPlayerController::IPressedAction_ToggleInventory()
 {
-	if (RPGHUD == nullptr || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying()) return;
+	if (RPGHUD == nullptr || MyCharacter == nullptr || MyCharacter->IsAnyMontagePlaying() || MyCharacter->GetStunned()) return;
 
 	if (MyCharacter->GetAiming())
 	{

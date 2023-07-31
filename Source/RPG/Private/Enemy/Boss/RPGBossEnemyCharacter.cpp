@@ -151,6 +151,7 @@ void ARPGBossEnemyCharacter::InitAnimInstance()
 	BossAnimInst = Cast<URPGBossEnemyAnimInstance>(MyAnimInst);
 	if (BossAnimInst)
 	{
+		BossAnimInst->BindBossEnemyFunction();
 		BossAnimInst->DOnSpecialAttack.AddUFunction(this, FName("EmitShockWave"));
 		BossAnimInst->DOnSpecialAttack.AddUFunction(this, FName("FireMortar"));
 		BossAnimInst->DOnSpecialAttack.AddUFunction(this, FName("Bulldoze"));
@@ -324,9 +325,15 @@ void ARPGBossEnemyCharacter::OnAttackMontageEnded()
 
 void ARPGBossEnemyCharacter::OnSpecialAttackMontageEnded()
 {
-	DOnSpecialAttackEnd.Broadcast();
-	AttackRangeMark->SetVisibility(false);
-	if (HasAuthority()) bIsAttacking = false;
+	if (HasAuthority())
+	{
+		bIsAttacking = false;
+		DOnSpecialAttackEnd.Broadcast();
+	}
+	else
+	{
+		AttackRangeMark->SetVisibility(false);
+	}
 }
 
 void ARPGBossEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
