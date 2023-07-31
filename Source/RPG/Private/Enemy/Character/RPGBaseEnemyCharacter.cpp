@@ -166,6 +166,8 @@ void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, c
 		AttackerController->ReceiveDamageInfo(GetMesh()->GetSocketTransform(FName("DamageSocket")).GetLocation(), FinalDamage);
 	}
 
+	SetMatInstDynamicMulticast(GetWorld()->TimeSeconds);
+
 	if (Health != 0)
 	{
 		UDamageTypeStunAndPush* DT_StunAndPush = Cast<UDamageTypeStunAndPush>(DT_Base);
@@ -179,6 +181,27 @@ void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, c
 			UDamageTypeRestriction* DT_Restriction = Cast<UDamageTypeRestriction>(DT_Base);
 			if (DT_Restriction) StopActionMulticast();
 		}
+	}
+}
+
+void ARPGBaseEnemyCharacter::SetMatInstDynamicMulticast_Implementation(float LastDamagedTime)
+{
+	if (HasAuthority()) return;
+	
+	if (MatInsts.Num() == 0)
+	{
+		int8 Idx = 0;
+		MatInsts.Init(nullptr, GetMesh()->GetMaterials().Num());
+		for (UMaterialInterface* Mat : GetMesh()->GetMaterials())
+		{
+			MatInsts[Idx++] = GetMesh()->CreateAndSetMaterialInstanceDynamicFromMaterial(Idx, Mat->GetMaterial());
+		}
+		MatInstsNum = Idx;
+	}
+
+	for (int8 Idx = 0; Idx < MatInstsNum; Idx++)
+	{
+		MatInsts[Idx]->SetScalarParameterValue(FName("LastDamagedTime"), GetWorld()->TimeSeconds);
 	}
 }
 

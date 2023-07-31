@@ -4,6 +4,8 @@
 #include "Enemy/RPGEnemyFormComponent.h"
 #include "Enemy/RPGEnemyAIController.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Particles/ParticleSystem.h"
@@ -20,7 +22,13 @@ ARPGBossEnemyCharacter::ARPGBossEnemyCharacter()
 	bUseControllerRotationRoll = false;
 
 	GetMesh()->SetAllowAnimCurveEvaluation(true);
+	GetMesh()->SetRelativeLocation(FVector(0, 0, -190));
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+
+	GetCapsuleComponent()->SetCapsuleHalfHeight(200);
+	GetCapsuleComponent()->SetCapsuleRadius(170);
+
+	HealthBarWidget->SetRelativeLocation(FVector(0.f, 0.f, 220.f));
 
 	AttackRangeMark = CreateDefaultSubobject<UStaticMeshComponent>("Attack Range Mark");
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> StaticMeshAsset(TEXT("StaticMesh'/Engine/BasicShapes/Plane.Plane'"));
@@ -239,13 +247,13 @@ void ARPGBossEnemyCharacter::ActivateAttackRangeMarkMulticast_Implementation(ESp
 	AttackRangeMark->SetVisibility(true);
 	if (Type == ESpecialAttackType::ESAT_EmitShockWave)
 	{
-		AttackRangeMark->SetRelativeLocation(FVector(0, 0, -90));
+		AttackRangeMark->SetRelativeLocation(FVector(0, 0, -200));
 		AttackRangeMark->SetWorldScale3D(FVector(Size / 30 - 2, Size / 30 - 2, 1));
 		AttackRangeMark->SetMaterial(0, Circle);
 	}
 	else if (Type == ESpecialAttackType::ESAT_Bulldoze)
 	{
-		AttackRangeMark->SetRelativeLocation(FVector(450, 0, -90));
+		AttackRangeMark->SetRelativeLocation(FVector(450, 0, -200));
 		AttackRangeMark->SetWorldScale3D(FVector(Size / 30 - 2, 4, 1));
 		AttackRangeMark->SetMaterial(0, Rectangle);
 	}

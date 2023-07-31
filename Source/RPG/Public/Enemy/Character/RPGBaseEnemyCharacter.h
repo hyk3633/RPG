@@ -56,14 +56,19 @@ public:
 
 	friend URPGEnemyFormComponent;
 
-	void AttachWeaponStaticMesh(UStaticMesh* NewMesh, FName SocketName);
+protected:
 
 	virtual void PostInitializeComponents() override;
+
+	void AttachWeaponStaticMesh(UStaticMesh* NewMesh, FName SocketName);
 
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
 	void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SetMatInstDynamicMulticast(float LastDamagedTime);
 
 	/** Ã¼·Â */
 
@@ -181,6 +186,9 @@ protected:
 	UPROPERTY()
 	URPGEnemyAnimInstance* MyAnimInst;
 
+	UPROPERTY(EditAnywhere)
+	UWidgetComponent* HealthBarWidget;
+
 	EEnemyAttackType AttackType;
 
 private:
@@ -188,11 +196,13 @@ private:
 	UPROPERTY()
 	USkeletalMeshComponent* WeaponMesh;
 
-	UPROPERTY(EditAnywhere)
-	UWidgetComponent* HealthBarWidget;
-
 	UPROPERTY()
 	URPGEnemyHealthBarWidget* ProgressBar;
+
+	UPROPERTY()
+	TArray<UMaterialInstanceDynamic*> MatInsts;
+
+	int8 MatInstsNum;
 
 	UPROPERTY(ReplicatedUsing = OnRep_EnemyAssets)
 	FEnemyAssets EnemyAssets;

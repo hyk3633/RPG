@@ -2,14 +2,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/DamageType.h"
+#include "DamageType/DamageTypeBase.h"
 #include "DamageTypeStunAndPush.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class RPG_API UDamageTypeStunAndPush : public UDamageType
+class RPG_API UDamageTypeStunAndPush : public UDamageTypeBase
 {
 	GENERATED_BODY()
 	
