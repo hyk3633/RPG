@@ -3,40 +3,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Structs/Pos.h"
 #include "WorldGridManagerComponent.generated.h"
-
-USTRUCT()
-struct FPos
-{
-	GENERATED_BODY()
-
-	int32 Y;
-	int32 X;
-
-	FPos(int32 _Y, int32 _X) : Y(_Y), X(_X) {}
-	FPos() {}
-	FPos operator+(FPos& _Pos)
-	{
-		FPos Ret;
-		Ret.Y = Y + _Pos.Y;
-		Ret.X = X + _Pos.X;
-		return Ret;
-	}
-	bool operator<(const FPos& Other) const
-	{
-		if (Y != Other.Y)
-			return Y < Other.Y;
-		return X < Other.X;
-	}
-	friend uint32 GetTypeHash(const FPos& Other)
-	{
-		return GetTypeHash(Other.Y) + GetTypeHash(Other.X);
-	}
-};
-
-inline bool operator==(const FPos& L, const FPos& R) {
-	return (L.Y == R.Y && L.X == R.X);
-}
 
 USTRUCT()
 struct FAStarNode
@@ -73,9 +41,11 @@ public:
 
 	void InitWorldGrid(int32 Number, int32 Interval);
 
-	void AStar(const FVector& Start, const FVector& Dest, TArray<float>& PathToDestX, TArray<float>& PathToDestY);
+	void AStar(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest);
 
 protected:
+
+	int32 VectorToCoordinates(const double& VectorComponent);
 
 	bool CanGo(const FPos& _Pos);
 

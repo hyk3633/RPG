@@ -6,6 +6,7 @@
 #include "Enums/PressedKey.h"
 #include "Enums/MontageEnded.h"
 #include "Structs/StatInfo.h"
+#include "Structs/Pos.h"
 #include "DamageType/DamageTypeBase.h"
 #include "RPGBasePlayerCharacter.generated.h"
 
@@ -111,12 +112,12 @@ protected:
 	void InitDestAndDir();
 
 	UFUNCTION(Server, Reliable)
-	void SetDestinaionAndPathServer(const FVector& HitLocation);
+	void SetDestinaionAndPathServer(const FVector_NetQuantize& HitLocation);
 
 	void UpdateMovement();
 
 	UFUNCTION()
-	void OnRep_PathX();
+	void OnRep_PathArr();
 
 	void SpawnClickParticle(const FVector& EmitLocation);
 
@@ -380,11 +381,8 @@ private:
 
 	/** ¿Ãµø */
 
-	UPROPERTY(ReplicatedUsing = OnRep_PathX)
-	TArray<float> PathX;
-
-	UPROPERTY(Replicated)
-	TArray<float> PathY;
+	UPROPERTY(ReplicatedUsing = OnRep_PathArr)
+	TArray<FPos> PathArr;
 
 	bool bUpdateMovement = false;
 

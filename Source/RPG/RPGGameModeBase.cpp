@@ -49,22 +49,22 @@ void ARPGGameModeBase::BeginPlay()
 	//	Enemy->ActivateEnemy();
 	//}
 
-	AEnemyPooler* BossPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
-	BossPooler->CreatePool(1, EEnemyType::EET_Boss);
-	EnemyPoolerMap.Add(StaticCast<int32>(EEnemyType::EET_Boss), BossPooler);
-	BossPooler->GetEnemyArr()[0]->DOnDeath.AddUFunction(this, FName("EnemyRespawnDelay"));
-	ARPGBossEnemyCharacter* Boss = Cast<ARPGBossEnemyCharacter>(BossPooler->GetPooledEnemy());
-	if (Boss)
-	{
-		Boss->SetActorLocation(FVector(0, 0, 0));
-		Boss->SetActorRotation(FRotator(0, 180, 0));
-		Boss->ActivateEnemy();
-	}
+	//AEnemyPooler* BossPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
+	//BossPooler->CreatePool(1, EEnemyType::EET_Boss);
+	//EnemyPoolerMap.Add(StaticCast<int32>(EEnemyType::EET_Boss), BossPooler);
+	//BossPooler->GetEnemyArr()[0]->DOnDeath.AddUFunction(this, FName("EnemyRespawnDelay"));
+	//ARPGBossEnemyCharacter* Boss = Cast<ARPGBossEnemyCharacter>(BossPooler->GetPooledEnemy());
+	//if (Boss)
+	//{
+	//	Boss->SetActorLocation(FVector(0, 0, 0));
+	//	Boss->SetActorRotation(FRotator(0, 180, 0));
+	//	Boss->ActivateEnemy();
+	//}
 }
 
-void ARPGGameModeBase::GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<float>& PathToDestX, TArray<float>& PathToDestY)
+void ARPGGameModeBase::GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest)
 {
-	WorldGridManager->AStar(Start, Dest, PathToDestX, PathToDestY);
+	WorldGridManager->AStar(Start, Dest, PathToDest);
 }
 
 void ARPGGameModeBase::SpawnItems(const FVector& Location)

@@ -29,7 +29,7 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	GetCharacterMovement()->bConstrainToPlane = true;
 	GetCharacterMovement()->bSnapToPlaneAtStart = true;
 
-	CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Camera Arm"));
+	CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Camera Arm Component"));
 	CameraArm->SetupAttachment(RootComponent);
 	CameraArm->SetUsingAbsoluteRotation(true);
 	CameraArm->TargetArmLength = 1200.f;
@@ -342,36 +342,19 @@ void ARPGBasePlayerCharacter::SetDestinationAndPath()
 	if (Hit.bBlockingHit == false) return;
 
 	SpawnClickParticle(Hit.ImpactPoint);
-
-	if (HasAuthority())
-	{
-		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), Hit.ImpactPoint, PathX, PathY);
-		InitDestAndDir();
-	}
-	else
-	{
-		SetDestinaionAndPathServer(Hit.ImpactPoint);
-	}
-
-	/*if (HasAuthority())
-	{
-		for (int32 i = 0; i < PathX.Num(); i++)
-		{
-			DrawDebugPoint(GetWorld(), FVector(PathX[i], PathY[i], 10.f), 10.f, FColor::Blue, false, 2.f);
-		}
-	}*/
+	SetDestinaionAndPathServer(Hit.ImpactPoint);
 }
 
 void ARPGBasePlayerCharacter::InitDestAndDir()
 {
 	bUpdateMovement = true;
-	NextPoint = FVector(PathX[0], PathY[0], GetActorLocation().Z);
+	NextPoint = FVector(PathArr[0].X, PathArr[0].Y, GetActorLocation().Z);
 	NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
 }
 
-void ARPGBasePlayerCharacter::SetDestinaionAndPathServer_Implementation(const FVector& HitLocation)
+void ARPGBasePlayerCharacter::SetDestinaionAndPathServer_Implementation(const FVector_NetQuantize& HitLocation)
 {
-	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), HitLocation, PathX, PathY);
+	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), HitLocation, PathArr);
 }
 
 void ARPGBasePlayerCharacter::UpdateMovement()
@@ -383,22 +366,30 @@ void ARPGBasePlayerCharacter::UpdateMovement()
 	else
 	{
 		PathIdx++;
-		if (PathIdx == PathX.Num())
+		if (PathIdx == PathArr.Num())
 		{
 			bUpdateMovement = false;
 			PathIdx = 0;
 		}
 		else
 		{
-			NextPoint = FVector(PathX[PathIdx], PathY[PathIdx], GetActorLocation().Z);
+			NextPoint = FVector(PathArr[PathIdx].X, PathArr[PathIdx].Y, GetActorLocation().Z);
 			NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
 		}
 	}
 }
 
-void ARPGBasePlayerCharacter::OnRep_PathX()
+void ARPGBasePlayerCharacter::OnRep_PathArr()
 {
-	InitDestAndDir();
+	if (IsLocallyControlled())
+	{
+		if (PathArr.Num() == 0) return;
+		InitDestAndDir();
+		for (int32 i = 0; i < PathArr.Num(); i++)
+		{
+			DrawDebugPoint(GetWorld(), FVector(PathArr[i].X, PathArr[i].Y, 10.f), 10.f, FColor::Blue, false, 2.f);
+		}
+	}
 }
 
 void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)
@@ -818,8 +809,7 @@ void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
-	DOREPLIFETIME(ARPGBasePlayerCharacter, PathX);
-	DOREPLIFETIME(ARPGBasePlayerCharacter, PathY);
+	DOREPLIFETIME_CONDITION(ARPGBasePlayerCharacter, PathArr, COND_OwnerOnly);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Health);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, Mana);
 	DOREPLIFETIME(ARPGBasePlayerCharacter, CharacterDexterity);

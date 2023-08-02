@@ -1,6 +1,12 @@
 
 #include "GameSystem/WorldGridManagerComponent.h"
 #include "../RPG.h"
+#include <map>
+#include <vector>
+#include <queue>
+#include <algorithm>
+
+using namespace std;
 
 UWorldGridManagerComponent::UWorldGridManagerComponent()
 {
@@ -27,10 +33,23 @@ void UWorldGridManagerComponent::InitWorldGrid(int32 Number, int32 Interval)
 	WorldOffset = ((GridSize * GridDist) / 2.f) - (GridDist / 2.f);
 }
 
-void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest, TArray<float>& PathToDestX, TArray<float>& PathToDestY)
+void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest)
 {
-	const int32 SY = FMath::Floor(((Start.Y + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
-	const int32 SX = FMath::Floor(((Start.X + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
+	double start = FPlatformTime::Seconds();
+
+	PathToDest.Empty();
+
+	const int32 Dy = VectorToCoordinates(Dest.Y);
+	const int32 Dx = VectorToCoordinates(Dest.X);
+
+	if (Dy * GridSize + Dx > GridSize * GridSize)
+	{
+		ELOG(TEXT("Can not move that point."));
+		return;
+	}
+
+	const int32 SY = VectorToCoordinates(Start.Y);
+	const int32 SX = VectorToCoordinates(Start.X);
 
 	FPos StartPos(SY, SX);
 	TArray<bool> Visited;
@@ -44,14 +63,12 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 	TArray<FAStarNode> HeapArr;
 	HeapArr.Heapify();
 
-	const int32 Dy = FMath::Floor(((Dest.Y + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
-	const int32 Dx = FMath::Floor(((Dest.X + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
 	FPos DestPos(Dy, Dx);
 	{
 		int32 G = 0;
 		int32 H = 10 * (abs(DestPos.Y - StartPos.Y) + abs(DestPos.X - StartPos.X));
 		HeapArr.HeapPush(FAStarNode{ G + H, G, StartPos });
-		Best[StartPos.Y * GridSize + StartPos.X];
+		Best[StartPos.Y * GridSize + StartPos.X] = G + H;
 		Parent.Add(StartPos, StartPos);
 	}
 
@@ -90,16 +107,13 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 	}
 
 	FPos NextPos = DestPos;
-	PathToDestX.Empty();
-	PathToDestY.Empty();
 
 	while (true)
 	{
-		const float X = (GridDist * NextPos.X) - FMath::TruncToInt(WorldOffset);
-		const float Y = (GridDist * NextPos.Y) - FMath::TruncToInt(WorldOffset);
+		const int32 X = (GridDist * NextPos.X) - FMath::TruncToInt(WorldOffset);
+		const int32 Y = (GridDist * NextPos.Y) - FMath::TruncToInt(WorldOffset);
 
-		PathToDestX.Add(X);
-		PathToDestY.Add(Y);
+		PathToDest.Add(FPos(Y,X));
 
 		if (NextPos == *Parent.Find(NextPos))
 		{
@@ -109,8 +123,15 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 		NextPos = Parent[NextPos];
 	}
 
-	Algo::Reverse(PathToDestX);
-	Algo::Reverse(PathToDestY);
+	Algo::Reverse(PathToDest);
+
+	double end = FPlatformTime::Seconds();
+	PLOG(TEXT("time : %f"), end - start);
+}
+
+int32 UWorldGridManagerComponent::VectorToCoordinates(const double& VectorComponent)
+{
+	return FMath::Floor(((VectorComponent + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);;
 }
 
 bool UWorldGridManagerComponent::CanGo(const FPos& _Pos)

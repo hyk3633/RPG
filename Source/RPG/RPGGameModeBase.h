@@ -10,6 +10,7 @@
 #include "Structs/EnemyAssets.h"
 #include "Structs/ProjectileInfo.h"
 #include "Structs/ProjectileAssets.h"
+#include "Structs/Pos.h"
 #include "RPGGameModeBase.generated.h"
 
 /**
@@ -37,7 +38,7 @@ protected:
 
 public:
 
-	void GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<float>& PathToDestX, TArray<float>& PathToDestY);
+	void GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest);
 
 	void SpawnItems(const FVector& Location);
 
