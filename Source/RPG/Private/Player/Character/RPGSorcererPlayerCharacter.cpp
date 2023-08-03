@@ -83,6 +83,8 @@ void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 {
 	Super::CastAbilityByKey(KeyType);
 
+	if (HasAuthority()) return;
+
 	// R 스킬 제외한 스킬만 인트로 애니메이션 재생
 	URPGSorcererAnimInstance* SAnimInstance = Cast<URPGSorcererAnimInstance>(RPGAnimInstance);
 	if (SAnimInstance)
@@ -90,6 +92,7 @@ void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 		if (KeyType != EPressedKey::EPK_R) SAnimInstance->PlayAbilityIntroMontage();
 		SAnimInstance->AimingPoseOn();
 	}
+
 	if (IsLocallyControlled())
 	{
 		bAiming = true;
@@ -111,16 +114,14 @@ void ARPGSorcererPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 
 void ARPGSorcererPlayerCharacter::CastAbilityAfterTargeting()
 {
+	if (TargetingHitResult.bBlockingHit == false) return;
 	Super::CastAbilityAfterTargeting();
+	if (HasAuthority()) return;
 
 	RPGAnimInstance->PlayAbilityMontageOfKey();
 	URPGSorcererAnimInstance* SAnimInstance = Cast<URPGSorcererAnimInstance>(RPGAnimInstance);
 	if (SAnimInstance) SAnimInstance->AimingPoseOff();
-	if (HasAuthority()) UsingMana(RPGAnimInstance->GetCurrentKeyState());
-	if (IsLocallyControlled())
-	{
-		TargetingCompOff();
-	}
+	if (IsLocallyControlled()) TargetingCompOff();
 }
 
 void ARPGSorcererPlayerCharacter::OnAbilityEnded(EPressedKey KeyType)
@@ -162,6 +163,8 @@ void ARPGSorcererPlayerCharacter::AimingPoseOffServer_Implementation()
 
 void ARPGSorcererPlayerCharacter::AimingPoseOffMulticast_Implementation()
 {
+	if (HasAuthority()) return;
+
 	URPGSorcererAnimInstance* SAnimInstance = Cast<URPGSorcererAnimInstance>(RPGAnimInstance);
 	if (SAnimInstance) SAnimInstance->AimingPoseOff();
 }
@@ -174,40 +177,46 @@ void ARPGSorcererPlayerCharacter::CastNormalAttack()
 
 	if (IsLocallyControlled())
 	{
-		SpawnNormalProjectileServer();
+		SpawnNormalProjectileServer(GetSocketLocation());
 	}
 }
 
-void ARPGSorcererPlayerCharacter::SpawnNormalProjectileServer_Implementation()
+FVector ARPGSorcererPlayerCharacter::GetSocketLocation(FName SocketName)
 {
-	SpawnNormalProjectile();
+	if (SocketName.IsNone())
+	{
+		if (GetCurrentCombo() % 2 == 0)
+		{
+			return GetMesh()->GetSocketTransform(FName("Muzzle_R2")).GetLocation();
+		}
+		else
+		{
+			return GetMesh()->GetSocketTransform(FName("Muzzle_L2")).GetLocation();
+		}
+	}
+
+	return GetMesh()->GetSocketTransform(SocketName).GetLocation();
 }
 
-void ARPGSorcererPlayerCharacter::SpawnNormalProjectile()
+void ARPGSorcererPlayerCharacter::SpawnNormalProjectileServer_Implementation(const FVector_NetQuantize& SpawnLocation)
 {
-	FVector SpawnPoint;
+	SpawnNormalProjectile(SpawnLocation);
+}
 
-	if (GetCurrentCombo() % 2 == 0)
-	{
-		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_R2")).GetLocation();
-	}
-	else
-	{
-		SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L2")).GetLocation();
-	}
-
+void ARPGSorcererPlayerCharacter::SpawnNormalProjectile(const FVector& SpawnLocation)
+{
 	FRotator SpawnDirection;
 	ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(TargetingHitResult.GetActor());
 	if (Enemy && GetDistanceTo(Enemy) <= AttackRange)
 	{
-		SpawnDirection = (Enemy->GetActorLocation() - SpawnPoint).Rotation();
+		SpawnDirection = (Enemy->GetActorLocation() - SpawnLocation).Rotation();
 	}
 	else
 	{
-		SpawnDirection = (FVector(TargetingHitResult.ImpactPoint.X, TargetingHitResult.ImpactPoint.Y, SpawnPoint.Z) - SpawnPoint).Rotation();
+		SpawnDirection = (FVector(TargetingHitResult.ImpactPoint.X, TargetingHitResult.ImpactPoint.Y, SpawnLocation.Z) - SpawnLocation).Rotation();
 	}
 
-	SpawnProjectile(EProjectileType::EPT_Sorcerer_Primary, SpawnPoint, SpawnDirection);
+	SpawnProjectile(EProjectileType::EPT_Sorcerer_Primary, SpawnLocation, SpawnDirection);
 }
 
 void ARPGSorcererPlayerCharacter::SpawnProjectile(const EProjectileType Type, const FVector& SpawnLocation, const FRotator& SpawnRotation)
@@ -243,21 +252,20 @@ void ARPGSorcererPlayerCharacter::FireRestrictionBall(ENotifyCode NotifyCode)
 
 	if (IsLocallyControlled())
 	{
-		FireRestrictionBallServer();
+		FireRestrictionBallServer(GetSocketLocation(FName("Muzzle_L")));
 	}
 }
 
-void ARPGSorcererPlayerCharacter::FireRestrictionBallServer_Implementation()
+void ARPGSorcererPlayerCharacter::FireRestrictionBallServer_Implementation(const FVector_NetQuantize& SpawnLocation)
 {
-	SpawnRestrictionProjectile();
+	SpawnRestrictionProjectile(SpawnLocation);
 }
 
-void ARPGSorcererPlayerCharacter::SpawnRestrictionProjectile()
+void ARPGSorcererPlayerCharacter::SpawnRestrictionProjectile(const FVector& SpawnLocation)
 {
-	FVector SpawnPoint = GetMesh()->GetSocketTransform(FName("Muzzle_L")).GetLocation();
-	FRotator SpawnDirection = (TargetingHitResult.ImpactPoint - SpawnPoint).Rotation();
+	FRotator SpawnDirection = (TargetingHitResult.ImpactPoint - SpawnLocation).Rotation();
 
-	SpawnProjectile(EProjectileType::EPT_Sorcerer_Restriction, SpawnPoint, SpawnDirection);
+	SpawnProjectile(EProjectileType::EPT_Sorcerer_Restriction, SpawnLocation, SpawnDirection);
 }
 
 /** --------------------------- W 스킬 --------------------------- */
@@ -512,5 +520,4 @@ void ARPGSorcererPlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePro
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ARPGSorcererPlayerCharacter, SphereTraceLocation);
-	DOREPLIFETIME(ARPGSorcererPlayerCharacter, bFloatCharacter);
 }

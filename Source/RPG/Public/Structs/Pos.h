@@ -15,7 +15,7 @@ public:
 	int32 X;
 
 	FPos(int32 _Y, int32 _X) : Y(_Y), X(_X) {}
-	FPos() {}
+	FPos() : Y(0), X(0) {}
 	FPos operator+(FPos& _Pos)
 	{
 		FPos Ret;

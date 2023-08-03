@@ -3,6 +3,7 @@
 #include "Player/Character/RPGWarriorPlayerCharacter.h"
 #include "Player/AnimInstance/RPGAnimInstance.h"
 #include "Player/AnimInstance/RPGWarriorAnimInstance.h"
+#include "Player/RPGPlayerController.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "Projectile/RPGBaseProjectile.h"
 #include "DamageType/DamageTypeStunAndPush.h"
@@ -89,11 +90,19 @@ void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 	// Q, W 스킬만 에이밍 X
 	if (KeyType == EPressedKey::EPK_Q || KeyType == EPressedKey::EPK_W)
 	{
-		RPGAnimInstance->PlayAbilityMontageOfKey();
-		if (HasAuthority()) UsingMana(RPGAnimInstance->GetCurrentKeyState());
-		if (IsLocallyControlled())
+		if (HasAuthority())
 		{
-			AbilityActiveBitSet(RPGAnimInstance->GetCurrentKeyState());
+			UsingMana(RPGAnimInstance->GetCurrentKeyState());
+		}
+		else
+		{
+			RPGAnimInstance->PlayAbilityMontageOfKey();
+			if (IsLocallyControlled())
+			{
+				ARPGPlayerController* PController = Cast<ARPGPlayerController>(GetController());
+				if (PController) PController->bShowMouseCursor = true;
+				AbilityActiveBitSet(RPGAnimInstance->GetCurrentKeyState());
+			}
 		}
 	}
 	else
@@ -116,14 +125,12 @@ void ARPGWarriorPlayerCharacter::CastAbilityByKey(EPressedKey KeyType)
 
 void ARPGWarriorPlayerCharacter::CastAbilityAfterTargeting()
 {
+	if (TargetingHitResult.bBlockingHit == false) return;
 	Super::CastAbilityAfterTargeting();
+	if (HasAuthority()) return;
 
 	RPGAnimInstance->PlayAbilityMontageOfKey();
-	if (HasAuthority()) UsingMana(RPGAnimInstance->GetCurrentKeyState());
-	if (IsLocallyControlled())
-	{
-		TargetingCompOff();
-	}
+	if (IsLocallyControlled()) TargetingCompOff();
 }
 
 void ARPGWarriorPlayerCharacter::OnAbilityEnded(EPressedKey KeyType)

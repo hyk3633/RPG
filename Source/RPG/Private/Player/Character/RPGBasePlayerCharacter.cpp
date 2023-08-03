@@ -71,8 +71,6 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	MaxCooldownTime.Init(0, 4);
 	ManaUsage.Init(0, 4);
 	SkillPowerCorrectionValues.Init(0, 4);
-
-	AttackEndComboState();
 }
 
 void ARPGBasePlayerCharacter::PostInitializeComponents()
@@ -99,6 +97,26 @@ void ARPGBasePlayerCharacter::BeginPlay()
 		RPGAnimInstance->DOnAnimMontageEnded.AddUFunction(this, FName("OnStunMontageEnded"));
 		RPGAnimInstance->DOnAbilityMontageEnded.AddUFunction(this, FName("OnAbilityEnded"));
 		RPGAnimInstance->SetMaxCombo(MaxCombo);
+	}
+
+	if (IsLocallyControlled())
+	{
+		// 그리드
+		int32 GridSize = 80;
+		int32 GridDist = 25;
+		float WorldOffset = ((GridSize * GridDist) / 2.f) - (GridDist / 2.f);
+		for (int i = 0; i < GridSize; i++)
+		{
+			for (int j = 0; j < GridSize; j++)
+			{
+				float X = (GridDist * j) - FMath::TruncToInt(WorldOffset);
+				float Y = (GridDist * i) - FMath::TruncToInt(WorldOffset);
+				DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 10.f, FColor::Green, true);
+			}
+		}
+		int32 j = FMath::Floor(((GetActorLocation().X + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
+		int32 i = FMath::Floor(((GetActorLocation().Y + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
+		DrawDebugPoint(GetWorld(), FVector((GridDist * j) - FMath::TruncToInt(WorldOffset), (GridDist * i) - FMath::TruncToInt(WorldOffset), 10.f), 10.f, FColor::Red, true);
 	}
 }
 
@@ -343,6 +361,11 @@ void ARPGBasePlayerCharacter::SetDestinationAndPath()
 
 	SpawnClickParticle(Hit.ImpactPoint);
 	SetDestinaionAndPathServer(Hit.ImpactPoint);
+
+	for (int32 i = 0; i < PathArr.Num(); i++)
+	{
+		DrawDebugPoint(GetWorld(), FVector(PathArr[i].X, PathArr[i].Y, 10.f), 10.f, FColor::Blue, false, 2.f);
+	}
 }
 
 void ARPGBasePlayerCharacter::InitDestAndDir()
@@ -424,29 +447,28 @@ void ARPGBasePlayerCharacter::GetHitCursorServer_Implementation(const FHitResult
 
 void ARPGBasePlayerCharacter::NormalAttackWithComboServer_Implementation()
 {
-	NormalAttackWithComboMulticast();
-}
-
-void ARPGBasePlayerCharacter::NormalAttackWithComboMulticast_Implementation()
-{
 	NormalAttackWithCombo();
+	PlayNormalAttackMontageMulticast(CurrentCombo + 1);
 }
 
 void ARPGBasePlayerCharacter::NormalAttackWithCombo()
 {
-	TurnTowardAttackPoint();
-
 	if (bIsAttacking) return;
 	if (bCanNextCombo)
 	{
 		CurrentCombo = (CurrentCombo + 1) % MaxCombo;
 		bCanNextCombo = false;
 	}
-	if (RPGAnimInstance)
+	bIsAttacking = true;
+}
+
+void ARPGBasePlayerCharacter::PlayNormalAttackMontageMulticast_Implementation(const int32 Combo)
+{
+	TurnTowardAttackPoint();
+	if (RPGAnimInstance && !HasAuthority())
 	{
 		RPGAnimInstance->PlayNormalAttackMontage();
-		RPGAnimInstance->JumpToAttackMontageSection(CurrentCombo + 1);
-		bIsAttacking = true;
+		RPGAnimInstance->JumpToAttackMontageSection(Combo);
 	}
 }
 
@@ -459,20 +481,28 @@ void ARPGBasePlayerCharacter::TurnTowardAttackPoint()
 
 void ARPGBasePlayerCharacter::OnAttackMontageEnded(EMontageEnded MontageType)
 {
-	if (MontageType == EMontageEnded::EME_AttackEnded)
+	if (MontageType == EMontageEnded::EME_AttackEnded && IsLocallyControlled())
 	{
-		bIsAttacking = false;
-		AttackEndComboState();
+		AttackEndComboStateServer();
 	}
 }
 
-void ARPGBasePlayerCharacter::AttackEndComboState()
+void ARPGBasePlayerCharacter::AttackEndComboStateServer_Implementation()
 {
+	bIsAttacking = false;
 	bCanNextCombo = false;
 	CurrentCombo = 0;
 }
 
 void ARPGBasePlayerCharacter::CastNormalAttack()
+{
+	if (IsLocallyControlled())
+	{
+		CastNormalAttackServer();
+	}
+}
+
+void ARPGBasePlayerCharacter::CastNormalAttackServer_Implementation()
 {
 	bCanNextCombo = true;
 	bIsAttacking = false;
@@ -543,12 +573,13 @@ void ARPGBasePlayerCharacter::GetCursorHitResultCastAbility()
 	if (RPGAnimInstance == nullptr) return;
 	
 	GetHitCursor();
+	AimCursor->SetVisibility(false);
+	if (bUpdateMovement) StopMove();
+	ARPGPlayerController* PController = Cast<ARPGPlayerController>(GetController());
+	if (PController) PController->bShowMouseCursor = true;
+	bAiming = false;
+
 	CastAbilityAfterTargetingServer();
-	if (IsLocallyControlled()) AimCursor->SetVisibility(false);
-	if (bUpdateMovement)
-	{
-		StopMove();
-	}
 }
 
 void ARPGBasePlayerCharacter::CastAbilityAfterTargetingServer_Implementation()
@@ -564,15 +595,7 @@ void ARPGBasePlayerCharacter::CastAbilityAfterTargetingMulticast_Implementation(
 
 void ARPGBasePlayerCharacter::CastAbilityAfterTargeting()
 {
-	if (RPGAnimInstance == nullptr) return;
-	if (TargetingHitResult.bBlockingHit == false) return;
-	if (HasAuthority()) return;
-	if (IsLocallyControlled())
-	{
-		ARPGPlayerController* PController = Cast<ARPGPlayerController>(GetController());
-		if (PController) PController->bShowMouseCursor = true;
-		bAiming = false;
-	}
+	if (HasAuthority()) UsingMana(RPGAnimInstance->GetCurrentKeyState());
 }
 
 /** --------------------------- 스킬 쿨타임 계산 --------------------------- */

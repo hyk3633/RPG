@@ -54,10 +54,12 @@ protected:
 
 	virtual void CastNormalAttack() override;
 
-	UFUNCTION(Server, Reliable)
-	void SpawnNormalProjectileServer();
+	FVector GetSocketLocation(FName SocketName = NAME_None);
 
-	void SpawnNormalProjectile();
+	UFUNCTION(Server, Reliable)
+	void SpawnNormalProjectileServer(const FVector_NetQuantize& SpawnLocation);
+
+	void SpawnNormalProjectile(const FVector& SpawnLocation);
 
 	void SpawnProjectile(const EProjectileType Type, const FVector& SpawnLocation, const FRotator& SpawnRotation);
 
@@ -67,9 +69,9 @@ protected:
 	void FireRestrictionBall(ENotifyCode NotifyCode);
 
 	UFUNCTION(Server, Reliable)
-	void FireRestrictionBallServer();
+	void FireRestrictionBallServer(const FVector_NetQuantize& SpawnLocation);
 
-	void SpawnRestrictionProjectile();
+	void SpawnRestrictionProjectile(const FVector& SpawnLocation);
 
 	/** Ability W */
 
@@ -206,7 +208,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Character | Particle | Blackhole")
 	UParticleSystem* BlackholeBeamParticle;
 
-	UPROPERTY(Replicated)
 	bool bFloatCharacter = false;
 
 	FTimerHandle FloatingTimer;

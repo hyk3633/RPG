@@ -131,7 +131,7 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 
 int32 UWorldGridManagerComponent::VectorToCoordinates(const double& VectorComponent)
 {
-	return FMath::Floor(((VectorComponent + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);;
+	return FMath::Floor(((VectorComponent + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
 }
 
 bool UWorldGridManagerComponent::CanGo(const FPos& _Pos)

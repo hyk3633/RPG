@@ -32,22 +32,22 @@ void ARPGGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//AEnemyPooler* EnemyPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
-	//EnemyPooler->CreatePool(2, EEnemyType::EET_SkeletonArcher);
-	//EnemyPoolerMap.Add(StaticCast<int32>(EEnemyType::EET_SkeletonArcher), EnemyPooler);
-	//
-	//for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
-	//{
-	//	Enemy->DOnDeath.AddUFunction(this, FName("EnemyRespawnDelay"));
-	//}
-	//
-	//ARPGBaseEnemyCharacter* Enemy = EnemyPooler->GetPooledEnemy();
-	//if (Enemy)
-	//{
-	//	Enemy->SetActorLocation(FVector(0, 0, 0));
-	//	Enemy->SetActorRotation(FRotator(0, 180, 0));
-	//	Enemy->ActivateEnemy();
-	//}
+	AEnemyPooler* EnemyPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
+	EnemyPooler->CreatePool(2, EEnemyType::EET_SkeletonArcher);
+	EnemyPoolerMap.Add(StaticCast<int32>(EEnemyType::EET_SkeletonArcher), EnemyPooler);
+	
+	for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
+	{
+		Enemy->DOnDeath.AddUFunction(this, FName("EnemyRespawnDelay"));
+	}
+	
+	ARPGBaseEnemyCharacter* Enemy = EnemyPooler->GetPooledEnemy();
+	if (Enemy)
+	{
+		Enemy->SetActorLocation(FVector(0, 0, 0));
+		Enemy->SetActorRotation(FRotator(0, 180, 0));
+		Enemy->ActivateEnemy();
+	}
 
 	//AEnemyPooler* BossPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
 	//BossPooler->CreatePool(1, EEnemyType::EET_Boss);

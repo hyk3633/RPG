@@ -135,20 +135,24 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void NormalAttackWithComboServer();
 
-	UFUNCTION(NetMulticast, Reliable)
-	void NormalAttackWithComboMulticast();
-
 	void NormalAttackWithCombo();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayNormalAttackMontageMulticast(const int32 Combo);
 
 	void TurnTowardAttackPoint();
 
 	UFUNCTION()
 	void OnAttackMontageEnded(EMontageEnded MontageType);
 
-	void AttackEndComboState();
+	UFUNCTION(Server, Reliable)
+	void AttackEndComboStateServer();
 
 	UFUNCTION()
 	virtual void CastNormalAttack();
+
+	UFUNCTION(Server, Reliable)
+	void CastNormalAttackServer();
 
 public:	/** ---------- 스킬 사용 준비 ---------- */
 
