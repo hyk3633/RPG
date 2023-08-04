@@ -1,10 +1,7 @@
 
 #include "GameSystem/WorldGridManagerComponent.h"
 #include "../RPG.h"
-#include <map>
-#include <vector>
-#include <queue>
-#include <algorithm>
+#include "DrawDebugHelpers.h"
 
 using namespace std;
 
@@ -100,6 +97,8 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 			if (Best[NextPos.Y * GridSize + NextPos.X] <= G + H)
 				continue;
 
+
+
 			Best[NextPos.Y * GridSize + NextPos.X] = G + H;
 			HeapArr.HeapPush(FAStarNode{ G + H, G, NextPos });
 			Parent.Add(NextPos, Node.Pos);
@@ -110,8 +109,8 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 
 	while (true)
 	{
-		const int32 X = (GridDist * NextPos.X) - FMath::TruncToInt(WorldOffset);
-		const int32 Y = (GridDist * NextPos.Y) - FMath::TruncToInt(WorldOffset);
+		const int32 X = CoordinatesToVector(NextPos.X);
+		const int32 Y = CoordinatesToVector(NextPos.Y);
 
 		PathToDest.Add(FPos(Y,X));
 
@@ -134,10 +133,24 @@ int32 UWorldGridManagerComponent::VectorToCoordinates(const double& VectorCompon
 	return FMath::Floor(((VectorComponent + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
 }
 
+int32 UWorldGridManagerComponent::CoordinatesToVector(const int32 Coordinates)
+{
+	return (GridDist * Coordinates) - FMath::TruncToInt(WorldOffset);
+}
+
 bool UWorldGridManagerComponent::CanGo(const FPos& _Pos)
 {
 	if (_Pos.Y >= 0 && _Pos.Y < GridSize && _Pos.X >= 0 && _Pos.X < GridSize)
+	{
+		//FHitResult Hit;
+		//const int32 X = CoordinatesToVector(_Pos.X);
+		//const int32 Y = CoordinatesToVector(_Pos.Y);
+		//GetWorld()->LineTraceSingleByChannel(Hit, FVector(X, Y, -1000), FVector(X, Y, 1000), ECC_ObstacleCheck);
+		//DrawDebugLine(GetWorld(), FVector(X, Y, -1000), FVector(X, Y, 1000), FColor::Blue, false, 3.f, 0, 1.5f);
+		//if (Hit.bBlockingHit) return false;
+		//else return true;
 		return true;
+	}
 	return false;
 }
 

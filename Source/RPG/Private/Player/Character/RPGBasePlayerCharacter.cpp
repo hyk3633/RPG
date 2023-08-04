@@ -99,25 +99,25 @@ void ARPGBasePlayerCharacter::BeginPlay()
 		RPGAnimInstance->SetMaxCombo(MaxCombo);
 	}
 
-	if (IsLocallyControlled())
-	{
-		// 그리드
-		int32 GridSize = 80;
-		int32 GridDist = 25;
-		float WorldOffset = ((GridSize * GridDist) / 2.f) - (GridDist / 2.f);
-		for (int i = 0; i < GridSize; i++)
-		{
-			for (int j = 0; j < GridSize; j++)
-			{
-				float X = (GridDist * j) - FMath::TruncToInt(WorldOffset);
-				float Y = (GridDist * i) - FMath::TruncToInt(WorldOffset);
-				DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 10.f, FColor::Green, true);
-			}
-		}
-		int32 j = FMath::Floor(((GetActorLocation().X + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
-		int32 i = FMath::Floor(((GetActorLocation().Y + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
-		DrawDebugPoint(GetWorld(), FVector((GridDist * j) - FMath::TruncToInt(WorldOffset), (GridDist * i) - FMath::TruncToInt(WorldOffset), 10.f), 10.f, FColor::Red, true);
-	}
+	//if (IsLocallyControlled())
+	//{
+	//	// 그리드
+	//	int32 GridSize = 80;
+	//	int32 GridDist = 25;
+	//	float WorldOffset = ((GridSize * GridDist) / 2.f) - (GridDist / 2.f);
+	//	for (int i = 0; i < GridSize; i++)
+	//	{
+	//		for (int j = 0; j < GridSize; j++)
+	//		{
+	//			float X = (GridDist * j) - FMath::TruncToInt(WorldOffset);
+	//			float Y = (GridDist * i) - FMath::TruncToInt(WorldOffset);
+	//			DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 10.f, FColor::Green, true);
+	//		}
+	//	}
+	//	int32 j = FMath::Floor(((GetActorLocation().X + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
+	//	int32 i = FMath::Floor(((GetActorLocation().Y + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
+	//	DrawDebugPoint(GetWorld(), FVector((GridDist * j) - FMath::TruncToInt(WorldOffset), (GridDist * i) - FMath::TruncToInt(WorldOffset), 10.f), 10.f, FColor::Red, true);
+	//}
 }
 
 void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)

@@ -47,6 +47,8 @@ protected:
 
 	int32 VectorToCoordinates(const double& VectorComponent);
 
+	int32 CoordinatesToVector(const int32 Coordinates);
+
 	bool CanGo(const FPos& _Pos);
 
 private:
