@@ -6,6 +6,8 @@
 #include "Structs/Pos.h"
 #include "WorldGridManagerComponent.generated.h"
 
+class UMapNavDataAsset;
+
 USTRUCT()
 struct FAStarNode
 {
@@ -31,23 +33,27 @@ public:
 	
 	UWorldGridManagerComponent();
 
+	FORCEINLINE bool GetIsNavigationEnable() const { return bMapNavDataUsable; }
+
 protected:
 	
 	virtual void BeginPlay() override;
 
 public:	
 	
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
-	void InitWorldGrid(int32 Number, int32 Interval);
+	void InitWorldGrid();
 
 	void AStar(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest);
 
 protected:
 
-	int32 VectorToCoordinates(const double& VectorComponent);
+	int32 VectorToCoordinatesY(const double& VectorComponent);
 
-	int32 CoordinatesToVector(const int32 Coordinates);
+	int32 VectorToCoordinatesX(const double& VectorComponent);
+
+	int32 CoordinatesToVectorY(const int32 Coordinates);
+
+	int32 CoordinatesToVectorX(const int32 Coordinates);
 
 	bool CanGo(const FPos& _Pos);
 
@@ -66,14 +72,25 @@ private:
 	};
 	int32 Cost[8] = { 10,10,10,10,14,14,14,14 };
 
-	int32 GridSize;
+	FVector NavOrigin;
 
-	int32 GridDist;
+	int32 GridDist = 0;
+	int32 GridWidthSize = 0;
+	int32 GridLengthSize = 0;
+	int32 TotalSize = 0;
 
-	float WorldOffset;
+	float WorldOffsetX;
+	float WorldOffsetY;
 
-	TArray<FPos> _path;
+	TArray<FPos> FieldLocations;
 
-	int32 idx = 0;
+	TArray<bool> IsMovableArr;
 		
+	UPROPERTY()
+	UMapNavDataAsset* MapNavDataAsset;
+
+	UPROPERTY(EditAnywhere, Category = "MapNavData")
+	FString MapNavDataReference;
+
+	bool bMapNavDataUsable = false;
 };

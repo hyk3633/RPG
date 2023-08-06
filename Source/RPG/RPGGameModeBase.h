@@ -6,6 +6,7 @@
 #include "Engine/DataTable.h"
 #include "Enums/EnemyType.h"
 #include "Enums/ProjectileType.h"
+#include "Structs/ItemInfo.h"
 #include "Structs/EnemyInfo.h"
 #include "Structs/EnemyAssets.h"
 #include "Structs/ProjectileInfo.h"
@@ -21,7 +22,6 @@ class UWorldGridManagerComponent;
 class UItemSpawnManagerComponent;
 class UDataTable;
 class AEnemyPooler;
-struct FItemInfo;
 
 UCLASS()
 class RPG_API ARPGGameModeBase : public AGameModeBase
@@ -61,7 +61,7 @@ protected:
 
 private:
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere)
 	UWorldGridManagerComponent* WorldGridManager;
 	
 	UPROPERTY(EditAnywhere)
@@ -83,5 +83,4 @@ private:
 	TMap<int32, AEnemyPooler*> EnemyPoolerMap;
 
 	FTimerHandle EnemyRespawnTimer;
-
 };

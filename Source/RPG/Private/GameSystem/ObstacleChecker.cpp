@@ -1,9 +1,10 @@
 
 #include "GameSystem/ObstacleChecker.h"
+#include "DataAsset/MapNavDataAsset.h"
 #include "Components/BoxComponent.h"
 #include "Components/BillBoardComponent.h"
 #include "../RPG.h"
-#include <cstdlib>
+#include "AssetRegistry/AssetRegistryModule.h"
 
 AObstacleChecker::AObstacleChecker()
 {
@@ -15,35 +16,46 @@ AObstacleChecker::AObstacleChecker()
 
 	BillBoard = CreateDefaultSubobject<UBillboardComponent>(TEXT("BillBoard"));
 	BillBoard->SetupAttachment(RootComponent);
+
+	AssetPath = TEXT("/Game/_Assets/DataAsset/");
 }
 
 void AObstacleChecker::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HasAuthority() == false)
+	if (HasAuthority())
 	{
-		InitMapSpecification();
-
-		if (LoadMapData())
+		if (CheckAssetValidity() == false)
 		{
-			bAllowObstacleCheck = false;
-		}
-		else
-		{
+			InitMapSpecification();
 			InitFieldLocations();
 			bStartCheck = true;
 		}
 	}
 }
 
+bool AObstacleChecker::CheckAssetValidity()
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	FAssetData AssetData = AssetRegistryModule.Get().GetAssetByObjectPath(AssetPath + AssetName + TEXT(".") + AssetName);
+
+	if (AssetData.IsValid())
+	{
+		UMapNavDataAsset* Asset = Cast<UMapNavDataAsset>(AssetData.GetAsset());
+		PLOG(TEXT("AssetData [ %s ] is already exist."), *AssetName);
+		return true;
+	}
+	else
+	{
+		PLOG(TEXT("AssetData [ %s ] is not exist."), *AssetName);
+	}
+	return false;
+}
+
 void AObstacleChecker::InitMapSpecification()
 {
 	GetActorBounds(true, Origin, Extent);
-
-	Start = FVector(Origin.X + Extent.X, Origin.Y - Extent.Y, 10);
-
-	GridDist = 25;
 
 	GridWidthSize = FMath::TruncToInt((Extent.X * 2.f) / (float)GridDist) + 0.5f;
 	GridLengthSize = FMath::TruncToInt((Extent.Y * 2.f) / (float)GridDist) + 0.5f;
@@ -53,57 +65,10 @@ void AObstacleChecker::InitMapSpecification()
 	WorldOffsetY = ((GridLengthSize * GridDist) / 2.f) - (GridDist / 2.f);
 }
 
-bool AObstacleChecker::LoadMapData()
-{
-	FString FilePath = FPaths::ProjectDir() + TEXT("MapData/") + FileName;
-
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if(PlatformFile.FileExists(*FilePath))
-	{
-		WLOG(TEXT("Success to read file!"));
-
-		FString Content;
-		ReadFile(FilePath, Content);
-
-		const int32 DataLength = Content.Len();
-
-		for (int i = 0; i < GridLengthSize; i++)
-		{
-			for (int j = 0; j < GridWidthSize; j++)
-			{
-				int32 X = Origin.X + ((GridDist * j) - FMath::TruncToInt(WorldOffsetX));
-				int32 Y = Origin.Y + ((GridDist * i) - FMath::TruncToInt(WorldOffsetY));
-
-				if (DataLength <= i * GridLengthSize + j)
-				{
-					ELOG(TEXT("Accessible string bound exceeded!"));
-					return true;
-				}
-
-				if (Content[i * GridLengthSize + j] - TEXT('0'))
-				{
-					DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Red, true);
-				}
-				else
-				{
-					DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Green, true);
-				}
-			}
-		}
-
-		return true;
-	}
-	else
-	{
-		ELOG(TEXT("Failed to read the file!"));
-		return false;
-	}
-}
-
 void AObstacleChecker::InitFieldLocations()
 {
 	FieldLocations.Init(FPos(), TotalSize);
-	ObstaclesOrNot.Init(false, TotalSize);
+	IsMovableArr.Init(false, TotalSize);
 	for (int i = 0; i < GridLengthSize; i++)
 	{
 		for (int j = 0; j < GridWidthSize; j++)
@@ -136,7 +101,7 @@ void AObstacleChecker::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bAllowObstacleCheck && bStartCheck && HasAuthority() == false)
+	if (bAllowObstacleCheck && bStartCheck && HasAuthority())
 	{
 		CheckObstacleSequentially(DeltaTime);
 	}
@@ -166,14 +131,12 @@ void AObstacleChecker::CheckObstacle()
 			ECC_ObstacleCheck
 		);
 
-		DrawDebugLine(GetWorld(), FVector(FieldLocations[LastIdx].X, FieldLocations[LastIdx].Y, -1000), FVector(FieldLocations[LastIdx].X, FieldLocations[LastIdx].Y, 1000), FColor::Blue, false, 3.f, 0, 1.5f);
-
-		ObstacleCheckData.AppendInt(Hit.bBlockingHit);
-		ObstaclesOrNot[LastIdx] = Hit.bBlockingHit;
+		IsMovableArr[LastIdx] = !Hit.bBlockingHit;
 
 		if (Hit.bBlockingHit)
 		{
 			DrawDebugPoint(GetWorld(), FVector(FieldLocations[LastIdx].X, FieldLocations[LastIdx].Y, 10), 7.5f, FColor::Red, true);
+			DrawDebugLine(GetWorld(), FVector(FieldLocations[LastIdx].X, FieldLocations[LastIdx].Y, -1000), FVector(FieldLocations[LastIdx].X, FieldLocations[LastIdx].Y, 1000), FColor::Blue, false, 3.f, 0, 1.5f);
 		}
 		else
 		{
@@ -185,31 +148,47 @@ void AObstacleChecker::CheckObstacle()
 
 	if (LastIdx >= TotalSize)
 	{
-		if (FileName.Len() == 0)
-		{
-			ELOG(TEXT("No file name designated!"));
-			return;
-		}
-
-		FString FilePath = FPaths::ProjectDir() + TEXT("MapData/") + FileName;
-
-		WriteToFile(FilePath, ObstacleCheckData);
-
-		bAllowObstacleCheck = false;
-		bStartCheck = false;
+		CreateMapNavDataAsset();
 	}
 }
 
-void AObstacleChecker::WriteToFile(const FString& FilePath, const FString& Content)
+void AObstacleChecker::CreateMapNavDataAsset()
 {
-	if (FFileHelper::SaveStringToFile(Content, *FilePath))
+	if (AssetName.Len() == 0)
 	{
-		WLOG(TEXT("The Data File is Successfully Saved!"));
+		ELOG(TEXT("No asset name designated!"));
+		return;
 	}
-}
 
-bool AObstacleChecker::ReadFile(const FString& FilePath, FString& OutContent)
-{
-	return FFileHelper::LoadFileToString(OutContent, *FilePath);
+	AssetPath += AssetName;
+
+	UPackage* Package = CreatePackage(nullptr, *AssetPath);
+	UMapNavDataAsset* NewDataAsset = NewObject<UMapNavDataAsset>(Package, UMapNavDataAsset::StaticClass(), *AssetName, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+
+	NewDataAsset->NavOrigin = Origin;
+	NewDataAsset->FieldLocations = FieldLocations;
+	NewDataAsset->IsMovableArr = IsMovableArr;
+	NewDataAsset->GridDist = GridDist;
+	NewDataAsset->GridWidthSize = GridWidthSize;
+	NewDataAsset->GridLengthSize = GridLengthSize;
+	NewDataAsset->WorldOffsetX = WorldOffsetX;
+	NewDataAsset->WorldOffsetY = WorldOffsetY;
+
+	FAssetRegistryModule::AssetCreated(NewDataAsset);
+	NewDataAsset->MarkPackageDirty();
+
+	FString FilePath = FString::Printf(TEXT("%s%s%s"), *AssetPath, *AssetName, *FPackageName::GetAssetPackageExtension());
+	bool IsSuccess = UPackage::SavePackage(Package, NewDataAsset, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FilePath);
+	if (IsSuccess)
+	{
+		WLOG(TEXT("DataAsset [ %s ] successfully created!"));
+	}
+	else
+	{
+		WLOG(TEXT("Failed to create DataAsset [ %s ]!"));
+	}
+
+	bAllowObstacleCheck = false;
+	bStartCheck = false;
 }
 

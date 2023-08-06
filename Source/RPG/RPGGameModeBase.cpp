@@ -11,7 +11,6 @@
 ARPGGameModeBase::ARPGGameModeBase()
 {
 	WorldGridManager = CreateDefaultSubobject<UWorldGridManagerComponent>(TEXT("World Grid Manager"));
-	WorldGridManager->InitWorldGrid(80, 25);
 
 	ItemSpawnManager = CreateDefaultSubobject<UItemSpawnManagerComponent>(TEXT("Item Spawn Manager"));
 
@@ -32,22 +31,22 @@ void ARPGGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AEnemyPooler* EnemyPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
-	EnemyPooler->CreatePool(2, EEnemyType::EET_SkeletonArcher);
-	EnemyPoolerMap.Add(StaticCast<int32>(EEnemyType::EET_SkeletonArcher), EnemyPooler);
-	
-	for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
-	{
-		Enemy->DOnDeath.AddUFunction(this, FName("EnemyRespawnDelay"));
-	}
-	
-	ARPGBaseEnemyCharacter* Enemy = EnemyPooler->GetPooledEnemy();
-	if (Enemy)
-	{
-		Enemy->SetActorLocation(FVector(0, 0, 0));
-		Enemy->SetActorRotation(FRotator(0, 180, 0));
-		Enemy->ActivateEnemy();
-	}
+	//AEnemyPooler* EnemyPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
+	//EnemyPooler->CreatePool(2, EEnemyType::EET_SkeletonArcher);
+	//EnemyPoolerMap.Add(StaticCast<int32>(EEnemyType::EET_SkeletonArcher), EnemyPooler);
+	//
+	//for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
+	//{
+	//	Enemy->DOnDeath.AddUFunction(this, FName("EnemyRespawnDelay"));
+	//}
+	//
+	//ARPGBaseEnemyCharacter* Enemy = EnemyPooler->GetPooledEnemy();
+	//if (Enemy)
+	//{
+	//	Enemy->SetActorLocation(FVector(0, 0, 0));
+	//	Enemy->SetActorRotation(FRotator(0, 180, 0));
+	//	Enemy->ActivateEnemy();
+	//}
 
 	//AEnemyPooler* BossPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
 	//BossPooler->CreatePool(1, EEnemyType::EET_Boss);
@@ -64,7 +63,14 @@ void ARPGGameModeBase::BeginPlay()
 
 void ARPGGameModeBase::GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest)
 {
-	WorldGridManager->AStar(Start, Dest, PathToDest);
+	if (WorldGridManager->GetIsNavigationEnable())
+	{
+		WorldGridManager->AStar(Start, Dest, PathToDest);
+	}
+	else
+	{
+		ELOG(TEXT("Navigation is disable!"));
+	}
 }
 
 void ARPGGameModeBase::SpawnItems(const FVector& Location)

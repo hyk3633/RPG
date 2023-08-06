@@ -16,6 +16,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
+#include "GameSystem/ObstacleChecker.h"
+#include "DataAsset/MapNavDataAsset.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+
 ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -42,6 +46,7 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 
 	GetMesh()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_ObstacleCheck, ECollisionResponse::ECR_Ignore);
 
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(60.f);
@@ -49,6 +54,7 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyAttack, ECollisionResponse::ECR_Block);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_ObstacleCheck, ECollisionResponse::ECR_Ignore);
 
 	TargetingComp = CreateDefaultSubobject<USphereComponent>(TEXT("Targeting Component"));
 	TargetingComp->SetupAttachment(RootComponent);
@@ -99,25 +105,54 @@ void ARPGBasePlayerCharacter::BeginPlay()
 		RPGAnimInstance->SetMaxCombo(MaxCombo);
 	}
 
-	//if (IsLocallyControlled())
-	//{
-	//	// ±×¸®µå
-	//	int32 GridSize = 80;
-	//	int32 GridDist = 25;
-	//	float WorldOffset = ((GridSize * GridDist) / 2.f) - (GridDist / 2.f);
-	//	for (int i = 0; i < GridSize; i++)
-	//	{
-	//		for (int j = 0; j < GridSize; j++)
-	//		{
-	//			float X = (GridDist * j) - FMath::TruncToInt(WorldOffset);
-	//			float Y = (GridDist * i) - FMath::TruncToInt(WorldOffset);
-	//			DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 10.f, FColor::Green, true);
-	//		}
-	//	}
-	//	int32 j = FMath::Floor(((GetActorLocation().X + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
-	//	int32 i = FMath::Floor(((GetActorLocation().Y + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
-	//	DrawDebugPoint(GetWorld(), FVector((GridDist * j) - FMath::TruncToInt(WorldOffset), (GridDist * i) - FMath::TruncToInt(WorldOffset), 10.f), 10.f, FColor::Red, true);
-	//}
+	if (IsLocallyControlled())
+	{
+		/*FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+		FAssetData AssetData = AssetRegistryModule.Get().GetAssetByObjectPath(TEXT("MapNavDataAsset'/Game/_Assets/DataAsset/TestDataAsset.TestDataAsset'"));
+		if (AssetData.IsValid())
+		{
+			UMapNavDataAsset* MapNavDataAsset = Cast<UMapNavDataAsset>(AssetData.GetAsset());
+
+			TArray<AActor*> FoundActors;
+			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AObstacleChecker::StaticClass(), FoundActors);
+
+			FVector Origin;
+			FVector Extent;
+
+			for (AActor* Actor : FoundActors)
+			{
+				Actor->GetActorBounds(true, Origin, Extent);
+				break;
+			}
+
+			int32 GridDist = 25;
+
+			int32 GridWidthSize = FMath::TruncToInt((Extent.X * 2.f) / (float)GridDist) + 0.5f;
+			int32 GridLengthSize = FMath::TruncToInt((Extent.Y * 2.f) / (float)GridDist) + 0.5f;
+			int32 TotalSize = GridWidthSize * GridLengthSize;
+
+			float WorldOffsetX = ((GridWidthSize * GridDist) / 2.f) - (GridDist / 2.f);
+			float WorldOffsetY = ((GridLengthSize * GridDist) / 2.f) - (GridDist / 2.f);
+
+			for (int i = 0; i < GridLengthSize; i++)
+			{
+				for (int j = 0; j < GridWidthSize; j++)
+				{
+					int32 Y = Origin.Y + ((GridDist * i) - FMath::TruncToInt(WorldOffsetY));
+					int32 X = Origin.X + ((GridDist * j) - FMath::TruncToInt(WorldOffsetX));
+
+					if (MapNavDataAsset->IsMovableArr[GridLengthSize * i + j])
+					{
+						DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Red, true);
+					}
+					else
+					{
+						DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Green, true);
+					}
+				}
+			}
+		}*/
+	}
 }
 
 void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
@@ -361,11 +396,6 @@ void ARPGBasePlayerCharacter::SetDestinationAndPath()
 
 	SpawnClickParticle(Hit.ImpactPoint);
 	SetDestinaionAndPathServer(Hit.ImpactPoint);
-
-	for (int32 i = 0; i < PathArr.Num(); i++)
-	{
-		DrawDebugPoint(GetWorld(), FVector(PathArr[i].X, PathArr[i].Y, 10.f), 10.f, FColor::Blue, false, 2.f);
-	}
 }
 
 void ARPGBasePlayerCharacter::InitDestAndDir()
@@ -404,8 +434,10 @@ void ARPGBasePlayerCharacter::UpdateMovement()
 
 void ARPGBasePlayerCharacter::OnRep_PathArr()
 {
+	CF();
 	if (IsLocallyControlled())
 	{
+		PLOG(TEXT("path length : %d"), PathArr.Num());
 		if (PathArr.Num() == 0) return;
 		InitDestAndDir();
 		for (int32 i = 0; i < PathArr.Num(); i++)

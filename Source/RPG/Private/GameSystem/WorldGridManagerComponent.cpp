@@ -1,59 +1,82 @@
 
 #include "GameSystem/WorldGridManagerComponent.h"
+#include "DataAsset/MapNavDataAsset.h"
 #include "../RPG.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "DrawDebugHelpers.h"
-
-using namespace std;
 
 UWorldGridManagerComponent::UWorldGridManagerComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-
 }
 
 void UWorldGridManagerComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	InitWorldGrid();
 }
 
-void UWorldGridManagerComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UWorldGridManagerComponent::InitWorldGrid()
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	FAssetData AssetData = AssetRegistryModule.Get().GetAssetByObjectPath(*MapNavDataReference);
+	if (AssetData.IsValid())
+	{
+		MapNavDataAsset = Cast<UMapNavDataAsset>(AssetData.GetAsset());
+		
+		bMapNavDataUsable = true;
 
-}
+		NavOrigin = MapNavDataAsset->NavOrigin;
 
-void UWorldGridManagerComponent::InitWorldGrid(int32 Number, int32 Interval)
-{
-	GridSize = Number;
-	GridDist = Interval;
-	WorldOffset = ((GridSize * GridDist) / 2.f) - (GridDist / 2.f);
+		GridDist = MapNavDataAsset->GridDist;
+		GridWidthSize = MapNavDataAsset->GridWidthSize;
+		GridLengthSize = MapNavDataAsset->GridLengthSize;
+
+		WorldOffsetX = MapNavDataAsset->WorldOffsetX;
+		WorldOffsetY = MapNavDataAsset->WorldOffsetY;
+
+		FieldLocations = MapNavDataAsset->FieldLocations;
+		IsMovableArr = MapNavDataAsset->IsMovableArr;
+	}
+	else
+	{
+		bMapNavDataUsable = false;
+	}
 }
 
 void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest)
 {
+	//PLOG(TEXT("vec - Y : %f, X : %f"), Dest.Y, Dest.X);
+	//int32 nY = FMath::Floor(((Dest.Y - NavOrigin.Y + FMath::TruncToInt(937.5)) / 25) + 0.5f);
+	//int32 nX = FMath::Floor(((Dest.X - NavOrigin.X + FMath::TruncToInt(937.5)) / 25) + 0.5f);
+	//PLOG(TEXT("Dest - Y : %d, X : %d"), nY, nX);
+	//PLOG(TEXT("Arr - Y : %d, X : %d"), FieldLocations[nY * GridLengthSize + nX].Y, FieldLocations[nY * GridLengthSize + nX].X);
+	//
+	//return;
+
 	double start = FPlatformTime::Seconds();
 
 	PathToDest.Empty();
 
-	const int32 Dy = VectorToCoordinates(Dest.Y);
-	const int32 Dx = VectorToCoordinates(Dest.X);
+	const int32 Dy = VectorToCoordinatesY(Dest.Y);
+	const int32 Dx = VectorToCoordinatesX(Dest.X);
 
-	if (Dy * GridSize + Dx > GridSize * GridSize)
+	if (Dy >= GridLengthSize || Dx >= GridWidthSize)
 	{
 		ELOG(TEXT("Can not move that point."));
 		return;
 	}
 
-	const int32 SY = VectorToCoordinates(Start.Y);
-	const int32 SX = VectorToCoordinates(Start.X);
+	const int32 SY = VectorToCoordinatesY(Start.Y);
+	const int32 SX = VectorToCoordinatesX(Start.X);
 
 	FPos StartPos(SY, SX);
 	TArray<bool> Visited;
-	Visited.Init(false, GridSize * GridSize);
+	Visited.Init(false, GridWidthSize * GridLengthSize);
 
 	TArray<int32> Best;
-	Best.Init(INT32_MAX, GridSize * GridSize);
+	Best.Init(INT32_MAX, GridWidthSize * GridLengthSize);
 
 	TMap<FPos, FPos> Parent;
 
@@ -65,7 +88,7 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 		int32 G = 0;
 		int32 H = 10 * (abs(DestPos.Y - StartPos.Y) + abs(DestPos.X - StartPos.X));
 		HeapArr.HeapPush(FAStarNode{ G + H, G, StartPos });
-		Best[StartPos.Y * GridSize + StartPos.X] = G + H;
+		Best[StartPos.Y * GridLengthSize + StartPos.X] = G + H;
 		Parent.Add(StartPos, StartPos);
 	}
 
@@ -74,12 +97,12 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 		FAStarNode Node;
 		HeapArr.HeapPop(Node);
 
-		if (Visited[Node.Pos.Y * GridSize + Node.Pos.X])
+		if (Visited[Node.Pos.Y * GridLengthSize + Node.Pos.X])
 			continue;
-		if (Best[Node.Pos.Y * GridSize + Node.Pos.X] < Node.F)
+		if (Best[Node.Pos.Y * GridLengthSize + Node.Pos.X] < Node.F)
 			continue;
 
-		Visited[Node.Pos.Y * GridSize + Node.Pos.X] = true;
+		Visited[Node.Pos.Y * GridLengthSize + Node.Pos.X] = true;
 
 		if (Node.Pos == DestPos)
 			break;
@@ -89,17 +112,15 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 			FPos NextPos = Node.Pos + Front[Dir];
 			if (CanGo(NextPos) == false)
 				continue;
-			if (Visited[NextPos.Y * GridSize + NextPos.X])
+			if (Visited[NextPos.Y * GridLengthSize + NextPos.X])
 				continue;
 
 			int32 G = Node.G + Cost[Dir];
 			int32 H = 10 * (abs(DestPos.Y - NextPos.Y) + abs(DestPos.X - NextPos.X));
-			if (Best[NextPos.Y * GridSize + NextPos.X] <= G + H)
+			if (Best[NextPos.Y * GridLengthSize + NextPos.X] <= G + H)
 				continue;
 
-
-
-			Best[NextPos.Y * GridSize + NextPos.X] = G + H;
+			Best[NextPos.Y * GridLengthSize + NextPos.X] = G + H;
 			HeapArr.HeapPush(FAStarNode{ G + H, G, NextPos });
 			Parent.Add(NextPos, Node.Pos);
 		}
@@ -109,10 +130,11 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 
 	while (true)
 	{
-		const int32 X = CoordinatesToVector(NextPos.X);
-		const int32 Y = CoordinatesToVector(NextPos.Y);
+		//const int32 Y = CoordinatesToVectorY(NextPos.Y);
+		//const int32 X = CoordinatesToVectorX(NextPos.X);
 
-		PathToDest.Add(FPos(Y,X));
+		//PathToDest.Add(FPos(Y,X));
+		PathToDest.Add(FieldLocations[NextPos.Y * GridLengthSize + NextPos.X]);
 
 		if (NextPos == *Parent.Find(NextPos))
 		{
@@ -128,28 +150,31 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 	PLOG(TEXT("time : %f"), end - start);
 }
 
-int32 UWorldGridManagerComponent::VectorToCoordinates(const double& VectorComponent)
+int32 UWorldGridManagerComponent::VectorToCoordinatesY(const double& VectorComponent)
 {
-	return FMath::Floor(((VectorComponent + FMath::TruncToInt(WorldOffset)) / GridDist) + 0.5f);
+	return FMath::Floor(((VectorComponent - NavOrigin.Y + FMath::TruncToInt(WorldOffsetY)) / GridDist) + 0.5f);
 }
 
-int32 UWorldGridManagerComponent::CoordinatesToVector(const int32 Coordinates)
+int32 UWorldGridManagerComponent::VectorToCoordinatesX(const double& VectorComponent)
 {
-	return (GridDist * Coordinates) - FMath::TruncToInt(WorldOffset);
+	return FMath::Floor(((VectorComponent - NavOrigin.X + FMath::TruncToInt(WorldOffsetX)) / GridDist) + 0.5f);
+}
+
+int32 UWorldGridManagerComponent::CoordinatesToVectorY(const int32 Coordinates)
+{
+	return (GridDist * Coordinates) - FMath::TruncToInt(WorldOffsetY);
+}
+
+int32 UWorldGridManagerComponent::CoordinatesToVectorX(const int32 Coordinates)
+{
+	return (GridDist * Coordinates) - FMath::TruncToInt(WorldOffsetX);
 }
 
 bool UWorldGridManagerComponent::CanGo(const FPos& _Pos)
 {
-	if (_Pos.Y >= 0 && _Pos.Y < GridSize && _Pos.X >= 0 && _Pos.X < GridSize)
+	if (_Pos.Y >= 0 && _Pos.Y < GridLengthSize && _Pos.X >= 0 && _Pos.X < GridWidthSize)
 	{
-		//FHitResult Hit;
-		//const int32 X = CoordinatesToVector(_Pos.X);
-		//const int32 Y = CoordinatesToVector(_Pos.Y);
-		//GetWorld()->LineTraceSingleByChannel(Hit, FVector(X, Y, -1000), FVector(X, Y, 1000), ECC_ObstacleCheck);
-		//DrawDebugLine(GetWorld(), FVector(X, Y, -1000), FVector(X, Y, 1000), FColor::Blue, false, 3.f, 0, 1.5f);
-		//if (Hit.bBlockingHit) return false;
-		//else return true;
-		return true;
+		if(IsMovableArr[_Pos.Y * GridLengthSize + _Pos.X]) return true;
 	}
 	return false;
 }

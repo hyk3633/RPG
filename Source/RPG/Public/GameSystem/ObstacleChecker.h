@@ -21,9 +21,9 @@ protected:
 
 	virtual void BeginPlay() override;
 
-	void InitMapSpecification();
+	bool CheckAssetValidity();
 
-	bool LoadMapData();
+	void InitMapSpecification();
 
 	void InitFieldLocations();
 
@@ -39,9 +39,7 @@ protected:
 
 	void CheckObstacle();
 
-	void WriteToFile(const FString& FilePath, const FString& Content);
-
-	bool ReadFile(const FString& FilePath, FString& OutContent);
+	void CreateMapNavDataAsset();
 
 private:
 
@@ -53,8 +51,9 @@ private:
 
 	FVector Origin;
 	FVector Extent;
-	FVector Start;
-	int32 GridDist = 0;
+
+	UPROPERTY(EditInstanceOnly, Category = "Nav Setting", meta = (ClampMin = "5", ClampMax = "50"))
+	int32 GridDist = 25;
 
 	int32 GridWidthSize = 0;
 	int32 GridLengthSize = 0;
@@ -67,15 +66,16 @@ private:
 
 	TArray<FPos> FieldLocations;
 
-	TArray<bool> ObstaclesOrNot;
-	FString ObstacleCheckData = "";
+	TArray<bool> IsMovableArr;
 
 	int32 LastIdx = 0;
 
-	UPROPERTY(EditInstanceOnly)
-	FString FileName;
+	FString AssetPath;
 
-	UPROPERTY(EditInstanceOnly)
+	UPROPERTY(EditInstanceOnly, Category = "Nav Setting")
+	FString AssetName;
+
+	UPROPERTY(EditInstanceOnly, Category = "Nav Setting")
 	bool bAllowObstacleCheck = false;
 
 	bool bStartCheck = false;
