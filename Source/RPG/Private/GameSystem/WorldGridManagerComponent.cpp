@@ -15,6 +15,26 @@ void UWorldGridManagerComponent::BeginPlay()
 	Super::BeginPlay();
 	
 	InitWorldGrid();
+	DrawGrid();
+}
+
+void UWorldGridManagerComponent::DrawGrid()
+{
+	int32 Count = 0;
+	while (Count < GridWidthSize * GridLengthSize)
+	{
+		int32 X = FieldLocations[Count].X;
+		int32 Y = FieldLocations[Count].Y;
+		if (ExtraCost[Count] == 0)
+			DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Green, true);
+		else if (ExtraCost[Count] < 8)
+			DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Yellow, true);
+		else if (ExtraCost[Count] < 12)
+			DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Orange, true);
+		else
+			DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Red, true);
+		Count++;
+	}
 }
 
 void UWorldGridManagerComponent::InitWorldGrid()
@@ -38,6 +58,7 @@ void UWorldGridManagerComponent::InitWorldGrid()
 
 		FieldLocations = MapNavDataAsset->FieldLocations;
 		IsMovableArr = MapNavDataAsset->IsMovableArr;
+		ExtraCost = MapNavDataAsset->ExtraCost;
 	}
 	else
 	{
@@ -47,14 +68,6 @@ void UWorldGridManagerComponent::InitWorldGrid()
 
 void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest)
 {
-	//PLOG(TEXT("vec - Y : %f, X : %f"), Dest.Y, Dest.X);
-	//int32 nY = FMath::Floor(((Dest.Y - NavOrigin.Y + FMath::TruncToInt(937.5)) / 25) + 0.5f);
-	//int32 nX = FMath::Floor(((Dest.X - NavOrigin.X + FMath::TruncToInt(937.5)) / 25) + 0.5f);
-	//PLOG(TEXT("Dest - Y : %d, X : %d"), nY, nX);
-	//PLOG(TEXT("Arr - Y : %d, X : %d"), FieldLocations[nY * GridLengthSize + nX].Y, FieldLocations[nY * GridLengthSize + nX].X);
-	//
-	//return;
-
 	double start = FPlatformTime::Seconds();
 
 	PathToDest.Empty();
@@ -62,7 +75,7 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 	const int32 Dy = VectorToCoordinatesY(Dest.Y);
 	const int32 Dx = VectorToCoordinatesX(Dest.X);
 
-	if (Dy >= GridLengthSize || Dx >= GridWidthSize)
+	if (CanGo(FPos(Dy,Dx)) == false)
 	{
 		ELOG(TEXT("Can not move that point."));
 		return;
@@ -115,7 +128,7 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 			if (Visited[NextPos.Y * GridLengthSize + NextPos.X])
 				continue;
 
-			int32 G = Node.G + Cost[Dir];
+			int32 G = Node.G + Cost[Dir] + ExtraCost[NextPos.Y * GridLengthSize + NextPos.X];
 			int32 H = 10 * (abs(DestPos.Y - NextPos.Y) + abs(DestPos.X - NextPos.X));
 			if (Best[NextPos.Y * GridLengthSize + NextPos.X] <= G + H)
 				continue;
@@ -130,16 +143,9 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 
 	while (true)
 	{
-		//const int32 Y = CoordinatesToVectorY(NextPos.Y);
-		//const int32 X = CoordinatesToVectorX(NextPos.X);
-
-		//PathToDest.Add(FPos(Y,X));
 		PathToDest.Add(FieldLocations[NextPos.Y * GridLengthSize + NextPos.X]);
 
-		if (NextPos == *Parent.Find(NextPos))
-		{
-			break;
-		}
+		if (NextPos == *Parent.Find(NextPos)) break;
 
 		NextPos = Parent[NextPos];
 	}
@@ -148,6 +154,11 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 
 	double end = FPlatformTime::Seconds();
 	PLOG(TEXT("time : %f"), end - start);
+
+	for (int32 i = 0; i < PathToDest.Num(); i++)
+	{
+		DrawDebugPoint(GetWorld(), FVector(PathToDest[i].X, PathToDest[i].Y, 10.f), 10.f, FColor::Blue, false, 2.f);
+	}
 }
 
 int32 UWorldGridManagerComponent::VectorToCoordinatesY(const double& VectorComponent)

@@ -39,6 +39,8 @@ protected:
 	
 	virtual void BeginPlay() override;
 
+	void DrawGrid();
+
 public:	
 	
 	void InitWorldGrid();
@@ -77,7 +79,6 @@ private:
 	int32 GridDist = 0;
 	int32 GridWidthSize = 0;
 	int32 GridLengthSize = 0;
-	int32 TotalSize = 0;
 
 	float WorldOffsetX;
 	float WorldOffsetY;
@@ -85,6 +86,8 @@ private:
 	TArray<FPos> FieldLocations;
 
 	TArray<bool> IsMovableArr;
+
+	TArray<int8> ExtraCost;
 		
 	UPROPERTY()
 	UMapNavDataAsset* MapNavDataAsset;

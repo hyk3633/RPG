@@ -26,6 +26,9 @@ public:
 	TArray<bool> IsMovableArr;
 
 	UPROPERTY(VisibleAnywhere)
+	TArray<int8> ExtraCost;
+
+	UPROPERTY(VisibleAnywhere)
 	FString MapName;
 
 	UPROPERTY(VisibleAnywhere)

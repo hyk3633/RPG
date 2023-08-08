@@ -39,6 +39,10 @@ protected:
 
 	void CheckObstacle();
 
+	void GiveExtraScoreToGrid(float DeltaTime);
+
+	void BFS(int32 GridIdx);
+
 	void CreateMapNavDataAsset();
 
 private:
@@ -58,15 +62,20 @@ private:
 	int32 GridWidthSize = 0;
 	int32 GridLengthSize = 0;
 	int32 TotalSize = 0;
+	int32 BlockedSize = 0;
 
-	float WorldOffsetX;
-	float WorldOffsetY;
+	float WorldOffsetX = 0;
+	float WorldOffsetY = 0;
 
 	float CumulatedTime = 0.1f;
 
 	TArray<FPos> FieldLocations;
 
 	TArray<bool> IsMovableArr;
+
+	TArray<int32> BlockedGrids;
+
+	TArray<int8> ExtraCost;
 
 	int32 LastIdx = 0;
 
@@ -79,4 +88,20 @@ private:
 	bool bAllowObstacleCheck = false;
 
 	bool bStartCheck = false;
+
+	bool bStartGiveScore = false;
+
+	int8 ObstacleCost = 12;
+
+	FPos Front[8] =
+	{
+		FPos { -1, 0},
+		FPos { 0, -1},
+		FPos { 1, 0},
+		FPos { 0, 1},
+		FPos {-1, -1},
+		FPos {1, -1},
+		FPos {1, 1},
+		FPos {-1, 1},
+	};
 };
