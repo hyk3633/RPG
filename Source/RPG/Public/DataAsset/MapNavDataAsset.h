@@ -41,8 +41,8 @@ public:
 	int32 GridLengthSize;
 
 	UPROPERTY(VisibleAnywhere)
-	float WorldOffsetX;
+	float BiasX;
 
 	UPROPERTY(VisibleAnywhere)
-	float WorldOffsetY;
+	float BiasY;
 };

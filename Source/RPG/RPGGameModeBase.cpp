@@ -31,22 +31,30 @@ void ARPGGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//AEnemyPooler* EnemyPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
-	//EnemyPooler->CreatePool(2, EEnemyType::EET_SkeletonArcher);
-	//EnemyPoolerMap.Add(StaticCast<int32>(EEnemyType::EET_SkeletonArcher), EnemyPooler);
-	//
-	//for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
-	//{
-	//	Enemy->DOnDeath.AddUFunction(this, FName("EnemyRespawnDelay"));
-	//}
-	//
-	//ARPGBaseEnemyCharacter* Enemy = EnemyPooler->GetPooledEnemy();
-	//if (Enemy)
-	//{
-	//	Enemy->SetActorLocation(FVector(0, 0, 0));
-	//	Enemy->SetActorRotation(FRotator(0, 180, 0));
-	//	Enemy->ActivateEnemy();
-	//}
+	AEnemyPooler* EnemyPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
+	EnemyPooler->CreatePool(4, EEnemyType::EET_SkeletonArcher);
+	EnemyPoolerMap.Add(StaticCast<int32>(EEnemyType::EET_SkeletonArcher), EnemyPooler);
+	
+	for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
+	{
+		Enemy->DOnDeath.AddUFunction(this, FName("EnemyRespawnDelay"));
+	}
+	
+	ARPGBaseEnemyCharacter* Enemy = EnemyPooler->GetPooledEnemy();
+	if (Enemy)
+	{
+		Enemy->SetActorLocation(FVector(370, 180, 0));
+		Enemy->SetActorRotation(FRotator(900, 180, 0));
+		Enemy->ActivateEnemy();
+	}
+
+	ARPGBaseEnemyCharacter* Enemy2 = EnemyPooler->GetPooledEnemy();
+	if (Enemy2)
+	{
+		Enemy2->SetActorLocation(FVector(0, 200, 0));
+		Enemy2->SetActorRotation(FRotator(0, 180, 0));
+		Enemy2->ActivateEnemy();
+	}
 
 	//AEnemyPooler* BossPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
 	//BossPooler->CreatePool(1, EEnemyType::EET_Boss);
@@ -61,15 +69,23 @@ void ARPGGameModeBase::BeginPlay()
 	//}
 }
 
-void ARPGGameModeBase::GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest)
+void ARPGGameModeBase::GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, const bool bIsEnemyMove)
 {
 	if (WorldGridManager->GetIsNavigationEnable())
 	{
-		WorldGridManager->AStar(Start, Dest, PathToDest);
+		WorldGridManager->AStar(Start, Dest, PathToDest, bIsEnemyMove);
 	}
 	else
 	{
 		ELOG(TEXT("Navigation is disable!"));
+	}
+}
+
+void ARPGGameModeBase::UpdateCharacterExtraCost(int32& CoordinateY, int32& CoordinateX, const FVector& Location)
+{
+	if (WorldGridManager->GetIsNavigationEnable())
+	{
+		WorldGridManager->UpdateCharacterExtraCost(CoordinateY, CoordinateX, Location);
 	}
 }
 

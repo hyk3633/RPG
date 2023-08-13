@@ -38,7 +38,9 @@ protected:
 
 public:
 
-	void GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest);
+	void GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, const bool bIsEnemyMove = false);
+
+	void UpdateCharacterExtraCost(int32& CoordinateY, int32& CoordinateX, const FVector& Location);
 
 	void SpawnItems(const FVector& Location);
 

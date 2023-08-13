@@ -104,54 +104,9 @@ void ARPGBasePlayerCharacter::BeginPlay()
 		RPGAnimInstance->DOnAbilityMontageEnded.AddUFunction(this, FName("OnAbilityEnded"));
 		RPGAnimInstance->SetMaxCombo(MaxCombo);
 	}
-
-	if (IsLocallyControlled())
+	if (HasAuthority())
 	{
-		/*FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-		FAssetData AssetData = AssetRegistryModule.Get().GetAssetByObjectPath(TEXT("MapNavDataAsset'/Game/_Assets/DataAsset/TestDataAsset.TestDataAsset'"));
-		if (AssetData.IsValid())
-		{
-			UMapNavDataAsset* MapNavDataAsset = Cast<UMapNavDataAsset>(AssetData.GetAsset());
-
-			TArray<AActor*> FoundActors;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), AObstacleChecker::StaticClass(), FoundActors);
-
-			FVector Origin;
-			FVector Extent;
-
-			for (AActor* Actor : FoundActors)
-			{
-				Actor->GetActorBounds(true, Origin, Extent);
-				break;
-			}
-
-			int32 GridDist = 25;
-
-			int32 GridWidthSize = FMath::TruncToInt((Extent.X * 2.f) / (float)GridDist) + 0.5f;
-			int32 GridLengthSize = FMath::TruncToInt((Extent.Y * 2.f) / (float)GridDist) + 0.5f;
-			int32 TotalSize = GridWidthSize * GridLengthSize;
-
-			float WorldOffsetX = ((GridWidthSize * GridDist) / 2.f) - (GridDist / 2.f);
-			float WorldOffsetY = ((GridLengthSize * GridDist) / 2.f) - (GridDist / 2.f);
-
-			for (int i = 0; i < GridLengthSize; i++)
-			{
-				for (int j = 0; j < GridWidthSize; j++)
-				{
-					int32 Y = Origin.Y + ((GridDist * i) - FMath::TruncToInt(WorldOffsetY));
-					int32 X = Origin.X + ((GridDist * j) - FMath::TruncToInt(WorldOffsetX));
-
-					if (MapNavDataAsset->IsMovableArr[GridLengthSize * i + j])
-					{
-						DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Red, true);
-					}
-					else
-					{
-						DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Green, true);
-					}
-				}
-			}
-		}*/
+		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
 	}
 }
 
@@ -322,7 +277,19 @@ void ARPGBasePlayerCharacter::Tick(float DeltaTime)
 
 	if (bUpdateMovement)
 	{
-		UpdateMovement();
+		if (IsLocallyControlled())
+		{
+			UpdateMovement();
+		}
+		else if (HasAuthority())
+		{
+			CulmulativeTime += DeltaTime;
+			if (CulmulativeTime >= 0.1f)
+			{
+				GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
+				CulmulativeTime = 0.f;
+			}
+		}
 	}
 	
 	if (bAiming && IsLocallyControlled())
@@ -385,6 +352,7 @@ void ARPGBasePlayerCharacter::StopMove()
 {
 	GetMovementComponent()->StopMovementImmediately();
 	bUpdateMovement = false;
+	ReplicatebUpdateMovementServer(bUpdateMovement);
 	PathIdx = 0;
 }
 
@@ -401,8 +369,18 @@ void ARPGBasePlayerCharacter::SetDestinationAndPath()
 void ARPGBasePlayerCharacter::InitDestAndDir()
 {
 	bUpdateMovement = true;
+	ReplicatebUpdateMovementServer(bUpdateMovement);
 	NextPoint = FVector(PathArr[0].X, PathArr[0].Y, GetActorLocation().Z);
 	NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+}
+
+void ARPGBasePlayerCharacter::ReplicatebUpdateMovementServer_Implementation(const bool UpdateMovement)
+{
+	bUpdateMovement = UpdateMovement;
+	if (!bUpdateMovement)
+	{
+		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
+	}
 }
 
 void ARPGBasePlayerCharacter::SetDestinaionAndPathServer_Implementation(const FVector_NetQuantize& HitLocation)
@@ -422,6 +400,7 @@ void ARPGBasePlayerCharacter::UpdateMovement()
 		if (PathIdx == PathArr.Num())
 		{
 			bUpdateMovement = false;
+			ReplicatebUpdateMovementServer(bUpdateMovement);
 			PathIdx = 0;
 		}
 		else
@@ -434,16 +413,14 @@ void ARPGBasePlayerCharacter::UpdateMovement()
 
 void ARPGBasePlayerCharacter::OnRep_PathArr()
 {
-	CF();
 	if (IsLocallyControlled())
 	{
-		PLOG(TEXT("path length : %d"), PathArr.Num());
 		if (PathArr.Num() == 0) return;
 		InitDestAndDir();
-		for (int32 i = 0; i < PathArr.Num(); i++)
-		{
-			DrawDebugPoint(GetWorld(), FVector(PathArr[i].X, PathArr[i].Y, 10.f), 10.f, FColor::Blue, false, 2.f);
-		}
+		//for (int32 i = 0; i < PathArr.Num(); i++)
+		//{
+		//	DrawDebugPoint(GetWorld(), FVector(PathArr[i].X, PathArr[i].Y, 10.f), 10.f, FColor::Blue, false, 2.f);
+		//}
 	}
 }
 

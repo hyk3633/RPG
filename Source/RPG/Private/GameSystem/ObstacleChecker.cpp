@@ -61,8 +61,8 @@ void AObstacleChecker::InitMapSpecification()
 	GridLengthSize = FMath::TruncToInt((Extent.Y * 2.f) / (float)GridDist) + 0.5f;
 	TotalSize = GridWidthSize * GridLengthSize;
 
-	WorldOffsetX = ((GridWidthSize * GridDist) / 2.f) - (GridDist / 2.f);
-	WorldOffsetY = ((GridLengthSize * GridDist) / 2.f) - (GridDist / 2.f);
+	BiasX = FMath::TruncToInt(((GridWidthSize * GridDist) / 2.f) - (GridDist / 2.f));
+	BiasY = FMath::TruncToInt(((GridLengthSize * GridDist) / 2.f) - (GridDist / 2.f));
 }
 
 void AObstacleChecker::InitFieldLocations()
@@ -75,8 +75,8 @@ void AObstacleChecker::InitFieldLocations()
 	{
 		for (int j = 0; j < GridWidthSize; j++)
 		{
-			int32 Y = Origin.Y + ((GridDist * i) - FMath::TruncToInt(WorldOffsetY));
-			int32 X = Origin.X + ((GridDist * j) - FMath::TruncToInt(WorldOffsetX));
+			int32 Y = Origin.Y + ((GridDist * i) - BiasY);
+			int32 X = Origin.X + ((GridDist * j) - BiasX);
 
 			FieldLocations[i * GridLengthSize + j] = FPos(Y, X);
 		}
@@ -199,23 +199,21 @@ void AObstacleChecker::BFS(int32 GridIdx)
 			for (int8 Idx = 0; Idx < 8; Idx++)
 			{
 				int32 NY = CY + Front[Idx].Y, NX = CX + Front[Idx].X;
-				if (NY >= 0 && NY < GridLengthSize && NX >= 0 && NX < GridWidthSize)
+				if (NY < 0 || NY >= GridLengthSize || NX < 0 || NX >= GridWidthSize) continue;
+				
+				int32 NextIdx = NY * GridLengthSize + NX;
+				if (ExtraCost[NextIdx] >= CurrentCost) continue;
+				
+				ExtraCost[NextIdx] = CurrentCost;
+				if (CurrentCost > 4) TempArr.Add(NextIdx);
+				if (CurrentCost >= 8)
 				{
-					int32 NextIdx = NY * GridLengthSize + NX;
-					if (ExtraCost[NextIdx] < CurrentCost)
-					{
-						ExtraCost[NextIdx] = CurrentCost;
-						if (CurrentCost > 4) TempArr.Add(NextIdx);
-						if (CurrentCost >= 8)
-						{
-							DrawDebugPoint(GetWorld(), FVector(FieldLocations[NextIdx].X, FieldLocations[NextIdx].Y, 15), 7.5f, FColor::Orange, true);
-						}
-						else
-						{
-							DrawDebugPoint(GetWorld(), FVector(FieldLocations[NextIdx].X, FieldLocations[NextIdx].Y, 15), 7.5f, FColor::Yellow, true);
-						}
-					}
+					DrawDebugPoint(GetWorld(), FVector(FieldLocations[NextIdx].X, FieldLocations[NextIdx].Y, 15), 7.5f, FColor::Orange, true);
 				}
+				else
+				{
+					DrawDebugPoint(GetWorld(), FVector(FieldLocations[NextIdx].X, FieldLocations[NextIdx].Y, 15), 7.5f, FColor::Yellow, true);
+				}	
 			}
 		}
 		NextGrid = TempArr;
@@ -234,7 +232,13 @@ void AObstacleChecker::CreateMapNavDataAsset()
 	AssetPath += AssetName;
 
 	UPackage* Package = CreatePackage(nullptr, *AssetPath);
-	UMapNavDataAsset* NewDataAsset = NewObject<UMapNavDataAsset>(Package, UMapNavDataAsset::StaticClass(), *AssetName, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+	UMapNavDataAsset* NewDataAsset = NewObject<UMapNavDataAsset>
+		(
+			Package, 
+			UMapNavDataAsset::StaticClass(), 
+			*AssetName, 
+			EObjectFlags::RF_Public | EObjectFlags::RF_Standalone
+		);
 
 	NewDataAsset->NavOrigin = Origin;
 	NewDataAsset->FieldLocations = FieldLocations;
@@ -242,8 +246,8 @@ void AObstacleChecker::CreateMapNavDataAsset()
 	NewDataAsset->GridDist = GridDist;
 	NewDataAsset->GridWidthSize = GridWidthSize;
 	NewDataAsset->GridLengthSize = GridLengthSize;
-	NewDataAsset->WorldOffsetX = WorldOffsetX;
-	NewDataAsset->WorldOffsetY = WorldOffsetY;
+	NewDataAsset->BiasX = BiasX;
+	NewDataAsset->BiasY = BiasY;
 	NewDataAsset->ExtraCost = ExtraCost;
 
 	FAssetRegistryModule::AssetCreated(NewDataAsset);

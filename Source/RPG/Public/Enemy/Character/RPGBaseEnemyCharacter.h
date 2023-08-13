@@ -5,6 +5,7 @@
 #include "GameFramework/Character.h"
 #include "Enums/EnemyAttackType.h"
 #include "Structs/EnemyAssets.h"
+#include "Structs/Pos.h"
 #include "RPGBaseEnemyCharacter.generated.h"
 
 class URPGEnemyFormComponent;
@@ -13,6 +14,7 @@ class URPGEnemyAnimInstance;
 class UWidgetComponent;
 class URPGEnemyHealthBarWidget;
 
+DECLARE_MULTICAST_DELEGATE(FDelegateMoveEnd);
 DECLARE_MULTICAST_DELEGATE(FDelegateOnAttackEnd);
 DECLARE_MULTICAST_DELEGATE(FOnDeathDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnActivateDelegate);
@@ -49,6 +51,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	FDelegateMoveEnd DMoveEnd;
 	FDelegateOnAttackEnd DOnAttackEnd;
 	FOnDeathDelegate DOnDeath;
 	FDelegateOnHealthChanged DOnHealthChanged;
@@ -89,7 +92,19 @@ protected:
 
 	void EnemyDeath();
 
-public: /** 공격 */
+public: 
+
+	/** 이동 */
+
+	void BTTask_Move();
+
+protected:
+
+	void UpdateMovement();
+
+public:
+	
+	/** 공격 */
 
 	virtual void BTTask_Attack();
 
@@ -234,4 +249,19 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_bIsActivated)
 	bool bIsActivated = false;
+
+	/** 이동 */
+
+	int32 LastTimeY = -1;
+	int32 LastTimeX = -1;
+
+	TArray<FPos> PathArr;
+
+	bool bUpdateMovement = false;
+
+	float CulmulativeTime = 0.1f;
+
+	FVector NextPoint;
+	FVector NextDirection;
+	int32 PathIdx;
 };

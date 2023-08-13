@@ -45,7 +45,15 @@ public:
 	
 	void InitWorldGrid();
 
-	void AStar(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest);
+	void UpdateCharacterExtraCost(int32& CoordinateY, int32& CoordinateX, const FVector& Location);
+
+protected:
+
+	void UpdateCharacterExtraCostValue(const int32& CoordinateY, const int32& CoordinateX, const int8 Value);
+
+public:
+
+	void AStar(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, const bool bIsEnemyMove);
 
 protected:
 
@@ -61,6 +69,7 @@ protected:
 
 private:
 
+	// 이동 가능 방향
 	FPos Front[8] =
 	{
 		FPos { -1, 0},
@@ -72,23 +81,39 @@ private:
 		FPos {1, 1},
 		FPos {-1, 1},
 	};
-	int32 Cost[8] = { 10,10,10,10,14,14,14,14 };
 
+	// 방향 별 가중치
+	int8 Cost[8] = { 10,10,10,10,14,14,14,14 };
+
+	// 내비게이션 중심 위치
 	FVector NavOrigin;
 
+	// 그리드 포인트 간 거리
 	int32 GridDist = 0;
+
+	// 그리드 가로,세로 길이
 	int32 GridWidthSize = 0;
 	int32 GridLengthSize = 0;
 
-	float WorldOffsetX;
-	float WorldOffsetY;
+	// 그리드 - 벡터 변환 바이어스
+	int32 BiasX;
+	int32 BiasY;
 
+	// 그리드 포인트 배열
 	TArray<FPos> FieldLocations;
 
+	// 해당 인덱스 그리드의 장애물 여부
 	TArray<bool> IsMovableArr;
 
-	TArray<int8> ExtraCost;
-		
+	// 장애물 회피를 위한 추가 가중치
+	TArray<int8> ObstacleExtraCost;
+
+	// 캐릭터 위치의 추가 가중치
+	TArray<int8> CharacterExtraCost;
+
+	// 적 캐릭터의 이동 경로 추가 가중치
+	TArray<int8> EnemyPathExtraCost;
+
 	UPROPERTY()
 	UMapNavDataAsset* MapNavDataAsset;
 

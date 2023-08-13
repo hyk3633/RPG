@@ -112,6 +112,9 @@ protected:
 	void InitDestAndDir();
 
 	UFUNCTION(Server, Reliable)
+	void ReplicatebUpdateMovementServer(const bool UpdateMovement);
+
+	UFUNCTION(Server, Reliable)
 	void SetDestinaionAndPathServer(const FVector_NetQuantize& HitLocation);
 
 	void UpdateMovement();
@@ -390,6 +393,10 @@ private:
 
 	bool bUpdateMovement = false;
 
+	float CulmulativeTime = 0.1f;
+	int32 LastTimeY = -1;
+	int32 LastTimeX = -1;
+
 	FVector NextPoint;
 	FVector NextDirection;
 	int32 PathIdx;
@@ -397,9 +404,9 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_bStunned)
 	bool bStunned = false;
 
-	/** 일반 공격 */
-
 protected:
+
+	/** 일반 공격 */
 
 	int32 MaxCombo = 4;
 

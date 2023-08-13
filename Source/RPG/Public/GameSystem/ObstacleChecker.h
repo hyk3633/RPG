@@ -64,8 +64,8 @@ private:
 	int32 TotalSize = 0;
 	int32 BlockedSize = 0;
 
-	float WorldOffsetX = 0;
-	float WorldOffsetY = 0;
+	int32 BiasX = 0;
+	int32 BiasY = 0;
 
 	float CumulatedTime = 0.1f;
 

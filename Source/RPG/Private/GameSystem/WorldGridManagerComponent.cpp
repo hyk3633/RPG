@@ -25,11 +25,11 @@ void UWorldGridManagerComponent::DrawGrid()
 	{
 		int32 X = FieldLocations[Count].X;
 		int32 Y = FieldLocations[Count].Y;
-		if (ExtraCost[Count] == 0)
+		if (ObstacleExtraCost[Count] == 0)
 			DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Green, true);
-		else if (ExtraCost[Count] < 8)
+		else if (ObstacleExtraCost[Count] < 8)
 			DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Yellow, true);
-		else if (ExtraCost[Count] < 12)
+		else if (ObstacleExtraCost[Count] < 12)
 			DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Orange, true);
 		else
 			DrawDebugPoint(GetWorld(), FVector(X, Y, 10.f), 5.f, FColor::Red, true);
@@ -53,12 +53,15 @@ void UWorldGridManagerComponent::InitWorldGrid()
 		GridWidthSize = MapNavDataAsset->GridWidthSize;
 		GridLengthSize = MapNavDataAsset->GridLengthSize;
 
-		WorldOffsetX = MapNavDataAsset->WorldOffsetX;
-		WorldOffsetY = MapNavDataAsset->WorldOffsetY;
+		BiasX = MapNavDataAsset->BiasX;
+		BiasY = MapNavDataAsset->BiasY;
 
 		FieldLocations = MapNavDataAsset->FieldLocations;
 		IsMovableArr = MapNavDataAsset->IsMovableArr;
-		ExtraCost = MapNavDataAsset->ExtraCost;
+		ObstacleExtraCost = MapNavDataAsset->ExtraCost;
+
+		CharacterExtraCost.Init(0, GridWidthSize * GridLengthSize);
+		EnemyPathExtraCost.Init(0, GridWidthSize * GridLengthSize);
 	}
 	else
 	{
@@ -66,10 +69,56 @@ void UWorldGridManagerComponent::InitWorldGrid()
 	}
 }
 
-void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest)
+void UWorldGridManagerComponent::UpdateCharacterExtraCost(int32& CoordinateY, int32& CoordinateX, const FVector& Location)
+{
+	// 기존 위치 지우기
+	if (CoordinateY != -1 && CoordinateX != -1)
+	{
+		FlushPersistentDebugLines(GetWorld());
+		UpdateCharacterExtraCostValue(CoordinateY, CoordinateX, 0);
+	}
+
+	// 새로 위치 기록
+	CoordinateY = VectorToCoordinatesY(Location.Y);
+	CoordinateX = VectorToCoordinatesX(Location.X);
+	if (CanGo(FPos(CoordinateY, CoordinateX)))
+	{
+		UpdateCharacterExtraCostValue(CoordinateY, CoordinateX, 14);
+	}
+}
+
+void UWorldGridManagerComponent::UpdateCharacterExtraCostValue(const int32& CoordinateY, const int32& CoordinateX, const int8 Value)
+{
+	const int32 Sy = CoordinateY - 2;
+	const int32 Sx = CoordinateX - 2;
+	for (int32 Y = Sy; Y < Sy + 5; Y++)
+	{
+		for (int32 X = Sx; X < Sx + 5; X++)
+		{
+			// IsMovableArr로 옮기기
+			CharacterExtraCost[Y * GridLengthSize + X] = Value;
+			if(Value > 0)
+			{
+				DrawDebugPoint(GetWorld(),
+					FVector(FieldLocations[Y * GridLengthSize + X].X, FieldLocations[Y * GridLengthSize + X].Y, 15.f), 5.f, FColor::Purple, true);
+			}
+		}
+	}
+}
+
+void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, const bool bIsEnemyMove)
 {
 	double start = FPlatformTime::Seconds();
 
+	if (bIsEnemyMove)
+	{
+		for (FPos& Pos : PathToDest)
+		{
+			const int32 Y = VectorToCoordinatesY(Pos.Y);
+			const int32 X = VectorToCoordinatesX(Pos.X);
+			EnemyPathExtraCost[Y * GridLengthSize + X] = 0;
+		}
+	}
 	PathToDest.Empty();
 
 	const int32 Dy = VectorToCoordinatesY(Dest.Y);
@@ -123,17 +172,23 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 		for (int32 Dir = 0; Dir < 8; Dir++)
 		{
 			FPos NextPos = Node.Pos + Front[Dir];
+			const int32 NextIdx = NextPos.Y * GridLengthSize + NextPos.X;
+
 			if (CanGo(NextPos) == false)
 				continue;
-			if (Visited[NextPos.Y * GridLengthSize + NextPos.X])
+			if (Visited[NextIdx])
 				continue;
 
-			int32 G = Node.G + Cost[Dir] + ExtraCost[NextPos.Y * GridLengthSize + NextPos.X];
+			int32 G = Node.G + Cost[Dir] + ObstacleExtraCost[NextIdx];
+			// G에 적 이동 경로 가중치 추가
+
 			int32 H = 10 * (abs(DestPos.Y - NextPos.Y) + abs(DestPos.X - NextPos.X));
-			if (Best[NextPos.Y * GridLengthSize + NextPos.X] <= G + H)
+			if (Best[NextIdx] <= G + H)
 				continue;
 
-			Best[NextPos.Y * GridLengthSize + NextPos.X] = G + H;
+			if (bIsEnemyMove) EnemyPathExtraCost[NextIdx] = 10;
+
+			Best[NextIdx] = G + H;
 			HeapArr.HeapPush(FAStarNode{ G + H, G, NextPos });
 			Parent.Add(NextPos, Node.Pos);
 		}
@@ -163,22 +218,22 @@ void UWorldGridManagerComponent::AStar(const FVector& Start, const FVector& Dest
 
 int32 UWorldGridManagerComponent::VectorToCoordinatesY(const double& VectorComponent)
 {
-	return FMath::Floor(((VectorComponent - NavOrigin.Y + FMath::TruncToInt(WorldOffsetY)) / GridDist) + 0.5f);
+	return FMath::Floor(((VectorComponent - NavOrigin.Y + BiasY) / GridDist) + 0.5f);
 }
 
 int32 UWorldGridManagerComponent::VectorToCoordinatesX(const double& VectorComponent)
 {
-	return FMath::Floor(((VectorComponent - NavOrigin.X + FMath::TruncToInt(WorldOffsetX)) / GridDist) + 0.5f);
+	return FMath::Floor(((VectorComponent - NavOrigin.X + BiasX) / GridDist) + 0.5f);
 }
 
 int32 UWorldGridManagerComponent::CoordinatesToVectorY(const int32 Coordinates)
 {
-	return (GridDist * Coordinates) - FMath::TruncToInt(WorldOffsetY);
+	return (GridDist * Coordinates) - BiasY;
 }
 
 int32 UWorldGridManagerComponent::CoordinatesToVectorX(const int32 Coordinates)
 {
-	return (GridDist * Coordinates) - FMath::TruncToInt(WorldOffsetX);
+	return (GridDist * Coordinates) - BiasX;
 }
 
 bool UWorldGridManagerComponent::CanGo(const FPos& _Pos)

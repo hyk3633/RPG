@@ -98,6 +98,7 @@ void ARPGBaseEnemyCharacter::ActivateEnemy()
 	DOnActivate.Broadcast();
 	bIsActivated = true;
 	SetCollisionActivate();
+	if (HasAuthority()) GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
 }
 
 void ARPGBaseEnemyCharacter::OnRep_bIsActivated()
@@ -146,6 +147,17 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 	{
 		MyAnimInst->Speed = GetVelocity().Length();
 		MyAnimInst->bIsInAir = GetMovementComponent()->IsFalling();
+	}
+
+	if (bUpdateMovement) UpdateMovement();
+	if (HasAuthority())
+	{
+		CulmulativeTime += DeltaTime;
+		if (CulmulativeTime >= 0.1f)
+		{
+			GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
+			CulmulativeTime = 0.f;
+		}
 	}
 }
 
@@ -268,6 +280,63 @@ void ARPGBaseEnemyCharacter::EnemyDeath()
 	OffRenderCustomDepthEffect();
 	HealthBarWidget->SetVisibility(false);
 	MyAnimInst->PlayDeathMontage();
+}
+
+/** 이동 */
+
+void ARPGBaseEnemyCharacter::BTTask_Move()
+{
+	if (HasAuthority() && GetTarget())
+	{
+		// 이동 경로 받아오기
+		const FVector Direction = (GetActorLocation() - GetTarget()->GetActorLocation()).GetSafeNormal();
+		const FVector Destination = GetTarget()->GetActorLocation() + (Direction * 150.f);
+		//DrawDebugPoint(GetWorld(), Destination, 20, FColor::Turquoise, true);
+		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), Destination, PathArr);
+
+		// 이동 시작
+		if (PathArr.Num())
+		{
+			GetMovementComponent()->StopMovementImmediately();
+			PathIdx = 0;
+			bUpdateMovement = true;
+			NextPoint = FVector(PathArr[0].X, PathArr[0].Y, GetActorLocation().Z);
+			NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+			
+			for (int32 i = 0; i < PathArr.Num(); i++)
+			{
+				DrawDebugPoint(GetWorld(), FVector(PathArr[i].X, PathArr[i].Y, 10.f), 10.f, FColor::Magenta, false, 5.f);
+			}
+		}
+	}
+	else
+	{
+		DMoveEnd.Broadcast();
+	}
+}
+
+void ARPGBaseEnemyCharacter::UpdateMovement()
+{
+	if (FVector::Dist(NextPoint, GetActorLocation()) > 20.f)
+	{
+		AddMovementInput(NextDirection * 20.f * GetWorld()->GetDeltaSeconds());
+	}
+	else
+	{
+		PathIdx++;
+		if (PathIdx == PathArr.Num())
+		{
+			bUpdateMovement = false;
+			GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
+			PathIdx = 0;
+			DMoveEnd.Broadcast();
+		}
+		else
+		{
+			NextPoint = FVector(PathArr[PathIdx].X, PathArr[PathIdx].Y, GetActorLocation().Z);
+			NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+		}
+	}
 }
 
 /** 공격 */
