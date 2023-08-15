@@ -54,13 +54,6 @@ public:
 
 	FProjectileAssets* GetProjectileAssets(const EProjectileType Type);
 
-protected:
-
-	UFUNCTION()
-	void EnemyRespawnDelay();
-
-	void EnemyRespawn();
-
 private:
 
 	UPROPERTY(EditAnywhere)
@@ -80,9 +73,4 @@ private:
 
 	UPROPERTY()
 	UDataTable* ProjectileAssetsDataTable;
-
-	UPROPERTY()
-	TMap<int32, AEnemyPooler*> EnemyPoolerMap;
-
-	FTimerHandle EnemyRespawnTimer;
 };

@@ -82,11 +82,10 @@ void URPGEnemyFormComponent::InitEnemy(ARPGBaseEnemyCharacter* SpawnedEnemy)
 
 	SpawnedEnemy->Name = EnemyInfo.Name;
 	SpawnedEnemy->MaxHealth = EnemyInfo.MaxHealth;
-	SpawnedEnemy->StrikingPower = EnemyInfo.StrikingPower;
+	SpawnedEnemy->Health = EnemyInfo.MaxHealth;
 	SpawnedEnemy->DefensivePower = EnemyInfo.DefensivePower;
 	SpawnedEnemy->Exp = EnemyInfo.Exp;
-
-	SpawnedEnemy->Health = EnemyInfo.MaxHealth;
+	SpawnedEnemy->Distance = EnemyInfo.Distance;
 }
 
 void URPGEnemyFormComponent::MeleeAttack(ARPGBaseEnemyCharacter* Attacker)

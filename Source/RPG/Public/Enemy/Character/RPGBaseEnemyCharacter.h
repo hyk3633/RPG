@@ -128,6 +128,8 @@ public:
 	FORCEINLINE void SetAIController(ARPGEnemyAIController* AICont) { MyController = AICont; }
 	FORCEINLINE URPGEnemyAnimInstance* GetAnimInstance() const { return MyAnimInst; }
 	FORCEINLINE bool GetIsActivated() const { return bIsActivated; }
+	FORCEINLINE int32 GetAttackDistance() const { return Distance; }
+
 	bool GetSuckedIn() const;
 
 	APawn* GetTarget() const;
@@ -241,11 +243,11 @@ private:
 	UPROPERTY(Replicated)
 	FString Name;
 
-	float StrikingPower;
-
 	float DefensivePower;
 
 	int32 Exp;
+
+	int32 Distance;
 
 	UPROPERTY(ReplicatedUsing = OnRep_bIsActivated)
 	bool bIsActivated = false;

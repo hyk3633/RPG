@@ -31,31 +31,6 @@ void ARPGGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AEnemyPooler* EnemyPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
-	EnemyPooler->CreatePool(4, EEnemyType::EET_SkeletonArcher);
-	EnemyPoolerMap.Add(StaticCast<int32>(EEnemyType::EET_SkeletonArcher), EnemyPooler);
-	
-	for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
-	{
-		Enemy->DOnDeath.AddUFunction(this, FName("EnemyRespawnDelay"));
-	}
-	
-	ARPGBaseEnemyCharacter* Enemy = EnemyPooler->GetPooledEnemy();
-	if (Enemy)
-	{
-		Enemy->SetActorLocation(FVector(370, 180, 0));
-		Enemy->SetActorRotation(FRotator(900, 180, 0));
-		Enemy->ActivateEnemy();
-	}
-
-	ARPGBaseEnemyCharacter* Enemy2 = EnemyPooler->GetPooledEnemy();
-	if (Enemy2)
-	{
-		Enemy2->SetActorLocation(FVector(0, 200, 0));
-		Enemy2->SetActorRotation(FRotator(0, 180, 0));
-		Enemy2->ActivateEnemy();
-	}
-
 	//AEnemyPooler* BossPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
 	//BossPooler->CreatePool(1, EEnemyType::EET_Boss);
 	//EnemyPoolerMap.Add(StaticCast<int32>(EEnemyType::EET_Boss), BossPooler);
@@ -137,24 +112,5 @@ FProjectileAssets* ARPGGameModeBase::GetProjectileAssets(const EProjectileType T
 		if (Data) return Data;
 	}
 	return nullptr;
-}
-
-void ARPGGameModeBase::EnemyRespawnDelay()
-{
-	GetWorldTimerManager().SetTimer(EnemyRespawnTimer, this, &ARPGGameModeBase::EnemyRespawn, 5);
-}
-
-void ARPGGameModeBase::EnemyRespawn()
-{
-	const int32 Index = StaticCast<int32>(EEnemyType::EET_Skeleton);
-	if (EnemyPoolerMap.Contains(Index) == false) return;
-	
-	ARPGBaseEnemyCharacter* Enemy = (*EnemyPoolerMap.Find(Index))->GetPooledEnemy();
-	if (Enemy)
-	{
-		Enemy->SetActorLocation(FVector(0, 0, 0));
-		Enemy->SetActorRotation(FRotator(0, 0, 180));
-		Enemy->ActivateEnemy();
-	}
 }
 
