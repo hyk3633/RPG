@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Structs/Pos.h"
 #include "EnemySpawner.generated.h"
 
 class ARPGBaseEnemyCharacter;
@@ -63,12 +64,6 @@ protected:
 	UFUNCTION()
 	void OnAreaBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-public:
-
-	virtual void Tick(float DeltaTime) override;
-
-protected:
-
 	void CalculateDistanceBetweenPlayersAndEnemies();
 
 	void GetEnemiesPathToPlayers();
@@ -77,6 +72,10 @@ protected:
 	void EnemyRespawnDelay();
 
 	void EnemyRespawn();
+
+public:
+
+	bool IsGridInArea(const FPos& GridPos);
 
 private:
 
@@ -105,4 +104,7 @@ private:
 	FTimerHandle GettingPathTimer;
 
 	int8 PathOrderIdx = 0;
+
+	FPos TopLeft;
+	FPos BottomRight;
 };

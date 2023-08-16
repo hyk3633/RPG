@@ -10,7 +10,7 @@ struct FEnemyInfo : public FTableRowBase
 
 public:
 
-	FEnemyInfo() : Name(""), StrikingPower(1.f), DefensivePower(1.f), MaxHealth(100), Exp(10), Distance(500) {}
+	FEnemyInfo() : Name(""), StrikingPower(1.f), DefensivePower(1.f), MaxHealth(100), Exp(10), DetectDistance(500), AttackDistance(100) {}
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
 	FString Name;
@@ -28,7 +28,10 @@ public:
 	int32 Exp;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	int32 Distance;
+	int32 DetectDistance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
+	int32 AttackDistance;
 
 	FEnemyInfo& operator=(const FEnemyInfo& Other)
 	{
@@ -37,7 +40,8 @@ public:
 		DefensivePower = Other.DefensivePower;
 		MaxHealth = Other.MaxHealth;
 		Exp = Other.Exp;
-		Distance = Other.Distance;
+		DetectDistance = Other.DetectDistance;
+		AttackDistance = Other.AttackDistance;
 
 		return *this;
 	}

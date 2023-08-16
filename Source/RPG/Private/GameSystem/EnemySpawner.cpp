@@ -3,6 +3,7 @@
 #include "GameSystem/WorldGridManagerComponent.h"
 #include "GameSystem/EnemyPooler.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
+#include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Components/BoxComponent.h"
 
@@ -28,6 +29,19 @@ void AEnemySpawner::BeginPlay()
 		return;
 	}
 
+	FVector Origin, Extent;
+	GetActorBounds(true, Origin, Extent);
+	{
+		const int32 Y = GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetWorldGridManager()->VectorToCoordinatesY(Origin.Y - Extent.Y);
+		const int32 X = GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetWorldGridManager()->VectorToCoordinatesX(Origin.X + Extent.X);
+		TopLeft = FPos(Y, X);
+	}
+	{
+		const int32 Y = GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetWorldGridManager()->VectorToCoordinatesY(Origin.Y + Extent.Y);
+		const int32 X = GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetWorldGridManager()->VectorToCoordinatesX(Origin.X - Extent.X);
+		BottomRight = FPos(Y, X);
+	}
+
 	AreaBox->OnComponentBeginOverlap.AddDynamic(this, &AEnemySpawner::OnAreaBoxBeginOverlap);
 	AreaBox->OnComponentEndOverlap.AddDynamic(this, &AEnemySpawner::OnAreaBoxEndOverlap);
 	
@@ -44,7 +58,7 @@ void AEnemySpawner::BeginPlay()
 	if (Enemy)
 	{
 		Enemy->SetActorLocation(FVector(370, 180, 0));
-		Enemy->SetActorRotation(FRotator(900, 180, 0));
+		Enemy->SetActorRotation(FRotator(0, 180, 0));
 		Enemy->ActivateEnemy();
 	}
 
@@ -62,14 +76,16 @@ void AEnemySpawner::BeginPlay()
 
 void AEnemySpawner::OnAreaBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	CF();
 	ACharacter* PlayerCharacter = Cast<ACharacter>(OtherActor);
 	if (PlayerCharacter)
 	{
 		PlayersInArea.Add(PlayerCharacter);
 		TargetAndEnemies.Add(PlayerCharacter, FEnemiesOfTarget());
 
-		CalculateDistanceBetweenPlayersAndEnemies();
+		if (GetWorldTimerManager().IsTimerActive(CalculateDistanceTimer) == false)
+		{
+			GetWorldTimerManager().SetTimer(CalculateDistanceTimer, this, &AEnemySpawner::CalculateDistanceBetweenPlayersAndEnemies, 3.f, true);
+		}
 	}
 }
 
@@ -85,16 +101,11 @@ void AEnemySpawner::OnAreaBoxEndOverlap(UPrimitiveComponent* OverlappedComponent
 
 			if (!PlayersInArea.Num())
 			{
+				GetWorldTimerManager().ClearTimer(CalculateDistanceTimer);
 				GetWorldTimerManager().ClearTimer(GettingPathTimer);
 			}
 		}
 	}
-}
-
-void AEnemySpawner::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }
 
 void AEnemySpawner::CalculateDistanceBetweenPlayersAndEnemies()
@@ -104,7 +115,7 @@ void AEnemySpawner::CalculateDistanceBetweenPlayersAndEnemies()
 		if (!IsValid(Enemy)) continue;
 		CF();
 		ACharacter* TargetPlayer = nullptr;
-		float MinDistance = Enemy->GetAttackDistance();
+		float MinDistance = Enemy->GetDetectDistance();
 		for (ACharacter* Player : PlayersInArea)
 		{
 			if (!IsValid(Player)) continue;
@@ -123,7 +134,7 @@ void AEnemySpawner::CalculateDistanceBetweenPlayersAndEnemies()
 			if(EnemiesOfTarget) EnemiesOfTarget->Enemies.Add(FEnemyAndDistance(Enemy, MinDistance));
 		}
 	}
-	GetWorldTimerManager().SetTimer(GettingPathTimer, this, &AEnemySpawner::GetEnemiesPathToPlayers, 0.1f, true);
+	GetWorldTimerManager().SetTimer(GettingPathTimer, this, &AEnemySpawner::GetEnemiesPathToPlayers, 0.1f, false);
 }
 
 void AEnemySpawner::GetEnemiesPathToPlayers()
@@ -134,8 +145,8 @@ void AEnemySpawner::GetEnemiesPathToPlayers()
 		TargetAndEnemies[Player].Enemies.Sort();
 		for (const FEnemyAndDistance& Pair : TargetAndEnemies[Player].Enemies)
 		{
-			// TODO : 경로 받아오기 함수
-			PLOG(TEXT("%s : %s , %f"), *Player->GetName(), *Pair.Enemy->GetName(), Pair.Distance);
+			Pair.Enemy->SetTarget(Player);
+			Pair.Enemy->GetPathToTarget(Player->GetActorLocation(), this);
 		}
 		TargetAndEnemies[Player].Enemies.Empty();
 	}
@@ -164,4 +175,11 @@ void AEnemySpawner::EnemyRespawn()
 		Enemy->SetActorRotation(FRotator(0, 0, 180));
 		Enemy->ActivateEnemy();
 	}
+}
+
+bool AEnemySpawner::IsGridInArea(const FPos& GridPos)
+{
+	if (GridPos.Y > TopLeft.Y && GridPos.Y < BottomRight.Y && GridPos.X > BottomRight.X && GridPos.X < TopLeft.X)
+		return true;
+	else return false;
 }

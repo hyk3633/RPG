@@ -5,6 +5,8 @@
 #include "Enemy/RPGEnemyAnimInstance.h"
 #include "UI/RPGEnemyHealthBarWidget.h"
 #include "Player/RPGPlayerController.h"
+#include "GameSystem/WorldGridManagerComponent.h"
+#include "GameSystem/EnemySpawner.h"
 #include "DamageType/DamageTypeBase.h"
 #include "DamageType/DamageTypeStunAndPush.h"
 #include "DamageType/DamageTypeRestriction.h"
@@ -149,16 +151,17 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 		MyAnimInst->bIsInAir = GetMovementComponent()->IsFalling();
 	}
 
-	if (bUpdateMovement) UpdateMovement();
-	if (HasAuthority())
+	/*if (HasAuthority())
 	{
+		if (bUpdateMovement) UpdateMovement();
+
 		CulmulativeTime += DeltaTime;
 		if (CulmulativeTime >= 0.1f)
 		{
 			GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
 			CulmulativeTime = 0.f;
 		}
-	}
+	}*/
 }
 
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
@@ -284,6 +287,21 @@ void ARPGBaseEnemyCharacter::EnemyDeath()
 
 /** 이동 */
 
+void ARPGBaseEnemyCharacter::GetPathToTarget(const FVector& Destination, AEnemySpawner* Spanwer)
+{
+	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetWorldGridManager()->AStarEnemy(GetActorLocation(), Destination, PathArr, Spanwer);
+
+	// 이동 시작
+	if (PathArr.Num())
+	{
+		GetMovementComponent()->StopMovementImmediately();
+		PathIdx = 0;
+		bUpdateMovement = true;
+		NextPoint = FVector(PathArr[0].X, PathArr[0].Y, GetActorLocation().Z);
+		NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+	}
+}
+
 void ARPGBaseEnemyCharacter::BTTask_Move()
 {
 	if (HasAuthority() && GetTarget())
@@ -324,7 +342,7 @@ void ARPGBaseEnemyCharacter::UpdateMovement()
 	else
 	{
 		PathIdx++;
-		if (PathIdx == PathArr.Num())
+		if (GetDistanceTo(GetTarget()) <= AttackDistance)
 		{
 			bUpdateMovement = false;
 			GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
@@ -377,6 +395,11 @@ void ARPGBaseEnemyCharacter::OnAttackMontageEnded()
 bool ARPGBaseEnemyCharacter::GetSuckedIn() const
 {
 	return MyController->GetSuckedIn();
+}
+
+void ARPGBaseEnemyCharacter::SetTarget(APawn* NewTarget)
+{
+	MyController->SetTarget(NewTarget);
 }
 
 APawn* ARPGBaseEnemyCharacter::GetTarget() const

@@ -44,11 +44,11 @@ void ARPGGameModeBase::BeginPlay()
 	//}
 }
 
-void ARPGGameModeBase::GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, const bool bIsEnemyMove)
+void ARPGGameModeBase::GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest)
 {
 	if (WorldGridManager->GetIsNavigationEnable())
 	{
-		WorldGridManager->AStar(Start, Dest, PathToDest, bIsEnemyMove);
+		WorldGridManager->AStarPlayer(Start, Dest, PathToDest);
 	}
 	else
 	{

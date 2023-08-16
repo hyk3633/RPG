@@ -13,6 +13,7 @@ class ARPGEnemyAIController;
 class URPGEnemyAnimInstance;
 class UWidgetComponent;
 class URPGEnemyHealthBarWidget;
+class AEnemySpawner;
 
 DECLARE_MULTICAST_DELEGATE(FDelegateMoveEnd);
 DECLARE_MULTICAST_DELEGATE(FDelegateOnAttackEnd);
@@ -96,6 +97,8 @@ public:
 
 	/** ¿Ãµø */
 
+	void GetPathToTarget(const FVector& Destination, AEnemySpawner* Spanwer);
+
 	void BTTask_Move();
 
 protected:
@@ -128,10 +131,12 @@ public:
 	FORCEINLINE void SetAIController(ARPGEnemyAIController* AICont) { MyController = AICont; }
 	FORCEINLINE URPGEnemyAnimInstance* GetAnimInstance() const { return MyAnimInst; }
 	FORCEINLINE bool GetIsActivated() const { return bIsActivated; }
-	FORCEINLINE int32 GetAttackDistance() const { return Distance; }
+	FORCEINLINE int32 GetDetectDistance() const { return DetectDistance; }
+	FORCEINLINE int32 GetAttackDistance() const { return AttackDistance; }
 
 	bool GetSuckedIn() const;
 
+	void SetTarget(APawn* NewTarget);
 	APawn* GetTarget() const;
 
 	bool GetIsInAir() const;
@@ -247,7 +252,9 @@ private:
 
 	int32 Exp;
 
-	int32 Distance;
+	int32 DetectDistance;
+
+	int32 AttackDistance;
 
 	UPROPERTY(ReplicatedUsing = OnRep_bIsActivated)
 	bool bIsActivated = false;

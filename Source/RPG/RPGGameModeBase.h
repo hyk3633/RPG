@@ -38,7 +38,9 @@ protected:
 
 public:
 
-	void GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, const bool bIsEnemyMove = false);
+	FORCEINLINE UWorldGridManagerComponent* GetWorldGridManager() const { return WorldGridManager; }
+
+	void GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest);
 
 	void UpdateCharacterExtraCost(int32& CoordinateY, int32& CoordinateX, const FVector& Location);
 

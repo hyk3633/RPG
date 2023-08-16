@@ -7,6 +7,8 @@
 #include "WorldGridManagerComponent.generated.h"
 
 class UMapNavDataAsset;
+class ARPGBaseEnemyCharacter;
+class AEnemySpawner;
 
 USTRUCT()
 struct FAStarNode
@@ -36,6 +38,8 @@ public:
 	FORCEINLINE bool GetIsNavigationEnable() const { return bMapNavDataUsable; }
 
 protected:
+
+	virtual void InitializeComponent() override;
 	
 	virtual void BeginPlay() override;
 
@@ -53,9 +57,9 @@ protected:
 
 public:
 
-	void AStar(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, const bool bIsEnemyMove);
+	void AStarPlayer(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest);
 
-protected:
+	void AStarEnemy(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, AEnemySpawner* Spawner);
 
 	int32 VectorToCoordinatesY(const double& VectorComponent);
 
@@ -73,13 +77,13 @@ private:
 	FPos Front[8] =
 	{
 		FPos { -1, 0},
-		FPos { 0, -1},
-		FPos { 1, 0},
 		FPos { 0, 1},
+		FPos { 1, 0},
+		FPos { 0, -1},
 		FPos {-1, -1},
-		FPos {1, -1},
-		FPos {1, 1},
 		FPos {-1, 1},
+		FPos {1, 1},
+		FPos {1, -1},
 	};
 
 	// 방향 별 가중치
