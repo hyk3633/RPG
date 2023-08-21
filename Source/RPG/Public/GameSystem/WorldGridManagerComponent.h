@@ -45,10 +45,10 @@ protected:
 
 	void DrawGrid();
 
-public:	
-	
 	void InitWorldGrid();
 
+public:	
+	
 	void UpdateCharacterExtraCost(int32& CoordinateY, int32& CoordinateX, const FVector& Location);
 
 protected:
@@ -58,8 +58,6 @@ protected:
 public:
 
 	void AStarPlayer(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest);
-
-	void AStarEnemy(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, AEnemySpawner* Spawner);
 
 	int32 VectorToCoordinatesY(const double& VectorComponent);
 
@@ -114,9 +112,6 @@ private:
 
 	// 캐릭터 위치의 추가 가중치
 	TArray<int8> CharacterExtraCost;
-
-	// 적 캐릭터의 이동 경로 추가 가중치
-	TArray<int8> EnemyPathExtraCost;
 
 	UPROPERTY()
 	UMapNavDataAsset* MapNavDataAsset;

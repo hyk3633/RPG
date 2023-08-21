@@ -35,6 +35,8 @@ public:
 
 protected:
 
+	void CheckFlowFieldData();
+
 	void CheckObstacleSequentially(float DeltaTime);
 
 	void CheckObstacle();
@@ -56,7 +58,7 @@ private:
 	FVector Origin;
 	FVector Extent;
 
-	UPROPERTY(EditInstanceOnly, Category = "Nav Setting", meta = (ClampMin = "5", ClampMax = "50"))
+	UPROPERTY(EditInstanceOnly, Category = "Nav Setting", meta = (ClampMin = "5", ClampMax = "500"))
 	int32 GridDist = 25;
 
 	int32 GridWidthSize = 0;
@@ -87,6 +89,9 @@ private:
 	UPROPERTY(EditInstanceOnly, Category = "Nav Setting")
 	bool bAllowObstacleCheck = false;
 
+	UPROPERTY(EditInstanceOnly, Category = "Nav Setting")
+	bool bFlowFieldCheck = false;
+
 	bool bStartCheck = false;
 
 	bool bStartGiveScore = false;
@@ -104,4 +109,6 @@ private:
 		FPos {1, 1},
 		FPos {-1, 1},
 	};
+
+	FPlane Plane;
 };

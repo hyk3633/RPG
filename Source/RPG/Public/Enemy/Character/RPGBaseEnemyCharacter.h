@@ -8,6 +8,7 @@
 #include "Structs/Pos.h"
 #include "RPGBaseEnemyCharacter.generated.h"
 
+class AEnemySpawner;
 class URPGEnemyFormComponent;
 class ARPGEnemyAIController;
 class URPGEnemyAnimInstance;
@@ -128,6 +129,8 @@ public:
 
 	/** 설정 반환 함수 */
 
+	FORCEINLINE void SetSpawner(AEnemySpawner* Spawner) { MySpawner = Spawner; }
+	FORCEINLINE AEnemySpawner* GetSpawner() const { return MySpawner; }
 	FORCEINLINE void SetAIController(ARPGEnemyAIController* AICont) { MyController = AICont; }
 	FORCEINLINE URPGEnemyAnimInstance* GetAnimInstance() const { return MyAnimInst; }
 	FORCEINLINE bool GetIsActivated() const { return bIsActivated; }
@@ -216,6 +219,9 @@ protected:
 private:
 
 	UPROPERTY()
+	AEnemySpawner* MySpawner;
+
+	UPROPERTY()
 	USkeletalMeshComponent* WeaponMesh;
 
 	UPROPERTY()
@@ -264,13 +270,6 @@ private:
 	int32 LastTimeY = -1;
 	int32 LastTimeX = -1;
 
-	TArray<FPos> PathArr;
-
 	bool bUpdateMovement = false;
 
-	float CulmulativeTime = 0.1f;
-
-	FVector NextPoint;
-	FVector NextDirection;
-	int32 PathIdx;
 };

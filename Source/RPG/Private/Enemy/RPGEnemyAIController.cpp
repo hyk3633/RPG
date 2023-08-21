@@ -3,6 +3,7 @@
 #include "Enemy/RPGEnemyAIController.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
+#include "GameSystem/EnemySpawner.h"
 #include "../RPG.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -55,16 +56,16 @@ void ARPGEnemyAIController::OnUnPossess()
 void ARPGEnemyAIController::FindClosestPlayer()
 {
 	float MinDistance = 3000.f;
-	ARPGBasePlayerCharacter* ClosestTarget = nullptr;
+	ACharacter* ClosestTarget = nullptr;
 
-	APawn* MyPawn = GetPawn();
-	if (MyPawn)
+	if (MyCharacter)
 	{
-		for (ARPGBasePlayerCharacter* Target : TActorRange<ARPGBasePlayerCharacter>(GetWorld()))
+		TArray<ACharacter*> Players = MyCharacter->GetSpawner()->GetPlayersInArea();
+		for (ACharacter* Target : Players)
 		{
-			if (MyPawn->GetDistanceTo(Target) <= MinDistance)
+			if (MyCharacter->GetDistanceTo(Target) <= MinDistance)
 			{
-				MinDistance = MyPawn->GetDistanceTo(Target);
+				MinDistance = MyCharacter->GetDistanceTo(Target);
 				ClosestTarget = Target;
 			}
 		}

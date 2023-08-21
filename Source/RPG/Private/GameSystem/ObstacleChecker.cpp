@@ -5,6 +5,8 @@
 #include "Components/BillBoardComponent.h"
 #include "../RPG.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 AObstacleChecker::AObstacleChecker()
 {
@@ -26,7 +28,7 @@ void AObstacleChecker::BeginPlay()
 
 	if (HasAuthority())
 	{
-		if (CheckAssetValidity() == false)
+		if (bAllowObstacleCheck && !CheckAssetValidity())
 		{
 			InitMapSpecification();
 			InitFieldLocations();
@@ -67,18 +69,27 @@ void AObstacleChecker::InitMapSpecification()
 
 void AObstacleChecker::InitFieldLocations()
 {
-	FieldLocations.Init(FPos(), TotalSize);
-	IsMovableArr.Init(false, TotalSize);
-	ExtraCost.Init(0, TotalSize);
-	BlockedGrids.Reserve(TotalSize);
-	for (int i = 0; i < GridLengthSize; i++)
+	if (bFlowFieldCheck)
 	{
-		for (int j = 0; j < GridWidthSize; j++)
-		{
-			int32 Y = Origin.Y + ((GridDist * i) - BiasY);
-			int32 X = Origin.X + ((GridDist * j) - BiasX);
+		IsMovableArr.Init(false, TotalSize);
+		Plane.Z = 1;
+	}
+	else
+	{
+		FieldLocations.Init(FPos(), TotalSize);
+		IsMovableArr.Init(false, TotalSize);
+		ExtraCost.Init(0, TotalSize);
+		BlockedGrids.Reserve(TotalSize);
 
-			FieldLocations[i * GridLengthSize + j] = FPos(Y, X);
+		for (int i = 0; i < GridLengthSize; i++)
+		{
+			for (int j = 0; j < GridWidthSize; j++)
+			{
+				int32 Y = Origin.Y + ((GridDist * i) - BiasY);
+				int32 X = Origin.X + ((GridDist * j) - BiasX);
+
+				FieldLocations[i * GridWidthSize + j] = FPos(Y, X);
+			}
 		}
 	}
 }
@@ -105,7 +116,7 @@ void AObstacleChecker::Tick(float DeltaTime)
 		{
 			CheckObstacleSequentially(DeltaTime);
 		}
-		else if (bStartGiveScore)
+		else if (bStartGiveScore && !bFlowFieldCheck)
 		{
 			GiveExtraScoreToGrid(DeltaTime);
 		}
@@ -117,8 +128,62 @@ void AObstacleChecker::CheckObstacleSequentially(float DeltaTime)
 	CumulatedTime += DeltaTime;
 	if (CumulatedTime >= 0.1f)
 	{
-		CheckObstacle();
+		if (bFlowFieldCheck)
+		{
+			CheckFlowFieldData();
+		}
+		else
+		{
+			CheckObstacle();
+		}
 		CumulatedTime = 0.f;
+	}
+}
+
+void AObstacleChecker::CheckFlowFieldData()
+{
+	int32 Count = 0;
+	FHitResult Hit;
+	while (Count++ < 100 && LastIdx < TotalSize)
+	{
+		FVector Loc = FVector(Origin.X + (GridDist * (LastIdx % GridWidthSize)) - BiasX, Origin.Y + (GridDist * (LastIdx / GridWidthSize)) - BiasY, -500);
+		FVector Loc2 = Loc;
+		Loc2.Z = 500;
+
+		UKismetSystemLibrary::BoxTraceSingle(
+			this,
+			Loc,
+			Loc2,
+			FVector(100, 100, 0),
+			FRotator::ZeroRotator,
+			UEngineTypes::ConvertToTraceType(ECC_ObstacleCheck),
+			false,
+			TArray<AActor*>(),
+			EDrawDebugTrace::None,
+			Hit,
+			true);
+		Loc.Z = 10;
+
+		if (Hit.bBlockingHit)
+		{
+			DrawDebugSolidPlane(GetWorld(), Plane, Loc, 35, FColor::Red, true);
+		}
+		else if (!Hit.bBlockingHit)
+		{
+			IsMovableArr[LastIdx] = true;
+			DrawDebugSolidPlane(GetWorld(), Plane, Loc, 35, FColor::Green, true);
+		}
+
+		LastIdx++;
+	}
+
+	if (LastIdx >= TotalSize)
+	{
+		bAllowObstacleCheck = false;
+		bStartCheck = false;
+		CumulatedTime = 0.1f;
+		LastIdx = 0;
+		CreateMapNavDataAsset();
 	}
 }
 
@@ -240,15 +305,19 @@ void AObstacleChecker::CreateMapNavDataAsset()
 			EObjectFlags::RF_Public | EObjectFlags::RF_Standalone
 		);
 
+	if (!bFlowFieldCheck)
+	{
+		NewDataAsset->ExtraCost = ExtraCost;
+		NewDataAsset->FieldLocations = FieldLocations;
+	}
+
 	NewDataAsset->NavOrigin = Origin;
-	NewDataAsset->FieldLocations = FieldLocations;
 	NewDataAsset->IsMovableArr = IsMovableArr;
 	NewDataAsset->GridDist = GridDist;
 	NewDataAsset->GridWidthSize = GridWidthSize;
 	NewDataAsset->GridLengthSize = GridLengthSize;
 	NewDataAsset->BiasX = BiasX;
 	NewDataAsset->BiasY = BiasY;
-	NewDataAsset->ExtraCost = ExtraCost;
 
 	FAssetRegistryModule::AssetCreated(NewDataAsset);
 	NewDataAsset->MarkPackageDirty();

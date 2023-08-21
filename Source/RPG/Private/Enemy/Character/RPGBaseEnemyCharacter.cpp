@@ -151,17 +151,7 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 		MyAnimInst->bIsInAir = GetMovementComponent()->IsFalling();
 	}
 
-	/*if (HasAuthority())
-	{
-		if (bUpdateMovement) UpdateMovement();
-
-		CulmulativeTime += DeltaTime;
-		if (CulmulativeTime >= 0.1f)
-		{
-			GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
-			CulmulativeTime = 0.f;
-		}
-	}*/
+	if (HasAuthority() && bUpdateMovement) UpdateMovement();
 }
 
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
@@ -287,45 +277,11 @@ void ARPGBaseEnemyCharacter::EnemyDeath()
 
 /** 이동 */
 
-void ARPGBaseEnemyCharacter::GetPathToTarget(const FVector& Destination, AEnemySpawner* Spanwer)
-{
-	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetWorldGridManager()->AStarEnemy(GetActorLocation(), Destination, PathArr, Spanwer);
-
-	// 이동 시작
-	if (PathArr.Num())
-	{
-		GetMovementComponent()->StopMovementImmediately();
-		PathIdx = 0;
-		bUpdateMovement = true;
-		NextPoint = FVector(PathArr[0].X, PathArr[0].Y, GetActorLocation().Z);
-		NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
-	}
-}
-
 void ARPGBaseEnemyCharacter::BTTask_Move()
 {
 	if (HasAuthority() && GetTarget())
 	{
-		// 이동 경로 받아오기
-		const FVector Direction = (GetActorLocation() - GetTarget()->GetActorLocation()).GetSafeNormal();
-		const FVector Destination = GetTarget()->GetActorLocation() + (Direction * 150.f);
-		//DrawDebugPoint(GetWorld(), Destination, 20, FColor::Turquoise, true);
-		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), Destination, PathArr);
-
-		// 이동 시작
-		if (PathArr.Num())
-		{
-			GetMovementComponent()->StopMovementImmediately();
-			PathIdx = 0;
-			bUpdateMovement = true;
-			NextPoint = FVector(PathArr[0].X, PathArr[0].Y, GetActorLocation().Z);
-			NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
-			
-			for (int32 i = 0; i < PathArr.Num(); i++)
-			{
-				DrawDebugPoint(GetWorld(), FVector(PathArr[i].X, PathArr[i].Y, 10.f), 10.f, FColor::Magenta, false, 5.f);
-			}
-		}
+		bUpdateMovement = true;
 	}
 	else
 	{
@@ -335,25 +291,15 @@ void ARPGBaseEnemyCharacter::BTTask_Move()
 
 void ARPGBaseEnemyCharacter::UpdateMovement()
 {
-	if (FVector::Dist(NextPoint, GetActorLocation()) > 20.f)
+	if (GetDistanceTo(GetTarget()) <= AttackDistance)
 	{
-		AddMovementInput(NextDirection * 20.f * GetWorld()->GetDeltaSeconds());
+		bUpdateMovement = false;
+		DMoveEnd.Broadcast();
 	}
 	else
 	{
-		PathIdx++;
-		if (GetDistanceTo(GetTarget()) <= AttackDistance)
-		{
-			bUpdateMovement = false;
-			GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
-			PathIdx = 0;
-			DMoveEnd.Broadcast();
-		}
-		else
-		{
-			NextPoint = FVector(PathArr[PathIdx].X, PathArr[PathIdx].Y, GetActorLocation().Z);
-			NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
-		}
+		FVector& Loc = MySpawner->GetFlowVector(Cast<ACharacter>(GetTarget()), this);
+		AddMovementInput(Loc * 20.f * GetWorld()->GetDeltaSeconds());
 	}
 }
 
