@@ -7,7 +7,9 @@
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Components/BoxComponent.h"
+#include "Components/BillBoardComponent.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 AEnemySpawner::AEnemySpawner()
 {
@@ -17,6 +19,9 @@ AEnemySpawner::AEnemySpawner()
 	SetRootComponent(AreaBox);
 	AreaBox->SetCollisionResponseToAllChannels(ECR_Ignore);
 	AreaBox->SetCollisionResponseToChannel(ECC_PlayerBody, ECR_Overlap);
+
+	BillBoard = CreateDefaultSubobject<UBillboardComponent>(TEXT("BillBoard"));
+	BillBoard->SetupAttachment(RootComponent);
 
 	WorldGridManager = CreateDefaultSubobject<UWorldGridManagerComponent>(TEXT("World Grid Manager"));
 }
@@ -44,35 +49,74 @@ void AEnemySpawner::BeginPlay()
 
 	if (HasAuthority() == false) return;
 	
-	AEnemyPooler* EnemyPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
-	EnemyPooler->CreatePool(4, EEnemyType::EET_Skeleton);
-	EnemyPoolerMap.Add(StaticCast<int32>(EEnemyType::EET_Skeleton), EnemyPooler);
+	GetActorBounds(true, SpawnerOrigin, SpawnerExtent);
+	SpawnEnemies();
+}
 
-	for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
+void AEnemySpawner::SpawnEnemies()
+{
+	for (auto Pair : EnemyToSpawnMap)
 	{
-		Enemy->DOnDeath.AddUFunction(this, FName("EnemyRespawnDelay"));
+		AEnemyPooler* EnemyPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
+		EnemyPooler->CreatePool(Pair.Value * 3, Pair.Key);
+		EnemyPoolerMap.Add(StaticCast<int8>(Pair.Key), EnemyPooler);
+
+		for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
+		{
+			Enemy->DOnDeactivate.AddUFunction(this, FName("EnemyRespawnDelay"));
+			Enemy->SetSpawner(this);
+		}
+
+		for (int8 Idx = 0; Idx < Pair.Value; Idx++)
+		{
+			FVector SpawnLocation;
+			const bool bIsSafeLocation = GetSpawnLocation(SpawnLocation);
+			if (bIsSafeLocation)
+			{
+				ARPGBaseEnemyCharacter* Enemy = EnemyPooler->GetPooledEnemy();
+				if (Enemy)
+				{
+					Enemy->SetActorRotation(FRotator(0, 180, 0));
+					Enemy->ActivateEnemy(SpawnLocation);
+				}
+			}
+			else ELOG(TEXT("no place to respawn"));
+		}
 	}
 
-	ARPGBaseEnemyCharacter* Enemy = EnemyPooler->GetPooledEnemy();
-	if (Enemy)
-	{
-		Enemy->SetActorLocation(FVector(270, -150, 0));
-		Enemy->SetActorRotation(FRotator(0, 180, 0));
-		Enemy->SetSpawner(this);
-		Enemy->ActivateEnemy();
-	}
+}
 
-	ARPGBaseEnemyCharacter* Enemy2 = EnemyPooler->GetPooledEnemy();
-	if (Enemy2)
+bool AEnemySpawner::GetSpawnLocation(FVector& SpawnLocation)
+{
+	FHitResult Hit;
+	for (int8 I = 0; I < 10; I++)
 	{
-		Enemy2->SetActorLocation(FVector(0, -500, 0));
-		Enemy2->SetActorRotation(FRotator(0, 180, 0));
-		Enemy2->SetSpawner(this);
-		Enemy2->ActivateEnemy();
-	}
+		SpawnLocation = FMath::RandPointInBox(FBox(SpawnerOrigin - SpawnerExtent, SpawnerOrigin + SpawnerExtent - FVector(100, 100, 0)));
+		SpawnLocation.Z = 10.f;
 
-	EnemiesInArea.Add(Enemy);
-	EnemiesInArea.Add(Enemy2);
+		const int32 Idx = GetConvertCurrentLocationToIndex(SpawnLocation);
+		if (IsMovableArr[Idx] == false) continue;
+
+		UKismetSystemLibrary::BoxTraceSingle(
+			this,
+			SpawnLocation,
+			SpawnLocation,
+			FVector(100, 100, 300),
+			FRotator::ZeroRotator,
+			UEngineTypes::ConvertToTraceType(ECC_IsSafeToSpawn),
+			false,
+			TArray<AActor*>(),
+			EDrawDebugTrace::ForDuration,
+			Hit,
+			true
+		);
+		if (!Hit.bBlockingHit) return true;
+		else
+		{
+			PLOG(TEXT("%s"), *Hit.GetActor()->GetName());
+		}
+	}
+	return false;
 }
 
 void AEnemySpawner::InitFlowField()
@@ -120,22 +164,37 @@ void AEnemySpawner::OnAreaBoxEndOverlap(UPrimitiveComponent* OverlappedComponent
 	}
 }
 
-void AEnemySpawner::EnemyRespawnDelay()
+void AEnemySpawner::EnemyRespawnDelay(EEnemyType Type)
 {
+	RespawnWaitingQueue.Enqueue(Type);
 	GetWorldTimerManager().SetTimer(EnemyRespawnTimer, this, &AEnemySpawner::EnemyRespawn, 5);
 }
 
 void AEnemySpawner::EnemyRespawn()
 {
-	const int32 Index = StaticCast<int32>(EEnemyType::EET_Skeleton);
+	if (RespawnWaitingQueue.IsEmpty()) return;
+
+	EEnemyType TypeToRespawn;
+	RespawnWaitingQueue.Dequeue(TypeToRespawn);
+
+	const int32 Index = StaticCast<int32>(TypeToRespawn);
 	if (EnemyPoolerMap.Contains(Index) == false) return;
 
-	ARPGBaseEnemyCharacter* Enemy = (*EnemyPoolerMap.Find(Index))->GetPooledEnemy();
-	if (Enemy)
+	FVector SpawnLocation;
+	const bool bIsSafeLocation = GetSpawnLocation(SpawnLocation);
+	if (bIsSafeLocation)
 	{
-		Enemy->SetActorLocation(FVector(0, 0, 0));
-		Enemy->SetActorRotation(FRotator(0, 0, 180));
-		Enemy->ActivateEnemy();
+		ARPGBaseEnemyCharacter* Enemy = (*EnemyPoolerMap.Find(Index))->GetPooledEnemy();
+		if (Enemy)
+		{
+			Enemy->SetActorRotation(FRotator(0, 180, 0));
+			Enemy->ActivateEnemy(SpawnLocation);
+		}
+	}
+	else
+	{
+		RespawnWaitingQueue.Enqueue(TypeToRespawn);
+		GetWorldTimerManager().SetTimer(EnemyRespawnTimer, this, &AEnemySpawner::EnemyRespawn, 5);
 	}
 }
 

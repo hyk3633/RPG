@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Structs/Pos.h"
+#include "Enums/EnemyType.h"
 #include "EnemySpawner.generated.h"
 
 class ARPGBaseEnemyCharacter;
@@ -47,6 +48,10 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	void SpawnEnemies();
+
+	bool GetSpawnLocation(FVector& SpawnLocation);
+
 	void InitFlowField();
 
 	UFUNCTION()
@@ -56,7 +61,7 @@ protected:
 	void OnAreaBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
-	void EnemyRespawnDelay();
+	void EnemyRespawnDelay(EEnemyType Type);
 
 	void EnemyRespawn();
 
@@ -76,6 +81,9 @@ protected:
 
 private:
 
+	UPROPERTY(EditInstanceOnly)
+	UBillboardComponent* BillBoard;
+
 	UPROPERTY(EditAnywhere)
 	UBoxComponent* AreaBox;
 
@@ -85,6 +93,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Flow Field Data")
 	FString FlowFieldDataReference;
 
+	UPROPERTY(EditInstanceOnly, Category = "Enemy Spawner")
+	TMap<EEnemyType, int8> EnemyToSpawnMap;
+
 	UPROPERTY()
 	TMap<int32, AEnemyPooler*> EnemyPoolerMap;
 
@@ -93,8 +104,8 @@ private:
 	UPROPERTY()
 	TArray<ACharacter*> PlayersInArea;
 
-	UPROPERTY()
-	TArray<ARPGBaseEnemyCharacter*> EnemiesInArea;
+	FVector SpawnerOrigin;
+	FVector SpawnerExtent;
 
 	FPos Front[8] =
 	{
@@ -124,4 +135,6 @@ private:
 	TMap<ACharacter*, FFlowVector> TargetsFlowVectors;
 
 	float CumulTime = 0.f;
+
+	TQueue<EEnemyType> RespawnWaitingQueue;
 };

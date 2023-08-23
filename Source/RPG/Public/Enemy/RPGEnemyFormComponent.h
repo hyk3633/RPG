@@ -73,6 +73,8 @@ private:
 
 	FEnemyAssets EnemyAssets;
 
+	EEnemyType EnemyType;
+
 	bool bIsWeaponed = false;
 
 	UPROPERTY()

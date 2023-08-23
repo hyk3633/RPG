@@ -15,6 +15,7 @@ AObstacleChecker::AObstacleChecker()
 	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("Area Box"));
 	SetRootComponent(BoxComponent);
 	BoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	BoxComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 
 	BillBoard = CreateDefaultSubobject<UBillboardComponent>(TEXT("BillBoard"));
 	BillBoard->SetupAttachment(RootComponent);

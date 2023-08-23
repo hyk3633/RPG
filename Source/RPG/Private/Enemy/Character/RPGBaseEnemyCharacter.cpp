@@ -94,13 +94,20 @@ void ARPGBaseEnemyCharacter::InitAnimInstance()
 	}
 }
 
-void ARPGBaseEnemyCharacter::ActivateEnemy()
+void ARPGBaseEnemyCharacter::ActivateEnemy(const FVector& Location)
 {
+
 	Health = MaxHealth;
-	DOnActivate.Broadcast();
 	bIsActivated = true;
 	SetCollisionActivate();
-	if (HasAuthority()) GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
+	if (HasAuthority())
+	{
+		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
+		SetCollisionActivate();
+		DOnActivate.Broadcast();
+		OriginLocation = Location;
+		SetActorLocation(Location);
+	}
 }
 
 void ARPGBaseEnemyCharacter::OnRep_bIsActivated()
@@ -218,6 +225,7 @@ void ARPGBaseEnemyCharacter::HealthDecrease(const int32& Damage)
 	if (Health == 0)
 	{
 		DOnDeath.Broadcast();
+		DOnDeactivate.Broadcast(EnemyType);
 		DisableSuckedInMulticast();
 		SetCollisionDeactivate();
 		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->SpawnItems(GetActorLocation());

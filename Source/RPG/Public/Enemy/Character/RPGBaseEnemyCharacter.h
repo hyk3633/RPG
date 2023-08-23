@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Enums/EnemyAttackType.h"
+#include "Enums/EnemyType.h"
 #include "Structs/EnemyAssets.h"
 #include "Structs/Pos.h"
 #include "RPGBaseEnemyCharacter.generated.h"
@@ -20,6 +21,7 @@ DECLARE_MULTICAST_DELEGATE(FDelegateMoveEnd);
 DECLARE_MULTICAST_DELEGATE(FDelegateOnAttackEnd);
 DECLARE_MULTICAST_DELEGATE(FOnDeathDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnActivateDelegate);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnDeactivateDelegate, EEnemyType Type);
 DECLARE_MULTICAST_DELEGATE_OneParam(FDelegateOnHealthChanged, float HealthPercentage);
 
 UCLASS()
@@ -33,7 +35,7 @@ public:
 
 	void SetEnemyAssets(const FEnemyAssets& NewEnemyAssets);
 
-	void ActivateEnemy();
+	void ActivateEnemy(const FVector& Location);
 
 protected:
 
@@ -58,6 +60,7 @@ public:
 	FOnDeathDelegate DOnDeath;
 	FDelegateOnHealthChanged DOnHealthChanged;
 	FOnActivateDelegate DOnActivate;
+	FOnDeactivateDelegate DOnDeactivate;
 
 	friend URPGEnemyFormComponent;
 
@@ -264,6 +267,10 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_bIsActivated)
 	bool bIsActivated = false;
+
+	FVector OriginLocation;
+
+	EEnemyType EnemyType;
 
 	/** ¿Ãµø */
 

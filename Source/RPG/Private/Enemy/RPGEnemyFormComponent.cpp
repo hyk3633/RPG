@@ -23,6 +23,7 @@ URPGEnemyFormComponent::URPGEnemyFormComponent()
 
 void URPGEnemyFormComponent::InitEnemyFormComponent(EEnemyType Type)
 {
+	EnemyType = Type;
 	GetEnemyInfoAndInitialize(Type);
 	GetEnemyAssetsAndInitialize(Type);
 }
@@ -87,6 +88,7 @@ void URPGEnemyFormComponent::InitEnemy(ARPGBaseEnemyCharacter* SpawnedEnemy)
 	SpawnedEnemy->Exp = EnemyInfo.Exp;
 	SpawnedEnemy->AttackDistance = EnemyInfo.AttackDistance;
 	SpawnedEnemy->DetectDistance = EnemyInfo.DetectDistance;
+	SpawnedEnemy->EnemyType = EnemyType;
 }
 
 void URPGEnemyFormComponent::MeleeAttack(ARPGBaseEnemyCharacter* Attacker)
