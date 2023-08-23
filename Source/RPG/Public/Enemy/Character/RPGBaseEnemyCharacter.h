@@ -82,6 +82,14 @@ protected:
 
 	virtual void HealthDecrease(const int32& Damage);
 
+public:
+
+	void RespawnDelay();
+
+protected:
+
+	void EnemyRespawn();
+
 	UFUNCTION()
 	void OnRep_Health();
 
@@ -278,5 +286,7 @@ private:
 	int32 LastTimeX = -1;
 
 	bool bUpdateMovement = false;
+
+	FTimerHandle RespawnTimer;
 
 };

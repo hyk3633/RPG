@@ -6,6 +6,7 @@
 #include "Player/RPGPlayerController.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "Projectile/RPGBaseProjectile.h"
+#include "DamageType/DamageTypeBase.h"
 #include "DamageType/DamageTypeStunAndPush.h"
 #include "../RPG.h"
 #include "Kismet/GameplayStatics.h"
@@ -192,7 +193,7 @@ void ARPGWarriorPlayerCharacter::NormalAttackLineTrace()
 	{
 		if (IsValid(Hit.GetActor()))
 		{
-			UGameplayStatics::ApplyDamage(Hit.GetActor(), GetStrikingPower(), GetController(), this, UDamageType::StaticClass());
+			UGameplayStatics::ApplyDamage(Hit.GetActor(), GetStrikingPower(), GetController(), this, UDamageTypeBase::StaticClass());
 			SpawnNormalAttackImpactParticleMulticast(Hit.GetActor()->GetActorLocation());
 		}
 	}
@@ -200,6 +201,7 @@ void ARPGWarriorPlayerCharacter::NormalAttackLineTrace()
 
 void ARPGWarriorPlayerCharacter::SpawnNormalAttackImpactParticleMulticast_Implementation(const FVector_NetQuantize& SpawnLocation)
 {
+	if (HasAuthority()) return;
 	SpawnParticle(NormalAttackImpactParticle, SpawnLocation);
 }
 

@@ -61,13 +61,13 @@ protected:
 	void OnAreaBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
-	void EnemyRespawnDelay(EEnemyType Type);
-
-	void EnemyRespawn();
+	void AddEnemyToRespawnQueue(EEnemyType Type);
 
 public:
 
 	FORCEINLINE TArray<ACharacter*>& GetPlayersInArea() { return PlayersInArea; };
+
+	void EnemyRespawn();
 
 	virtual void Tick(float DeltaTime) override;
 
@@ -98,8 +98,6 @@ private:
 
 	UPROPERTY()
 	TMap<int32, AEnemyPooler*> EnemyPoolerMap;
-
-	FTimerHandle EnemyRespawnTimer;
 
 	UPROPERTY()
 	TArray<ACharacter*> PlayersInArea;

@@ -170,7 +170,7 @@ void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, c
 	
 	const int32 FinalDamage = DT_Base->CalculateDamage(Damage, DefensivePower);
 	HealthDecrease(FinalDamage);
-	//PLOG(TEXT("%s Enemy damaged : %d"), *DamagedActor->GetName(), FinalDamage);
+	PLOG(TEXT("%s Enemy damaged : %d"), *DamagedActor->GetName(), FinalDamage);
 
 	ARPGPlayerController* AttackerController = Cast<ARPGPlayerController>(InstigatorController);
 	if (AttackerController)
@@ -230,6 +230,20 @@ void ARPGBaseEnemyCharacter::HealthDecrease(const int32& Damage)
 		SetCollisionDeactivate();
 		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->SpawnItems(GetActorLocation());
 		bIsActivated = false;
+		RespawnDelay();
+	}
+}
+
+void ARPGBaseEnemyCharacter::RespawnDelay()
+{
+	GetWorldTimerManager().SetTimer(RespawnTimer, this, &ARPGBaseEnemyCharacter::EnemyRespawn, 5);
+}
+
+void ARPGBaseEnemyCharacter::EnemyRespawn()
+{
+	if (MySpawner)
+	{
+		MySpawner->EnemyRespawn();
 	}
 }
 

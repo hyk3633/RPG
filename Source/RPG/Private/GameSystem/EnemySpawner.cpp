@@ -63,7 +63,7 @@ void AEnemySpawner::SpawnEnemies()
 
 		for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
 		{
-			Enemy->DOnDeactivate.AddUFunction(this, FName("EnemyRespawnDelay"));
+			Enemy->DOnDeactivate.AddUFunction(this, FName("AddEnemyToRespawnQueue"));
 			Enemy->SetSpawner(this);
 		}
 
@@ -164,10 +164,9 @@ void AEnemySpawner::OnAreaBoxEndOverlap(UPrimitiveComponent* OverlappedComponent
 	}
 }
 
-void AEnemySpawner::EnemyRespawnDelay(EEnemyType Type)
+void AEnemySpawner::AddEnemyToRespawnQueue(EEnemyType Type)
 {
 	RespawnWaitingQueue.Enqueue(Type);
-	GetWorldTimerManager().SetTimer(EnemyRespawnTimer, this, &AEnemySpawner::EnemyRespawn, 5);
 }
 
 void AEnemySpawner::EnemyRespawn()
@@ -182,9 +181,9 @@ void AEnemySpawner::EnemyRespawn()
 
 	FVector SpawnLocation;
 	const bool bIsSafeLocation = GetSpawnLocation(SpawnLocation);
+	ARPGBaseEnemyCharacter* Enemy = (*EnemyPoolerMap.Find(Index))->GetPooledEnemy();
 	if (bIsSafeLocation)
 	{
-		ARPGBaseEnemyCharacter* Enemy = (*EnemyPoolerMap.Find(Index))->GetPooledEnemy();
 		if (Enemy)
 		{
 			Enemy->SetActorRotation(FRotator(0, 180, 0));
@@ -194,7 +193,7 @@ void AEnemySpawner::EnemyRespawn()
 	else
 	{
 		RespawnWaitingQueue.Enqueue(TypeToRespawn);
-		GetWorldTimerManager().SetTimer(EnemyRespawnTimer, this, &AEnemySpawner::EnemyRespawn, 5);
+		if (Enemy) Enemy->RespawnDelay();
 	}
 }
 
@@ -300,5 +299,5 @@ void AEnemySpawner::CalculateFlowVector(ACharacter* TargetCharacter)
 	}
 
 	double end = FPlatformTime::Seconds();
-	PLOG(TEXT("time : %f"), end - start);
+	//PLOG(TEXT("time : %f"), end - start);
 }
