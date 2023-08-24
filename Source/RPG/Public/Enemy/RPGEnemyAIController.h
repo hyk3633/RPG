@@ -24,6 +24,13 @@ public:
 
 	ARPGEnemyAIController();
 
+	static const FName IsDead;
+	static const FName IsFalldown;
+	static const FName IsRestrained;
+	static const FName IsSuckedIn;
+	static const FName TargetPlayer;
+	static const FName IsStunned;
+
 protected:
 
 	virtual void PostInitializeComponents() override;

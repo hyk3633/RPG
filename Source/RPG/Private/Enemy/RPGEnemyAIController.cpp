@@ -1,5 +1,4 @@
 
-
 #include "Enemy/RPGEnemyAIController.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
@@ -8,6 +7,13 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "EngineUtils.h"
+
+const FName ARPGEnemyAIController::IsDead(TEXT("IsDead"));
+const FName ARPGEnemyAIController::IsFalldown(TEXT("IsFalldown"));
+const FName ARPGEnemyAIController::IsRestrained(TEXT("IsRestrained"));
+const FName ARPGEnemyAIController::IsSuckedIn(TEXT("IsSuckedIn"));
+const FName ARPGEnemyAIController::TargetPlayer(TEXT("Target"));
+const FName ARPGEnemyAIController::IsStunned(TEXT("IsStunned"));
 
 ARPGEnemyAIController::ARPGEnemyAIController()
 {
@@ -44,7 +50,7 @@ void ARPGEnemyAIController::OnPossess(APawn* InPawn)
 
 	if (BBComp)
 	{
-		BBComp->SetValueAsBool(FName("IsDead"), true);
+		BBComp->SetValueAsBool(IsDead, true);
 	}
 }
 
@@ -81,16 +87,15 @@ void ARPGEnemyAIController::SetTarget(APawn* TargetToSet)
 {
 	if (BBComp)
 	{
-		BBComp->SetValueAsObject(FName("Target"), TargetToSet);
+		BBComp->SetValueAsObject(TargetPlayer, TargetToSet);
 	}
-	SetFocus(TargetToSet);
 }
 
 APawn* ARPGEnemyAIController::GetTarget() const
 {
 	if (BBComp)
 	{
-		return Cast<APawn>(BBComp->GetValueAsObject(FName("Target")));
+		return Cast<APawn>(BBComp->GetValueAsObject(TargetPlayer));
 	}
 	return nullptr;
 }
@@ -99,7 +104,7 @@ void ARPGEnemyAIController::SetIsFalldown(const bool bIsFalldown)
 {
 	if (BBComp)
 	{
-		BBComp->SetValueAsBool(FName("IsFalldown"), bIsFalldown);
+		BBComp->SetValueAsBool(IsFalldown, bIsFalldown);
 	}
 }
 
@@ -107,7 +112,7 @@ void ARPGEnemyAIController::SetIsRestrained(const bool bIsRestrained)
 {
 	if (BBComp)
 	{
-		BBComp->SetValueAsBool(FName("IsRestrained"), bIsRestrained);
+		BBComp->SetValueAsBool(IsRestrained, bIsRestrained);
 	}
 }
 
@@ -115,7 +120,7 @@ void ARPGEnemyAIController::SetSuckedIn(const bool bIsSuckedIn)
 {
 	if (BBComp)
 	{
-		BBComp->SetValueAsBool(FName("IsSuckedIn"), bIsSuckedIn);
+		BBComp->SetValueAsBool(IsSuckedIn, bIsSuckedIn);
 	}
 }
 
@@ -123,7 +128,7 @@ void ARPGEnemyAIController::SetIsStunned(const bool bIsStunned)
 {
 	if (BBComp)
 	{
-		BBComp->SetValueAsBool(FName("IsStunned"), bIsStunned);
+		BBComp->SetValueAsBool(IsStunned, bIsStunned);
 	}
 }
 
@@ -131,7 +136,7 @@ bool ARPGEnemyAIController::GetSuckedIn() const
 {
 	if (BBComp)
 	{
-		return BBComp->GetValueAsBool(FName("IsSuckedIn"));
+		return BBComp->GetValueAsBool(IsSuckedIn);
 	}
 	else return false;
 }
@@ -140,7 +145,7 @@ void ARPGEnemyAIController::CharacterDead()
 {
 	if (BBComp)
 	{
-		BBComp->SetValueAsBool(FName("IsDead"), true);
+		BBComp->SetValueAsBool(IsDead, true);
 	}
 }
 
@@ -148,10 +153,10 @@ void ARPGEnemyAIController::CharacterActivate()
 {
 	if (BBComp)
 	{
-		BBComp->SetValueAsBool(FName("IsDead"), false);
-		BBComp->SetValueAsBool(FName("IsRestrained"), false);
-		BBComp->SetValueAsBool(FName("IsFalldown"), false);
-		BBComp->SetValueAsObject(FName("Target"), nullptr);
+		BBComp->SetValueAsBool(IsDead, false);
+		BBComp->SetValueAsBool(IsRestrained, false);
+		BBComp->SetValueAsBool(IsFalldown, false);
+		BBComp->SetValueAsObject(TargetPlayer, nullptr);
 	}
 }
 

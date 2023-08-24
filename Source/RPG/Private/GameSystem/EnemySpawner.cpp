@@ -83,7 +83,6 @@ void AEnemySpawner::SpawnEnemies()
 			else ELOG(TEXT("no place to respawn"));
 		}
 	}
-
 }
 
 bool AEnemySpawner::GetSpawnLocation(FVector& SpawnLocation)
@@ -110,11 +109,8 @@ bool AEnemySpawner::GetSpawnLocation(FVector& SpawnLocation)
 			Hit,
 			true
 		);
+
 		if (!Hit.bBlockingHit) return true;
-		else
-		{
-			PLOG(TEXT("%s"), *Hit.GetActor()->GetName());
-		}
 	}
 	return false;
 }

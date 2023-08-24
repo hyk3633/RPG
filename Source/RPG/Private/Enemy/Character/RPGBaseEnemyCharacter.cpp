@@ -158,7 +158,7 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 		MyAnimInst->bIsInAir = GetMovementComponent()->IsFalling();
 	}
 
-	if (HasAuthority() && bUpdateMovement) UpdateMovement();
+	if (HasAuthority() && bUpdateMovement && bIsActivated) UpdateMovement();
 }
 
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
@@ -226,10 +226,12 @@ void ARPGBaseEnemyCharacter::HealthDecrease(const int32& Damage)
 	{
 		DOnDeath.Broadcast();
 		DOnDeactivate.Broadcast(EnemyType);
+		DMoveEnd.Broadcast();
 		DisableSuckedInMulticast();
 		SetCollisionDeactivate();
-		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->SpawnItems(GetActorLocation());
 		bIsActivated = false;
+		bUpdateMovement = false;
+		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->SpawnItems(GetActorLocation());
 		RespawnDelay();
 	}
 }
