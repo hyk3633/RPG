@@ -41,11 +41,6 @@ protected:
 
 public:
 
-	UFUNCTION(BlueprintCallable, Category = Behavior)
-	void FindClosestPlayer();
-
-	void SetTarget(APawn* TargetToSet);
-
 	UFUNCTION(BlueprintCallable)
 	APawn* GetTarget() const;
 

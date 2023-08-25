@@ -31,11 +31,18 @@ public:
 
 	void SpawnItems(const FVector& Location);
 
+	void CreatePool(const int32 Size);
+
 private:
 
 	FVector& GetRandomVector(FVector Vector);
 
 	void ItemInitializeBeforeSpawn(const EItemType ItemType, const FVector& Location);
+
+	ARPGItem* GetPooledItem();
+
+	UFUNCTION()
+	void AddDeactivatedNum();
 
 	void ArmourStatRandomInitialize(FItemInfo& Info);
 
@@ -51,4 +58,12 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Item Spawner")
 	UDataTable* ItemDataTable;
 
+	UPROPERTY()
+	TArray<ARPGItem*> ItemPool;
+
+	int32 PoolSize;
+
+	int32 ActivatedNum;
+
+	int32 DeactivatedNum;
 };

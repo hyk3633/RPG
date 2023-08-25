@@ -55,21 +55,15 @@ void ARPGBaseProjectile::SetProjectileAssets(const FProjectileAssets& NewAssets)
 	ProjAssets = NewAssets;
 }
 
-void ARPGBaseProjectile::SetProjectileDamage(const float NewDamage)
+void ARPGBaseProjectile::OnRep_ProjAssets()
 {
-	Damage = NewDamage;
-}
-
-void ARPGBaseProjectile::BeginPlay()
-{
-	Super::BeginPlay();
-
-	if (HasAuthority())
+	if (ProjAssets.BodyMesh)
 	{
-		ProjectileMovementComponent->OnProjectileStop.AddDynamic(this, &ARPGBaseProjectile::OnImpact);
+		BodyMesh->SetStaticMesh(ProjAssets.BodyMesh);
+		BodyMesh->SetRelativeRotation(FRotator(0, -90, 0));
+		BodyMesh->SetRelativeScale3D(FVector(2, 1, 2));
 	}
-
-	if (GetLocalRole() == ENetRole::ROLE_SimulatedProxy && ProjAssets.BodyParticle)
+	if (ProjAssets.BodyParticle)
 	{
 		BodyParticleComp = UGameplayStatics::SpawnEmitterAttached
 		(
@@ -83,6 +77,21 @@ void ARPGBaseProjectile::BeginPlay()
 			EPSCPoolMethod::None,
 			false
 		);
+	}
+}
+
+void ARPGBaseProjectile::SetProjectileDamage(const float NewDamage)
+{
+	Damage = NewDamage;
+}
+
+void ARPGBaseProjectile::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (HasAuthority())
+	{
+		ProjectileMovementComponent->OnProjectileStop.AddDynamic(this, &ARPGBaseProjectile::OnImpact);
 	}
 }
 

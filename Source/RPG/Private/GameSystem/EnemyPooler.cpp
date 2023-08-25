@@ -23,10 +23,10 @@ void AEnemyPooler::CreatePool(const int32 Size, const EEnemyType Type)
 
 	EnemyFormComponent->InitEnemyFormComponent(Type);
 
-	for (int i = 0; i < PoolSize; i++)
+	for (int8 Idx = 0; Idx < PoolSize; Idx++)
 	{
-		EnemyArr[i] = EnemyFormComponent->CreateNewEnemy();
-		EnemyArr[i]->DOnDeath.AddUFunction(this, FName("AddDeactivatedNum"));
+		EnemyArr[Idx] = EnemyFormComponent->CreateNewEnemy();
+		EnemyArr[Idx]->DOnDeath.AddUFunction(this, FName("AddDeactivatedNum"));
 	}
 }
 

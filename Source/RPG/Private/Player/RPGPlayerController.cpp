@@ -241,7 +241,7 @@ void ARPGPlayerController::PickupItem(ARPGItem* Item)
 		break;
 	}
 
-	Item->DestroyFromAllClients();
+	Item->DeactivateItemFromAllClients();
 }
 
 void ARPGPlayerController::PickupCoinsClient_Implementation(const int32 CoinAmount)

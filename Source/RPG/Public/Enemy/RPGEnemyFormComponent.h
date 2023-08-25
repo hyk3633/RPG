@@ -51,13 +51,13 @@ public:
 
 	void MeleeAttack(ARPGBaseEnemyCharacter* Attacker);
 
-	void RangedAttack(ARPGBaseEnemyCharacter* Attacker, ACharacter* HomingTarget = nullptr);
+	void RangedAttack(ARPGBaseEnemyCharacter* Attacker, APawn* HomingTarget = nullptr);
 
 protected:
 
-	void GetSocketLocationAndSpawn(ARPGBaseEnemyCharacter* Attacker, ACharacter* HomingTarget = nullptr);
+	void GetSocketLocationAndSpawn(ARPGBaseEnemyCharacter* Attacker, APawn* HomingTarget = nullptr);
 
-	void SpawnProjectile(ARPGBaseEnemyCharacter* Attacker, const FVector& SpawnLocation, const FRotator& SpawnRotation, ACharacter* HomingTarget = nullptr);
+	void SpawnProjectile(ARPGBaseEnemyCharacter* Attacker, const FVector& SpawnLocation, const FRotator& SpawnRotation, APawn* HomingTarget = nullptr);
 
 public:
 

@@ -28,6 +28,8 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	virtual void InitAnimInstance() override;
+
 public:
 
 	virtual void BTTask_Attack() override;
@@ -37,7 +39,8 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayRangedAttackEffectMulticast();
 
-	virtual void Attack() override;
+	UFUNCTION()
+	void RangedAttack();
 
 private:
 

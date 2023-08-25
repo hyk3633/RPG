@@ -21,7 +21,14 @@ bool UBTDecorator_CanAttack::CalculateRawConditionValue(UBehaviorTreeComponent& 
 	ARPGBasePlayerCharacter* Player = Cast<ARPGBasePlayerCharacter>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(ARPGEnemyAIController::TargetPlayer));
 	if (Player == nullptr) return false;
 
-	if (Enemy->GetDistanceTo(Player) <= Enemy->GetAttackDistance()) return true;
+	if (Enemy->GetAttackType() == EEnemyAttackType::EEAT_Hybrid)
+	{
+		if (Enemy->GetDistanceTo(Player) <= Enemy->GetDetectDistance()) return true;
+	}
+	else
+	{
+		if (Enemy->GetDistanceTo(Player) <= Enemy->GetAttackDistance()) return true;
+	}
 
 	return false;
 }

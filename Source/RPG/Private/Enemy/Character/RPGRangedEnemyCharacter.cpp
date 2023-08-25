@@ -24,11 +24,19 @@ void ARPGRangedEnemyCharacter::PostInitializeComponents()
 void ARPGRangedEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+}
+
+void ARPGRangedEnemyCharacter::InitAnimInstance()
+{
+	Super::InitAnimInstance();
+
+	MyAnimInst->DOnRangedAttack.AddUFunction(this, FName("RangedAttack"));
 }
 
 void ARPGRangedEnemyCharacter::BTTask_Attack()
 {
-	if (AttackType == EEnemyAttackType::EEAT_Hybrid && GetDistanceTo(MyController->GetTarget()) < 100.f)
+	if (AttackType == EEnemyAttackType::EEAT_Hybrid && GetDistanceTo(MyController->GetTarget()) <= GetAttackDistance())
 	{
 		PlayMeleeAttackEffectMulticast();
 	}
@@ -44,17 +52,10 @@ void ARPGRangedEnemyCharacter::PlayRangedAttackEffectMulticast_Implementation()
 	MyAnimInst->PlayRangedAttackMontage();
 }
 
-void ARPGRangedEnemyCharacter::Attack()
+void ARPGRangedEnemyCharacter::RangedAttack()
 {
-	if (EnemyForm && HasAuthority())
+	if (HasAuthority())
 	{
-		if (AttackType == EEnemyAttackType::EEAT_Hybrid)
-		{
-			EnemyForm->MeleeAttack(this);
-		}
-		else
-		{
-			EnemyForm->RangedAttack(this);
-		}
+		EnemyForm->RangedAttack(this, GetTarget());
 	}
 }

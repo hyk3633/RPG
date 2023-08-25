@@ -25,14 +25,14 @@ void UProjectilePoolerComponent::CreatePool(TSubclassOf<ARPGBaseProjectile> Proj
 	{
 		UWorld* World = GetWorld();
 		if (World == nullptr) return;
-		for (int i = 0; i < PoolSize; i++)
+		for (int16 Idx = 0; Idx < PoolSize; Idx++)
 		{
 			ARPGBaseProjectile* Projectile = World->SpawnActorDeferred<ARPGBaseProjectile>(ProjectileClass, FTransform(FRotator().ZeroRotator, FVector().ZeroVector));
 			Projectile->SetProjectileInfo(NewProjectileInfo);
 			Projectile->SetProjectileAssets(NewProjectileAssets);
 			Projectile->DDeactivateProjectile.BindUObject(this, &UProjectilePoolerComponent::AddDeactivatedNum);
 			Projectile->FinishSpawning(FTransform(FRotator().ZeroRotator, FVector().ZeroVector));
-			ProjectileArr[i] = Projectile;
+			ProjectileArr[Idx] = Projectile;
 		}
 	}
 }

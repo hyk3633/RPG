@@ -35,6 +35,13 @@ public:
 
 	void SetProjectileAssets(const FProjectileAssets& NewAssets);
 
+protected:
+
+	UFUNCTION()
+	void OnRep_ProjAssets();
+
+public:
+
 	void SetProjectileDamage(const float NewDamage);
 
 	void ActivateProjectileToAllClients();
@@ -100,7 +107,7 @@ private:
 
 	FProjectileInfo ProjInfo;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_ProjAssets)
 	FProjectileAssets ProjAssets;
 
 	int32 Damage;

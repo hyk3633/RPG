@@ -105,26 +105,29 @@ void URPGEnemyFormComponent::MeleeAttack(ARPGBaseEnemyCharacter* Attacker)
 	}
 }
 
-void URPGEnemyFormComponent::RangedAttack(ARPGBaseEnemyCharacter* Attacker, ACharacter* HomingTarget)
+void URPGEnemyFormComponent::RangedAttack(ARPGBaseEnemyCharacter* Attacker, APawn* HomingTarget)
 {
 	if (EnemyAssets.ProjectileClass == nullptr) return;
 
 	GetSocketLocationAndSpawn(Attacker, HomingTarget);
 }
 
-void URPGEnemyFormComponent::GetSocketLocationAndSpawn(ARPGBaseEnemyCharacter* Attacker, ACharacter* HomingTarget)
+void URPGEnemyFormComponent::GetSocketLocationAndSpawn(ARPGBaseEnemyCharacter* Attacker, APawn* HomingTarget)
 {
 	const FVector TraceStart = (bIsWeaponed ? Attacker->WeaponMesh : Attacker->GetMesh())->GetSocketTransform(FName("Muzzle_Socket")).GetLocation();
 	FVector TraceEnd = TraceStart;
 
-	if (Attacker->GetTarget())
+	DrawDebugPoint(GetWorld(), TraceStart, 20, FColor::Blue, true);
+
+	if (IsValid(HomingTarget))
 	{
-		TraceEnd += (Attacker->GetTarget()->GetActorLocation() - TraceStart);
+		TraceEnd += (HomingTarget->GetActorLocation() - TraceStart);
 	}
 	else return;
 
 	FHitResult HitResult;
 	GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_EnemyAttack);
+	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Blue, true);
 	if (HitResult.bBlockingHit)
 	{
 		FRotator FireRotation = (HitResult.ImpactPoint - TraceStart).Rotation();
@@ -134,7 +137,7 @@ void URPGEnemyFormComponent::GetSocketLocationAndSpawn(ARPGBaseEnemyCharacter* A
 	}
 }
 
-void URPGEnemyFormComponent::SpawnProjectile(ARPGBaseEnemyCharacter* Attacker, const FVector& SpawnLocation, const FRotator& SpawnRotation, ACharacter* HomingTarget)
+void URPGEnemyFormComponent::SpawnProjectile(ARPGBaseEnemyCharacter* Attacker, const FVector& SpawnLocation, const FRotator& SpawnRotation, APawn* HomingTarget)
 {
 	if (ProjectilePooler == nullptr) return;
 	
@@ -143,7 +146,7 @@ void URPGEnemyFormComponent::SpawnProjectile(ARPGBaseEnemyCharacter* Attacker, c
 	{
 		Projectile->SetActorLocation(SpawnLocation);
 		Projectile->SetActorRotation(SpawnRotation);
-		Projectile->SetHomingTarget(HomingTarget);
+		Projectile->SetHomingTarget(Cast<ACharacter>(HomingTarget));
 		Projectile->ActivateProjectileToAllClients();
 	}
 }

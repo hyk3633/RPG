@@ -14,6 +14,7 @@ void UItemSpawnManagerComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	CreatePool(5);
 }
 
 void UItemSpawnManagerComponent::DropItem(const FItemInfo& Info, const FVector& Location)
@@ -21,12 +22,16 @@ void UItemSpawnManagerComponent::DropItem(const FItemInfo& Info, const FVector& 
 	const int32 RowNumber = StaticCast<int32>(Info.ItemType);
 	FItemOptionTableRow* ItemTableRow = ItemDataTable->FindRow<FItemOptionTableRow>(FName(*(FString::FormatAsNumber(RowNumber))), FString(""));
 
-	ARPGItem* SpawnedItem = GetWorld()->SpawnActorDeferred<ARPGItem>(ItemClass, FTransform(FRotator::ZeroRotator, Location));
-	if (SpawnedItem)
+	ARPGItem* ActivatedItem = GetPooledItem();
+	if (ActivatedItem)
 	{
-		SpawnedItem->SetItemMesh(ItemTableRow->ItemMesh);
-		SpawnedItem->SetItemInfo(Info);
-		SpawnedItem->FinishSpawning(FTransform(FRotator::ZeroRotator, Location));
+		ActivatedItem->SetItemMesh(ItemTableRow->ItemMesh);
+		ActivatedItem->SetItemInfo(Info);
+		ActivatedItem->ActivateItemFromAllClients(FTransform(FRotator::ZeroRotator, Location));
+	}
+	else
+	{
+		// 풀 늘리기
 	}
 }
 
@@ -63,6 +68,22 @@ void UItemSpawnManagerComponent::SpawnItems(const FVector& Location)
 		{
 			ItemInitializeBeforeSpawn(EItemType::EIT_Accessories, GetRandomVector(Location));
 		}
+	}
+}
+
+void UItemSpawnManagerComponent::CreatePool(const int32 Size)
+{
+	PoolSize = ActivatedNum = DeactivatedNum = Size;
+	ItemPool.Init(nullptr, Size);
+
+	UWorld* World = GetWorld();
+	if (World == nullptr) return;
+	for (int16 Idx = 0; Idx < PoolSize; Idx++)
+	{
+		ARPGItem* Item = World->SpawnActorDeferred<ARPGItem>(ARPGItem::StaticClass(), FTransform(FRotator().ZeroRotator, FVector().ZeroVector));
+		Item->DDeactivateItem.AddUFunction(this, FName("AddDeactivatedNum"));
+		Item->FinishSpawning(FTransform(FRotator().ZeroRotator, FVector().ZeroVector));
+		ItemPool[Idx] = Item;
 	}
 }
 
@@ -107,13 +128,33 @@ void UItemSpawnManagerComponent::ItemInitializeBeforeSpawn(const EItemType ItemT
 	}
 
 	// 아이템 스폰
-	ARPGItem* SpawnedItem = GetWorld()->SpawnActorDeferred<ARPGItem>(ItemClass, FTransform(FRotator::ZeroRotator, Location));
-	if (SpawnedItem)
+	ARPGItem* ActivatedItem = GetPooledItem();
+	if (ActivatedItem)
 	{
-		SpawnedItem->SetItemMesh(ItemTableRow->ItemMesh);
-		SpawnedItem->SetItemInfo(NewItemInfo);
-		SpawnedItem->FinishSpawning(FTransform(FRotator::ZeroRotator, Location));
+		ActivatedItem->SetItemMesh(ItemTableRow->ItemMesh);
+		ActivatedItem->SetItemInfo(NewItemInfo);
+		ActivatedItem->ActivateItemFromAllClients(FTransform(FRotator::ZeroRotator, Location));
 	}
+	else
+	{
+		// 풀 늘리기
+	}
+}
+
+ARPGItem* UItemSpawnManagerComponent::GetPooledItem()
+{
+	if (DeactivatedNum == 0) return nullptr;
+	if (ActivatedNum == 0) ActivatedNum = PoolSize;
+
+	DeactivatedNum--;
+	ActivatedNum--;
+
+	return ItemPool[ActivatedNum];
+}
+
+void UItemSpawnManagerComponent::AddDeactivatedNum()
+{
+	DeactivatedNum++;
 }
 
 void UItemSpawnManagerComponent::ArmourStatRandomInitialize(FItemInfo& Info)
@@ -149,22 +190,22 @@ void UItemSpawnManagerComponent::ArmourStatRandomInitialize(FItemInfo& Info)
 	// DefenseivePower
 	if (StatBit & (1 << 0))
 	{
-		Info.ItemStatArr[0] = (FMath::RandRange(1, 10) * 0.5f);
+		Info.ItemStatArr[0] = (FMath::RandRange(MIN_DEFENSIVE + 1, MAX_DEFENSIVE * 2) * 0.5f);
 	}
 	// Dexterity
 	if (StatBit & (1 << 1))
 	{
-		Info.ItemStatArr[1] = (FMath::RandRange(11, 30) / 10.f);
+		Info.ItemStatArr[1] = (FMath::RandRange(MIN_DEXTERITY + 10, MAX_DEXTERITY * 10) / 10.f);
 	}
 	// MaxHP
 	if (StatBit & (1 << 2))
 	{
-		Info.ItemStatArr[2] = (FMath::RandRange(3, 20) * 10);
+		Info.ItemStatArr[2] = (FMath::RandRange(MIN_MAXHP + 1, MAX_MAXHP / 10) * 10);
 	}
 	// MaxMP
 	if (StatBit & (1 << 3))
 	{
-		Info.ItemStatArr[3] = (FMath::RandRange(10, 30) * 10);
+		Info.ItemStatArr[3] = (FMath::RandRange(MIN_MAXMP + 5, MAX_MAXMP / 10) * 10);
 	}
 }
 
@@ -209,17 +250,17 @@ void UItemSpawnManagerComponent::AccessoriesStatRandomInitialize(FItemInfo& Info
 	// StrikingPower
 	if (StatBit & (1 << 0))
 	{
-		Info.ItemStatArr[0] = (FMath::RandRange(1, 10) * 0.5f);
+		Info.ItemStatArr[0] = (FMath::RandRange(MIN_STRIKINGPOWER + 1, MAX_STRIKINGPOWER * 2) * 0.5f);
 	}
 	// SkillPower
 	if (StatBit & (1 << 1))
 	{
-		Info.ItemStatArr[1] = (FMath::RandRange(1, 10) * 0.5f);
+		Info.ItemStatArr[1] = (FMath::RandRange(MIN_SKILLPOWER + 1, MAX_SKILLPOWER * 2) * 0.5f);
 	}
 	// AttackSpeed
 	if (StatBit & (1 << 2))
 	{
-		Info.ItemStatArr[2] = (FMath::RandRange(11, 20) / 10.f);
+		Info.ItemStatArr[2] = (FMath::RandRange(MIN_ATTACKSPEED + 10, MAX_ATTACKSPEED * 10) / 10.f);
 	}
 }
 

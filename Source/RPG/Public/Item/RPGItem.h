@@ -8,6 +8,8 @@
 #include "Containers/Union.h"
 #include "RPGItem.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FDelegateItemDeactivate)
+
 class UWidgetComponent;
 
 UCLASS()
@@ -21,11 +23,31 @@ public:
 
 	virtual void PostInitializeComponents() override;
 
+	FDelegateItemDeactivate DDeactivateItem;
+
 protected:
 
 	virtual void BeginPlay() override;
 
 public:	
+
+	void DeactivateItemFromAllClients();
+
+	void ActivateItemFromAllClients(const FTransform& SpawnTransform);
+
+protected:
+
+	UFUNCTION(NetMulticast, Reliable)
+	void DeactivateItemMulticast();
+
+	void DeactivateItem();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void ActivateItemMulticast(const FTransform& SpawnTransform);
+
+	void ActivateItem(const FTransform& SpawnTransform);
+
+public:
 
 	virtual void Tick(float DeltaTime) override;
 
@@ -48,12 +70,7 @@ public:
 
     void SetRenderCustomDepthOff();
 
-	void DestroyFromAllClients();
-
 private:
-
-	UFUNCTION(NetMulticast, Reliable)
-	void DestroyMulticast();
 
     UFUNCTION()
     void OnRep_ItemInfo();

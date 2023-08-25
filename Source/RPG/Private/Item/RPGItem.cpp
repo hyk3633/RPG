@@ -10,24 +10,22 @@ ARPGItem::ARPGItem()
 	PrimaryActorTick.bCanEverTick = false;
 
 	bReplicates = true;
+	SetReplicateMovement(true);
 
 	SceneComp = CreateDefaultSubobject<USceneComponent>(TEXT("Root Component"));
 	SetRootComponent(SceneComp);
 
 	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Item Mesh"));
+	ItemMesh->SetVisibility(false);
 	ItemMesh->SetupAttachment(SceneComp);
-	ItemMesh->SetEnableGravity(true);
-	ItemMesh->SetSimulatePhysics(true);
+	ItemMesh->SetEnableGravity(false);
+	ItemMesh->SetSimulatePhysics(false);
 	ItemMesh->SetCollisionObjectType(ECC_ItemMesh);
-	ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	ItemMesh->SetCollisionResponseToChannel(ECC_PlayerBody, ECollisionResponse::ECR_Ignore);
-	ItemMesh->SetCollisionResponseToChannel(ECC_EnemyBody, ECollisionResponse::ECR_Ignore);
-	ItemMesh->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
-	ItemMesh->SetCollisionResponseToChannel(ECC_EnemyProjectile, ECollisionResponse::ECR_Ignore);
-	ItemMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
-	ItemMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_PhysicsBody, ECollisionResponse::ECR_Ignore);
-	ItemMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-	ItemMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Ignore);
+	ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+	ItemMesh->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
+	ItemMesh->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	ItemMesh->SetCollisionResponseToChannel(ECC_ItemMesh, ECollisionResponse::ECR_Block);
 	ItemMesh->SetCollisionResponseToChannel(ECC_ItemTrace, ECollisionResponse::ECR_Block);
 
 	NameTagWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameTag Widget"));
@@ -51,6 +49,45 @@ void ARPGItem::BeginPlay()
 	
 }
 
+void ARPGItem::DeactivateItemFromAllClients()
+{
+	DeactivateItemMulticast();
+}
+
+void ARPGItem::DeactivateItemMulticast_Implementation()
+{
+	DeactivateItem();
+}
+
+void ARPGItem::DeactivateItem()
+{
+	ItemMesh->SetVisibility(false);
+	ItemMesh->SetEnableGravity(false);
+	ItemMesh->SetSimulatePhysics(false);
+	ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	NameTagWidget->SetVisibility(false);
+	if (HasAuthority()) DDeactivateItem.Broadcast();
+}
+
+void ARPGItem::ActivateItemFromAllClients(const FTransform& SpawnTransform)
+{
+	ActivateItemMulticast(SpawnTransform);
+}
+
+void ARPGItem::ActivateItemMulticast_Implementation(const FTransform& SpawnTransform)
+{
+	ActivateItem(SpawnTransform);
+}
+
+void ARPGItem::ActivateItem(const FTransform& SpawnTransform)
+{
+	SetActorTransform(SpawnTransform);
+	ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	ItemMesh->SetSimulatePhysics(true);
+	ItemMesh->SetEnableGravity(true);
+	ItemMesh->SetVisibility(true);
+}
+
 void ARPGItem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -70,16 +107,6 @@ void ARPGItem::SetItemMesh(UStaticMesh* NewMesh)
 void ARPGItem::SetItemMeshMulticast_Implementation(UStaticMesh* NewMesh)
 {
 	ItemMesh->SetStaticMesh(NewMesh);
-}
-
-void ARPGItem::DestroyFromAllClients()
-{
-	DestroyMulticast();
-}
-
-void ARPGItem::DestroyMulticast_Implementation()
-{
-	Destroy();
 }
 
 void ARPGItem::SetItemNameTagVisibility(const bool bVisible)

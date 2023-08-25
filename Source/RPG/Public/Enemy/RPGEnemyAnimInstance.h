@@ -6,6 +6,7 @@
 #include "RPGEnemyAnimInstance.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnAttackDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnRangedAttackDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnAttackEndedDelegate);
 
 /**
@@ -35,6 +36,8 @@ public:
 
 	FOnAttackDelegate DOnAttack;
 
+	FOnRangedAttackDelegate DOnRangedAttack;
+
 	FOnAttackEndedDelegate DOnAttackEnded;
 
 	friend ARPGBaseEnemyCharacter;
@@ -43,6 +46,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void AnimNotify_Attack();
+
+	UFUNCTION(BlueprintCallable)
+	void AnimNotify_RangedAttack();
 
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);

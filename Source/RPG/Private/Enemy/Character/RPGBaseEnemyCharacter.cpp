@@ -367,11 +367,6 @@ bool ARPGBaseEnemyCharacter::GetSuckedIn() const
 	return MyController->GetSuckedIn();
 }
 
-void ARPGBaseEnemyCharacter::SetTarget(APawn* NewTarget)
-{
-	MyController->SetTarget(NewTarget);
-}
-
 APawn* ARPGBaseEnemyCharacter::GetTarget() const
 {
 	return MyController->GetTarget();

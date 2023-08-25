@@ -147,10 +147,10 @@ public:
 	FORCEINLINE bool GetIsActivated() const { return bIsActivated; }
 	FORCEINLINE int32 GetDetectDistance() const { return DetectDistance; }
 	FORCEINLINE int32 GetAttackDistance() const { return AttackDistance; }
+	FORCEINLINE EEnemyAttackType GetAttackType() const { return AttackType;	}
 
 	bool GetSuckedIn() const;
 
-	void SetTarget(APawn* NewTarget);
 	APawn* GetTarget() const;
 
 	bool GetIsInAir() const;

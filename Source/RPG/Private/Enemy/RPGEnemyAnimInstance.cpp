@@ -47,6 +47,11 @@ void URPGEnemyAnimInstance::AnimNotify_Attack()
 	DOnAttack.Broadcast();
 }
 
+void URPGEnemyAnimInstance::AnimNotify_RangedAttack()
+{
+	DOnRangedAttack.Broadcast();
+}
+
 void URPGEnemyAnimInstance::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage == MeleeAttackMontage || Montage == RangedAttackMontage)

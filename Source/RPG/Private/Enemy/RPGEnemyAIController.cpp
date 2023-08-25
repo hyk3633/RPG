@@ -59,38 +59,6 @@ void ARPGEnemyAIController::OnUnPossess()
 
 }
 
-void ARPGEnemyAIController::FindClosestPlayer()
-{
-	float MinDistance = 3000.f;
-	ACharacter* ClosestTarget = nullptr;
-
-	if (MyCharacter)
-	{
-		TArray<ACharacter*> Players = MyCharacter->GetSpawner()->GetPlayersInArea();
-		for (ACharacter* Target : Players)
-		{
-			if (MyCharacter->GetDistanceTo(Target) <= MinDistance)
-			{
-				MinDistance = MyCharacter->GetDistanceTo(Target);
-				ClosestTarget = Target;
-			}
-		}
-	}
-
-	if (ClosestTarget)
-	{
-		SetTarget(ClosestTarget);
-	}
-}
-
-void ARPGEnemyAIController::SetTarget(APawn* TargetToSet)
-{
-	if (BBComp)
-	{
-		BBComp->SetValueAsObject(TargetPlayer, TargetToSet);
-	}
-}
-
 APawn* ARPGEnemyAIController::GetTarget() const
 {
 	if (BBComp)
