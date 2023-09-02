@@ -17,6 +17,7 @@
 #include "Components/ProgressBar.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
@@ -158,7 +159,10 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 		MyAnimInst->bIsInAir = GetMovementComponent()->IsFalling();
 	}
 
-	if (HasAuthority() && bUpdateMovement && bIsActivated) UpdateMovement();
+	if (HasAuthority() && bUpdateMovement && bIsActivated)
+	{
+		UpdateMovement();
+	}
 }
 
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
@@ -306,6 +310,7 @@ void ARPGBaseEnemyCharacter::BTTask_Move()
 	if (HasAuthority() && GetTarget())
 	{
 		bUpdateMovement = true;
+		GetWorldTimerManager().SetTimer(CheckOthersTimer, this, &ARPGBaseEnemyCharacter::CheckOthersInFrontOfMe, 0.1f, true);
 	}
 	else
 	{
@@ -315,15 +320,52 @@ void ARPGBaseEnemyCharacter::BTTask_Move()
 
 void ARPGBaseEnemyCharacter::UpdateMovement()
 {
-	if (GetDistanceTo(GetTarget()) <= AttackDistance)
+	if (ShouldIStopMovement())
 	{
 		bUpdateMovement = false;
+		GetWorldTimerManager().ClearTimer(CheckOthersTimer);
 		DMoveEnd.Broadcast();
 	}
 	else
 	{
 		FVector& Loc = MySpawner->GetFlowVector(Cast<ACharacter>(GetTarget()), this);
-		AddMovementInput(Loc * 20.f * GetWorld()->GetDeltaSeconds());
+		AddMovementInput(Loc * DefaultSpeed * SpeedAdjustmentValue * GetWorld()->GetDeltaSeconds());
+	}
+}
+
+bool ARPGBaseEnemyCharacter::ShouldIStopMovement()
+{
+	return GetDistanceTo(GetTarget()) <= AttackDistance;
+}
+
+void ARPGBaseEnemyCharacter::CheckOthersInFrontOfMe()
+{
+	FHitResult Hit;
+	FVector Loc = GetActorLocation();
+	Loc.Z = 60.f;
+	UKismetSystemLibrary::LineTraceSingle(
+		this,
+		Loc,
+		Loc + GetActorForwardVector() * 150,
+		UEngineTypes::ConvertToTraceType(ECC_PlayerAttack),
+		false,
+		TArray<AActor*>(),
+		EDrawDebugTrace::ForOneFrame,
+		Hit,
+		true
+	);
+	if (Hit.bBlockingHit)
+	{
+		ARPGBaseEnemyCharacter* OtherEnemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
+		if (OtherEnemy)
+		{
+			SpeedAdjustmentValue = OtherEnemy->GetSpeedAdjustmentValue() * 0.75f;
+			PLOG(TEXT("%s's speed value is %f"), *GetName(), SpeedAdjustmentValue);
+		}
+	}
+	else
+	{
+		SpeedAdjustmentValue = 1.f;
 	}
 }
 

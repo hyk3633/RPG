@@ -16,7 +16,7 @@ UBTService_FindClosestTarget::UBTService_FindClosestTarget()
 void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
 	Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
-	CF();
+
 	ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(OwnerComp.GetAIOwner()->GetPawn());
 	if (Enemy == nullptr) return;
 
@@ -34,8 +34,5 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 			}
 		}
 	}
-
 	OwnerComp.GetBlackboardComponent()->SetValueAsObject(ARPGEnemyAIController::TargetPlayer, ClosestTarget);
-
-	
 }

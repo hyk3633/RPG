@@ -30,6 +30,8 @@ public:
 	static const FName IsSuckedIn;
 	static const FName TargetPlayer;
 	static const FName IsStunned;
+	static const FName CanMeleeAttack;
+	static const FName CanRangedAttack;
 
 protected:
 

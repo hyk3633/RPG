@@ -8,7 +8,7 @@ UBTTask_SpecialAttack::UBTTask_SpecialAttack()
 {
 	bNotifyTick = true;
 
-	NodeName = TEXT("Attack");
+	NodeName = TEXT("Special Attack");
 
 	bIsAttacking = true;
 	bIsAborted = false;

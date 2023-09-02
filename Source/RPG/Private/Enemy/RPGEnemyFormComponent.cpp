@@ -85,10 +85,10 @@ void URPGEnemyFormComponent::InitEnemy(ARPGBaseEnemyCharacter* SpawnedEnemy)
 	SpawnedEnemy->MaxHealth = EnemyInfo.MaxHealth;
 	SpawnedEnemy->Health = EnemyInfo.MaxHealth;
 	SpawnedEnemy->DefensivePower = EnemyInfo.DefensivePower;
-	SpawnedEnemy->Exp = EnemyInfo.Exp;
 	SpawnedEnemy->AttackDistance = EnemyInfo.AttackDistance;
 	SpawnedEnemy->DetectDistance = EnemyInfo.DetectDistance;
 	SpawnedEnemy->EnemyType = EnemyType;
+	SpawnedEnemy->AttackType = EnemyAssets.AttackType;
 }
 
 void URPGEnemyFormComponent::MeleeAttack(ARPGBaseEnemyCharacter* Attacker)
@@ -123,7 +123,6 @@ void URPGEnemyFormComponent::GetSocketLocationAndSpawn(ARPGBaseEnemyCharacter* A
 	{
 		TraceEnd += (HomingTarget->GetActorLocation() - TraceStart);
 	}
-	else return;
 
 	FHitResult HitResult;
 	GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_EnemyAttack);

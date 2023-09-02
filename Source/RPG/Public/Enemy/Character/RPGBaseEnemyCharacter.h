@@ -117,6 +117,10 @@ protected:
 
 	void UpdateMovement();
 
+	virtual bool ShouldIStopMovement();
+
+	void CheckOthersInFrontOfMe();
+
 public:
 	
 	/** АјАн */
@@ -148,6 +152,7 @@ public:
 	FORCEINLINE int32 GetDetectDistance() const { return DetectDistance; }
 	FORCEINLINE int32 GetAttackDistance() const { return AttackDistance; }
 	FORCEINLINE EEnemyAttackType GetAttackType() const { return AttackType;	}
+	FORCEINLINE float GetSpeedAdjustmentValue() const { return SpeedAdjustmentValue; }
 
 	bool GetSuckedIn() const;
 
@@ -276,6 +281,10 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_bIsActivated)
 	bool bIsActivated = false;
 
+	float DefaultSpeed = 20.f;
+
+	float SpeedAdjustmentValue = 1.f;
+
 	FVector OriginLocation;
 
 	EEnemyType EnemyType;
@@ -288,5 +297,7 @@ private:
 	bool bUpdateMovement = false;
 
 	FTimerHandle RespawnTimer;
+
+	FTimerHandle CheckOthersTimer;
 
 };

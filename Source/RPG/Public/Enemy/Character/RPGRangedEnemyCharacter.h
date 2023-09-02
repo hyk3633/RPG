@@ -32,7 +32,9 @@ protected:
 
 public:
 
-	virtual void BTTask_Attack() override;
+	void BTTask_RangedAttack();
+
+	bool CheckCanFireToTarget();
 
 protected:
 
@@ -42,8 +44,9 @@ protected:
 	UFUNCTION()
 	void RangedAttack();
 
+	virtual bool ShouldIStopMovement() override;
+
 private:
 
-	
 
 };

@@ -3,6 +3,7 @@
 #include "AI/BTDecorator_CanAttack.h"
 #include "Enemy/RPGEnemyAIController.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
+#include "Enemy/Character/RPGRangedEnemyCharacter.h"
 #include "Player/Character/RPGBasePlayerCharacter.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
@@ -21,13 +22,24 @@ bool UBTDecorator_CanAttack::CalculateRawConditionValue(UBehaviorTreeComponent& 
 	ARPGBasePlayerCharacter* Player = Cast<ARPGBasePlayerCharacter>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(ARPGEnemyAIController::TargetPlayer));
 	if (Player == nullptr) return false;
 
-	if (Enemy->GetAttackType() == EEnemyAttackType::EEAT_Hybrid)
+	if (Enemy->GetAttackType() == EEnemyAttackType::EEAT_Melee)
 	{
-		if (Enemy->GetDistanceTo(Player) <= Enemy->GetDetectDistance()) return true;
+		if (Enemy->GetDistanceTo(Player) <= Enemy->GetAttackDistance()) return true;
 	}
 	else
 	{
-		if (Enemy->GetDistanceTo(Player) <= Enemy->GetAttackDistance()) return true;
+		ARPGRangedEnemyCharacter* RangedEnemy = Cast<ARPGRangedEnemyCharacter>(Enemy);
+		if (RangedEnemy->CheckCanFireToTarget())
+		{
+			if (Enemy->GetAttackType() == EEnemyAttackType::EEAT_Hybrid)
+			{
+				if (Enemy->GetDistanceTo(Player) <= Enemy->GetDetectDistance()) return true;
+			}
+			else
+			{
+				if (Enemy->GetDistanceTo(Player) <= Enemy->GetAttackDistance()) return true;
+			}
+		}
 	}
 
 	return false;

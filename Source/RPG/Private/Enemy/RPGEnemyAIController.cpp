@@ -14,6 +14,8 @@ const FName ARPGEnemyAIController::IsRestrained(TEXT("IsRestrained"));
 const FName ARPGEnemyAIController::IsSuckedIn(TEXT("IsSuckedIn"));
 const FName ARPGEnemyAIController::TargetPlayer(TEXT("Target"));
 const FName ARPGEnemyAIController::IsStunned(TEXT("IsStunned"));
+const FName ARPGEnemyAIController::CanMeleeAttack(TEXT("CanMeleeAttack"));
+const FName ARPGEnemyAIController::CanRangedAttack(TEXT("CanRangedAttack"));
 
 ARPGEnemyAIController::ARPGEnemyAIController()
 {

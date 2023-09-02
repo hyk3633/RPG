@@ -9,6 +9,7 @@ enum class EProjectileType : uint8
 	EPT_Sorcerer_Restriction,
 	EPT_Sorcerer_Meteorlite,
 	EPT_Boss_Homing,
+	EPT_Lich_Spell,
 
 	EPT_MAX
 
