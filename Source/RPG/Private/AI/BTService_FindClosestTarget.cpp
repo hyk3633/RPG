@@ -9,7 +9,7 @@
 UBTService_FindClosestTarget::UBTService_FindClosestTarget()
 {
 	NodeName = TEXT("Find closest target");
-	Interval = 1.f;
+	Interval = 5.f;
 	bNotifyOnSearch = true;
 }
 
@@ -21,7 +21,7 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 	if (Enemy == nullptr) return;
 
 	float MinDistance = Enemy->GetDetectDistance();
-	ACharacter* ClosestTarget = nullptr;
+	ACharacter* ClosestTarget = Cast<ACharacter>(Enemy->GetTarget());
 	if (Enemy)
 	{
 		TArray<ACharacter*> Players = Enemy->GetSpawner()->GetPlayersInArea();

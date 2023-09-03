@@ -28,10 +28,21 @@ void UBTService_RangedOrMelee::TickNode(UBehaviorTreeComponent& OwnerComp, uint8
 	if (RangedEnemy->CheckCanFireToTarget())
 	{
 		const float DistToTarget = RangedEnemy->GetDistanceTo(Player);
-		if (DistToTarget > RangedEnemy->GetAttackDistance() && DistToTarget <= RangedEnemy->GetDetectDistance())
+		if (RangedEnemy->GetAttackType() == EEnemyAttackType::EEAT_Hybrid)
 		{
-			OwnerComp.GetBlackboardComponent()->SetValueAsBool(ARPGEnemyAIController::CanRangedAttack, true);
-			return;
+			if (DistToTarget > RangedEnemy->GetAttackDistance() && DistToTarget <= RangedEnemy->GetDetectDistance())
+			{
+				OwnerComp.GetBlackboardComponent()->SetValueAsBool(ARPGEnemyAIController::CanRangedAttack, true);
+				return;
+			}
+		}
+		else
+		{
+			if (DistToTarget <= RangedEnemy->GetAttackDistance())
+			{
+				OwnerComp.GetBlackboardComponent()->SetValueAsBool(ARPGEnemyAIController::CanRangedAttack, true);
+				return;
+			}
 		}
 	}
 	OwnerComp.GetBlackboardComponent()->SetValueAsBool(ARPGEnemyAIController::CanRangedAttack, false);

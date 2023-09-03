@@ -417,10 +417,6 @@ void ARPGBasePlayerCharacter::OnRep_PathArr()
 	{
 		if (PathArr.Num() == 0) return;
 		InitDestAndDir();
-		//for (int32 i = 0; i < PathArr.Num(); i++)
-		//{
-		//	DrawDebugPoint(GetWorld(), FVector(PathArr[i].X, PathArr[i].Y, 10.f), 10.f, FColor::Blue, false, 2.f);
-		//}
 	}
 }
 

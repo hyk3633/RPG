@@ -43,18 +43,16 @@ void ARPGRangedEnemyCharacter::BTTask_RangedAttack()
 bool ARPGRangedEnemyCharacter::CheckCanFireToTarget()
 {
 	FHitResult Hit;
-	FVector Loc = GetActorLocation();
-	Loc.Z = 60.f;
 	UKismetSystemLibrary::BoxTraceSingle(
 		this,
-		Loc,
+		GetActorLocation(),
 		GetTarget()->GetTargetLocation(),
 		FVector(20, 20, 20),
 		GetActorForwardVector().Rotation(),
 		UEngineTypes::ConvertToTraceType(ECC_Visibility),
 		false,
 		TArray<AActor*>(),
-		EDrawDebugTrace::ForOneFrame,
+		EDrawDebugTrace::None,
 		Hit,
 		true,
 		FColor::Red,
@@ -89,16 +87,33 @@ bool ARPGRangedEnemyCharacter::ShouldIStopMovement()
 	// 타겟과의 거리가 감지 거리 이내라면
 	else
 	{
-		// 타겟과의 거리가 공격 거리보단 멀다면
-		if (DistToTarget > GetAttackDistance())
+		// 원/근거리 적
+		if (GetAttackType() == EEnemyAttackType::EEAT_Hybrid)
 		{
-			// 사격 가능한 위치라면 멈추고 그렇지 않으면 계속 움직이기
-			return CheckCanFireToTarget();
+			// 타겟과의 거리가 공격 거리보단 멀다면
+			if (DistToTarget > GetAttackDistance() && CheckCanFireToTarget())
+			{
+				// 사격 가능한 위치라면 멈추고 그렇지 않으면 계속 움직이기
+				return true;
+			}
+			else
+			{
+				// 타겟과의 거리가 공격 거리 이내라면 멈추기
+				return true;
+			}
 		}
+		// 원거리 적
 		else
 		{
-			// 타겟과의 거리가 공격 거리 이내라면 멈추기
-			return true;
+			// 공격 거리 이내면서 사격 가능한 위치이면 멈추기
+			if (DistToTarget <= GetAttackDistance() && CheckCanFireToTarget())
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 	}
 }

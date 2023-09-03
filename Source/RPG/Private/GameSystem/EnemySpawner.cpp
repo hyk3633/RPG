@@ -78,6 +78,7 @@ void AEnemySpawner::SpawnEnemies()
 				{
 					Enemy->SetActorRotation(FRotator(0, 180, 0));
 					Enemy->ActivateEnemy(SpawnLocation);
+					Enemy->SetActorLocation(FVector(500, -1130, 0));
 				}
 			}
 			else ELOG(TEXT("no place to respawn"));
@@ -204,7 +205,10 @@ void AEnemySpawner::Tick(float DeltaTime)
 		{
 			for (ACharacter* Target : PlayersInArea)
 			{
-				CalculateFlowVector(Target);
+				if (Target->GetVelocity().Length() >= 0)
+				{
+					CalculateFlowVector(Target);
+				}
 			}
 			CumulTime = 0.f;
 		}

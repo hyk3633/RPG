@@ -328,7 +328,7 @@ void ARPGBaseEnemyCharacter::UpdateMovement()
 	}
 	else
 	{
-		FVector& Loc = MySpawner->GetFlowVector(Cast<ACharacter>(GetTarget()), this);
+		const FVector& Loc = MySpawner->GetFlowVector(Cast<ACharacter>(GetTarget()), this);
 		AddMovementInput(Loc * DefaultSpeed * SpeedAdjustmentValue * GetWorld()->GetDeltaSeconds());
 	}
 }
@@ -341,12 +341,10 @@ bool ARPGBaseEnemyCharacter::ShouldIStopMovement()
 void ARPGBaseEnemyCharacter::CheckOthersInFrontOfMe()
 {
 	FHitResult Hit;
-	FVector Loc = GetActorLocation();
-	Loc.Z = 60.f;
 	UKismetSystemLibrary::LineTraceSingle(
 		this,
-		Loc,
-		Loc + GetActorForwardVector() * 150,
+		GetActorLocation(),
+		GetActorLocation() + GetActorForwardVector() * 150,
 		UEngineTypes::ConvertToTraceType(ECC_PlayerAttack),
 		false,
 		TArray<AActor*>(),
