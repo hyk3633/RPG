@@ -46,8 +46,8 @@ protected:
 public:
 	
 	FORCEINLINE const FEnemyInfo& GetEnemyInfo() const { return EnemyInfo; }
-
 	FORCEINLINE const FEnemyAssets& GetEnemyAssets() const { return EnemyAssets; }
+	FORCEINLINE EEnemyType GetEnemyType() const { return EnemyType; }
 
 	void MeleeAttack(ARPGBaseEnemyCharacter* Attacker);
 

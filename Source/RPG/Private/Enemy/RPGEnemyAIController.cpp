@@ -16,6 +16,7 @@ const FName ARPGEnemyAIController::TargetPlayer(TEXT("Target"));
 const FName ARPGEnemyAIController::IsStunned(TEXT("IsStunned"));
 const FName ARPGEnemyAIController::CanMeleeAttack(TEXT("CanMeleeAttack"));
 const FName ARPGEnemyAIController::CanRangedAttack(TEXT("CanRangedAttack"));
+const FName ARPGEnemyAIController::CanSpecialAttack(TEXT("CanSpecialAttack"));
 
 ARPGEnemyAIController::ARPGEnemyAIController()
 {
@@ -99,6 +100,14 @@ void ARPGEnemyAIController::SetIsStunned(const bool bIsStunned)
 	if (BBComp)
 	{
 		BBComp->SetValueAsBool(IsStunned, bIsStunned);
+	}
+}
+
+void ARPGEnemyAIController::SetCanSpecialAttack(const bool bCanSpecialAttack)
+{
+	if (BBComp)
+	{
+		BBComp->SetValueAsBool(CanSpecialAttack, bCanSpecialAttack);
 	}
 }
 

@@ -21,8 +21,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
-#include "DrawDebugHelpers.h"
-
 ARPGBaseEnemyCharacter::ARPGBaseEnemyCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -92,6 +90,7 @@ void ARPGBaseEnemyCharacter::InitAnimInstance()
 		MyAnimInst->BindFunction();
 		MyAnimInst->DOnAttack.AddUFunction(this, FName("Attack"));
 		MyAnimInst->DOnAttackEnded.AddUFunction(this, FName("OnAttackMontageEnded"));
+		MyAnimInst->DOnHitReactionEnded.AddUFunction(this, FName("OnHitReactionEnded"));
 	}
 }
 
@@ -184,7 +183,7 @@ void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, c
 
 	SetMatInstDynamicMulticast(GetWorld()->TimeSeconds);
 
-	if (Health != 0)
+	if (Health != 0 && EnemyForm->GetEnemyType() != EEnemyType::EET_Boss)
 	{
 		UDamageTypeStunAndPush* DT_StunAndPush = Cast<UDamageTypeStunAndPush>(DT_Base);
 		if (DT_StunAndPush)
@@ -196,6 +195,13 @@ void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, c
 		{
 			UDamageTypeRestriction* DT_Restriction = Cast<UDamageTypeRestriction>(DT_Base);
 			if (DT_Restriction) StopActionMulticast();
+			else
+			{
+				if (0.5f >= FMath::RandRange(0.f, 1.f))
+				{
+					HitReactionMulticast();
+				}
+			}
 		}
 	}
 }
@@ -415,6 +421,30 @@ APawn* ARPGBaseEnemyCharacter::GetTarget() const
 bool ARPGBaseEnemyCharacter::GetIsInAir() const
 {
 	return GetMovementComponent()->IsFalling();
+}
+
+/** 히트 리액션 */
+
+void ARPGBaseEnemyCharacter::HitReactionMulticast_Implementation()
+{
+	HitReaction();
+}
+
+void ARPGBaseEnemyCharacter::HitReaction()
+{
+	if (HasAuthority())
+	{
+		MyController->SetIsStunned(true);
+	}
+	else
+	{
+		MyAnimInst->PlayHitReactionMontage();
+	}
+}
+
+void ARPGBaseEnemyCharacter::OnHitReactionEnded()
+{
+	MyController->SetIsStunned(false);
 }
 
 /** 기절 */

@@ -58,7 +58,7 @@ void AEnemySpawner::SpawnEnemies()
 	for (auto Pair : EnemyToSpawnMap)
 	{
 		AEnemyPooler* EnemyPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
-		EnemyPooler->CreatePool(Pair.Value * 3, Pair.Key);
+		EnemyPooler->CreatePool(Pair.Value * 1, Pair.Key);
 		EnemyPoolerMap.Add(StaticCast<int8>(Pair.Key), EnemyPooler);
 
 		for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
@@ -78,7 +78,7 @@ void AEnemySpawner::SpawnEnemies()
 				{
 					Enemy->SetActorRotation(FRotator(0, 180, 0));
 					Enemy->ActivateEnemy(SpawnLocation);
-					Enemy->SetActorLocation(FVector(500, -1130, 0));
+					Enemy->SetActorLocation(FVector(0, -430, 0));
 				}
 			}
 			else ELOG(TEXT("no place to respawn"));

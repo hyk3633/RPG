@@ -7,6 +7,7 @@
 void URPGEnemyAnimInstance::BindFunction()
 {
 	OnMontageEnded.AddDynamic(this, &URPGEnemyAnimInstance::OnAttackMontageEnded);
+	OnMontageEnded.AddDynamic(this, &URPGEnemyAnimInstance::OnHitReactionMontageEnded);
 }
 
 void URPGEnemyAnimInstance::PlayMeleeAttackMontage()
@@ -37,6 +38,13 @@ void URPGEnemyAnimInstance::PlayGetupMontage()
 	Montage_Play(GetupMontage);
 }
 
+void URPGEnemyAnimInstance::PlayHitReactionMontage()
+{
+	if (HitReactionMontage == nullptr) return;
+	if (Montage_IsPlaying(GetupMontage)) return;
+	Montage_Play(HitReactionMontage);
+}
+
 void URPGEnemyAnimInstance::CancelMontage()
 {
 	Montage_Stop(0.f, DeathMontage);
@@ -57,5 +65,13 @@ void URPGEnemyAnimInstance::OnAttackMontageEnded(UAnimMontage* Montage, bool bIn
 	if (Montage == MeleeAttackMontage || Montage == RangedAttackMontage)
 	{
 		DOnAttackEnded.Broadcast();
+	}
+}
+
+void URPGEnemyAnimInstance::OnHitReactionMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == HitReactionMontage)
+	{
+		DOnHitReactionEnded.Broadcast();
 	}
 }

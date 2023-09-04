@@ -32,6 +32,7 @@ public:
 	static const FName IsStunned;
 	static const FName CanMeleeAttack;
 	static const FName CanRangedAttack;
+	static const FName CanSpecialAttack;
 
 protected:
 
@@ -53,6 +54,8 @@ public:
 	void SetSuckedIn(const bool bIsSuckedIn);
 
 	void SetIsStunned(const bool bIsStunned);
+
+	void SetCanSpecialAttack(const bool bCanSpecialAttack);
 
 	bool GetSuckedIn() const;
 

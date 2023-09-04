@@ -35,7 +35,7 @@ public:
 
 	void SetEnemyAssets(const FEnemyAssets& NewEnemyAssets);
 
-	void ActivateEnemy(const FVector& Location);
+	virtual void ActivateEnemy(const FVector& Location);
 
 protected:
 
@@ -144,6 +144,7 @@ public:
 
 	/** 설정 반환 함수 */
 
+	FORCEINLINE URPGEnemyFormComponent* GetFormComponent() const { return EnemyForm; }
 	FORCEINLINE void SetSpawner(AEnemySpawner* Spawner) { MySpawner = Spawner; }
 	FORCEINLINE AEnemySpawner* GetSpawner() const { return MySpawner; }
 	FORCEINLINE void SetAIController(ARPGEnemyAIController* AICont) { MyController = AICont; }
@@ -161,6 +162,16 @@ public:
 	bool GetIsInAir() const;
 
 protected:
+
+	/** 히트 리액션 */
+
+	UFUNCTION(NetMulticast, Reliable)
+	void HitReactionMulticast();
+
+	void HitReaction();
+
+	UFUNCTION()
+	void OnHitReactionEnded();
 
 	/** 기절 상태 및 기절 상태 회복 */
 

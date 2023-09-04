@@ -84,6 +84,13 @@ void ARPGBossEnemyCharacter::Tick(float DeltaTime)
 	}
 }
 
+void ARPGBossEnemyCharacter::ActivateEnemy(const FVector& Location)
+{
+	Super::ActivateEnemy(Location);
+
+	GetWorldTimerManager().SetTimer(SpecialAttackCooldownTimer, this, &ARPGBossEnemyCharacter::SpecialAttackCooldownEnd, 10);
+}
+
 void ARPGBossEnemyCharacter::CalculateAimYawAndPitch(float DeltaTime)
 {
 	if (BossAnimInst->GetIsTurning())
@@ -207,10 +214,10 @@ void ARPGBossEnemyCharacter::SpawnParticleMulticast_Implementation(UParticleSyst
 
 void ARPGBossEnemyCharacter::BTTask_SpecialAttack()
 {
+	MyController->SetCanSpecialAttack(false);
 	bIsAttacking = true;
 
-	//const ESpecialAttackType SpecialAttackType = StaticCast<ESpecialAttackType>(FMath::RandRange(0, 2));
-	const ESpecialAttackType SpecialAttackType = ESpecialAttackType::ESAT_EmitShockWave;
+	const ESpecialAttackType SpecialAttackType = StaticCast<ESpecialAttackType>(FMath::RandRange(0, 2));
 	
 	if (SpecialAttackType == ESpecialAttackType::ESAT_EmitShockWave)
 	{
@@ -329,11 +336,17 @@ void ARPGBossEnemyCharacter::OnSpecialAttackMontageEnded()
 	{
 		bIsAttacking = false;
 		DOnSpecialAttackEnd.Broadcast();
+		GetWorldTimerManager().SetTimer(SpecialAttackCooldownTimer, this, &ARPGBossEnemyCharacter::SpecialAttackCooldownEnd, 10);
 	}
 	else
 	{
 		AttackRangeMark->SetVisibility(false);
 	}
+}
+
+void ARPGBossEnemyCharacter::SpecialAttackCooldownEnd()
+{
+	MyController->SetCanSpecialAttack(true);
 }
 
 void ARPGBossEnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

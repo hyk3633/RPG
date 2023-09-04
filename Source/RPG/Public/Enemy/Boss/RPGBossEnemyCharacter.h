@@ -23,9 +23,9 @@ public:
 
 	ARPGBossEnemyCharacter();
 
-public:
-
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void ActivateEnemy(const FVector& Location) override;
 
 protected:
 
@@ -91,6 +91,8 @@ protected:
 	UFUNCTION()
 	void OnSpecialAttackMontageEnded();
 
+	void SpecialAttackCooldownEnd();
+
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 private:
@@ -151,4 +153,5 @@ private:
 
 	bool bIsAttacking = false;
 
+	FTimerHandle SpecialAttackCooldownTimer;
 };

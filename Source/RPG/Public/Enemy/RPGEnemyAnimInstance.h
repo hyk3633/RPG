@@ -8,7 +8,7 @@
 DECLARE_MULTICAST_DELEGATE(FOnAttackDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnRangedAttackDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnAttackEndedDelegate);
-
+DECLARE_MULTICAST_DELEGATE(FHitReactionEndedDelegate);
 /**
  * 
  */
@@ -32,6 +32,8 @@ public:
 
 	void PlayGetupMontage();
 
+	void PlayHitReactionMontage();
+
 	void CancelMontage();
 
 	FOnAttackDelegate DOnAttack;
@@ -39,6 +41,8 @@ public:
 	FOnRangedAttackDelegate DOnRangedAttack;
 
 	FOnAttackEndedDelegate DOnAttackEnded;
+
+	FHitReactionEndedDelegate DOnHitReactionEnded;
 
 	friend ARPGBaseEnemyCharacter;
 
@@ -52,6 +56,9 @@ protected:
 
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
+	void OnHitReactionMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 private:
 
@@ -69,6 +76,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
 	UAnimMontage* GetupMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* HitReactionMontage;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Status", meta = (AllowPrivateAccess = "true"))
 	float Speed;
