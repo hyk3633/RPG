@@ -17,6 +17,8 @@ class UCameraComponent;
 class USphereComponent;
 class ARPGBaseEnemyCharacter;
 class UDamageTypeBase;
+class USceneCaptureComponent2D;
+class UPaperSpriteComponent;
 struct FCharacterStats;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnChangeHealthPercentageDelegate, float Percentage);
@@ -310,6 +312,15 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraArm;
+
+	UPROPERTY(EditAnywhere, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	USpringArmComponent* MinimapArm;
+
+	UPROPERTY(EditAnywhere, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	USceneCaptureComponent2D* MinimapCapture;
+
+	UPROPERTY(EditAnywhere, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	UPaperSpriteComponent* PlayerIconSprite;
 
 	int32 NextArmLength = 1200;
 

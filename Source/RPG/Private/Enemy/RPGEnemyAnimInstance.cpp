@@ -42,7 +42,7 @@ void URPGEnemyAnimInstance::PlayHitReactionMontage()
 {
 	if (HitReactionMontage == nullptr) return;
 	if (Montage_IsPlaying(GetupMontage)) return;
-	Montage_Play(HitReactionMontage);
+	Montage_Play(HitReactionMontage, 1.5f);
 }
 
 void URPGEnemyAnimInstance::CancelMontage()

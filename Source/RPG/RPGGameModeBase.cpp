@@ -25,6 +25,8 @@ ARPGGameModeBase::ARPGGameModeBase()
 
 	static ConstructorHelpers::FObjectFinder<UDataTable> Obj_ProjectileAssetsDataTable(TEXT("/Game/_Assets/DataTable/DT_ProjectileAssets.DT_ProjectileAssets"));
 	if (Obj_ProjectileAssetsDataTable.Succeeded()) ProjectileAssetsDataTable = Obj_ProjectileAssetsDataTable.Object;
+
+	bUseSeamlessTravel = true;
 }
 
 void ARPGGameModeBase::BeginPlay()

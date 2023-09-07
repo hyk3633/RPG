@@ -4,20 +4,23 @@
 #include "Player/RPGPlayerController.h"
 #include "Player/RPGPlayerState.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
+#include "GameSystem/ObstacleChecker.h"
+#include "DataAsset/MapNavDataAsset.h"
 #include "DamageType/DamageTypeStunAndPush.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
-
-#include "GameSystem/ObstacleChecker.h"
-#include "DataAsset/MapNavDataAsset.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "PaperSpriteComponent.h"
+#include "PaperSprite.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 
 ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
@@ -43,6 +46,32 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Follow Camera"));
 	FollowCamera->SetupAttachment(CameraArm, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+
+	MinimapArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Minimap Arm"));
+	MinimapArm->SetupAttachment(RootComponent);
+	MinimapArm->SetRelativeRotation(FRotator(-90.f, 0.f, 0.f));
+	MinimapArm->TargetArmLength = 300.f;
+	MinimapArm->bInheritPitch = false;
+	MinimapArm->bInheritYaw = false;
+	MinimapArm->bInheritRoll = false;
+
+	MinimapCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("Minimap Capture"));
+	MinimapCapture->SetupAttachment(MinimapArm);
+	static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> RenderTargetAsset(TEXT("TextureRenderTarget2D'/Game/_Assets/Texture2D/Minimap/Minimap_RenderTarget.Minimap_RenderTarget'"));
+	if (RenderTargetAsset.Succeeded()) { MinimapCapture->TextureTarget = RenderTargetAsset.Object; }
+	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic;
+	MinimapCapture->OrthoWidth = 1000.f;
+	MinimapCapture->ShowFlags.SkeletalMeshes = 0;
+
+	PlayerIconSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("Paper Sprite"));
+	PlayerIconSprite->SetupAttachment(RootComponent);
+	static ConstructorHelpers::FObjectFinder<UPaperSprite> PlayerIconAsset(TEXT("PaperSprite'/Game/_Assets/Texture2D/Minimap/PlayerIcon_Sprite.PlayerIcon_Sprite'"));
+	if (PlayerIconAsset.Succeeded()) { PlayerIconSprite->SetSprite(PlayerIconAsset.Object); }
+	PlayerIconSprite->SetRelativeRotation(FRotator(0.f, -90.f, 90.f));
+	PlayerIconSprite->SetRelativeLocation(FVector(0, 0, 299));
+	PlayerIconSprite->SetRelativeScale3D(FVector(0.3));
+	PlayerIconSprite->bOwnerNoSee = true;
+	PlayerIconSprite->bVisibleInSceneCaptureOnly = true;
 
 	GetMesh()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
