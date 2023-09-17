@@ -68,7 +68,7 @@ protected:
 	void ExpireProjectile();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void SpawnParticleMulticast(EParticleType Type, const FVector_NetQuantize& SpawnLocation, const FRotator& SpawnRotation);
+	void SpawnEffectMulticast(EParticleType Type, const FVector_NetQuantize& SpawnLocation, const FRotator& SpawnRotation);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void ActivateProjectileMulticast();

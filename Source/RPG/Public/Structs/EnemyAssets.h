@@ -8,6 +8,7 @@
 class ARPGBaseProjectile;
 class ARPGEnemyAIController;
 class URPGEnemyAnimInstance;
+class USoundCue;
 
 USTRUCT(BlueprintType)
 struct FEnemyAssets : public FTableRowBase
@@ -44,4 +45,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
 	EEnemyAttackType AttackType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
+	USoundCue* MeleeHitSound;
 };

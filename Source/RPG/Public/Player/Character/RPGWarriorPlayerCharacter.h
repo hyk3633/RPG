@@ -11,6 +11,7 @@
 
 class ARPGBaseEnemyCharacter;
 class ARPGBaseProjectile;
+class USoundCue;
 
 UCLASS()
 class RPG_API ARPGWarriorPlayerCharacter : public ARPGBasePlayerCharacter
@@ -52,7 +53,7 @@ protected:
 	void NormalAttackLineTrace();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void SpawnNormalAttackImpactParticleMulticast(const FVector_NetQuantize& SpawnLocation);
+	void SpawnNormalAttackEffectMulticast(const FVector_NetQuantize& SpawnLocation);
 
 	/** Q 스킬 함수 */
 
@@ -139,6 +140,9 @@ private:
 	UParticleSystem* NormalAttackImpactParticle;
 
 	TArray<FHitResult> NormalAttackHits;
+
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Normal")
+	USoundCue* AttackHitSound;
 
 	/** Q 스킬 */
 

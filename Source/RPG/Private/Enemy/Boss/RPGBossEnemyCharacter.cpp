@@ -199,6 +199,7 @@ void ARPGBossEnemyCharacter::Attack()
 			if (HitResult.bBlockingHit)
 			{
 				SpawnParticleMulticast(PrimaryAttackWorldImpactParticle, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
+				PlaySoundMulticast(HitResult.ImpactPoint);
 			}
 		}
 	}
@@ -237,17 +238,17 @@ void ARPGBossEnemyCharacter::BTTask_SpecialAttack()
 
 void ARPGBossEnemyCharacter::PlayEmitShockwaveMontageEffectMulticast_Implementation()
 {
-	if(BossAnimInst) BossAnimInst->PlayEmitShockWaveMontage();
+	if(BossAnimInst) BossAnimInst->PlayEmitShockWaveMontage(HasAuthority());
 }
 
 void ARPGBossEnemyCharacter::PlayFireMortarMontageEffectMulticast_Implementation()
 {
-	if (BossAnimInst) BossAnimInst->PlayFireMortarMontage();
+	if (BossAnimInst) BossAnimInst->PlayFireMortarMontage(HasAuthority());
 }
 
 void ARPGBossEnemyCharacter::PlayBulldozeMontageEffectMulticast_Implementation()
 {
-	if (BossAnimInst) BossAnimInst->PlayBulldozeMontage();
+	if (BossAnimInst) BossAnimInst->PlayBulldozeMontage(HasAuthority());
 }
 
 void ARPGBossEnemyCharacter::ActivateAttackRangeMarkMulticast_Implementation(ESpecialAttackType Type, const float Size)

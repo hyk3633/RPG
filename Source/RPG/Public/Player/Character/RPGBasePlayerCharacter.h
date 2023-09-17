@@ -19,11 +19,13 @@ class ARPGBaseEnemyCharacter;
 class UDamageTypeBase;
 class USceneCaptureComponent2D;
 class UPaperSpriteComponent;
+class UPaperSprite;
 struct FCharacterStats;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnChangeHealthPercentageDelegate, float Percentage);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnChangeManaPercentageDelegate, float Percentage);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAbilityCooldownEndDelegate, int8 Bit);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnPlayerDeathDelegate, ACharacter* PlayerCharacter);
 
 UCLASS()
 class RPG_API ARPGBasePlayerCharacter : public ACharacter
@@ -41,6 +43,8 @@ public:
 	FOnChangeManaPercentageDelegate DOnChangeManaPercentage;
 
 	FOnAbilityCooldownEndDelegate DOnAbilityCooldownEnd;
+
+	FOnPlayerDeathDelegate DOnPlayerDeath;
 
 protected:
 
@@ -112,9 +116,6 @@ public: /** ---------- 이동 ---------- */
 protected:
 
 	void InitDestAndDir();
-
-	UFUNCTION(Server, Reliable)
-	void ReplicatebUpdateMovementServer(const bool UpdateMovement);
 
 	UFUNCTION(Server, Reliable)
 	void SetDestinaionAndPathServer(const FVector_NetQuantize& HitLocation);
@@ -296,6 +297,8 @@ protected:
 	
 	void GetTargetingCompOverlappingEnemies(TArray<AActor*>& Enemies);
 
+	void DrawDebugGrid();
+
 	void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 protected:
@@ -321,6 +324,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
 	UPaperSpriteComponent* PlayerIconSprite;
+
+	UPROPERTY()
+	UPaperSprite* OtherPlayerIcon;
 
 	int32 NextArmLength = 1200;
 
@@ -404,7 +410,6 @@ private:
 
 	bool bUpdateMovement = false;
 
-	float CulmulativeTime = 0.1f;
 	int32 LastTimeY = -1;
 	int32 LastTimeX = -1;
 
@@ -414,6 +419,8 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_bStunned)
 	bool bStunned = false;
+
+	FVector Destination;
 
 protected:
 
@@ -439,7 +446,7 @@ protected:
 
 	/** 리스폰 */
 
-	AController* TempController;
+	APlayerController* TempController;
 
 	FTimerHandle RespawnTimer;
 

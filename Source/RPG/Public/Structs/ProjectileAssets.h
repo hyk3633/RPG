@@ -27,6 +27,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
 	UParticleSystem* NoImpactParticle;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
+	class USoundCue* ImpactSound;
+
 	FProjectileAssets& operator=(const FProjectileAssets& Other)
 	{
 		BodyMesh = Other.BodyMesh;
@@ -34,6 +37,7 @@ public:
 		WorldImpactParticle = Other.WorldImpactParticle;
 		CharacterImpactParticle = Other.CharacterImpactParticle;
 		NoImpactParticle = Other.NoImpactParticle;
+		ImpactSound = Other.ImpactSound;
 
 		return *this;
 	}

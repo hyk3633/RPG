@@ -14,6 +14,7 @@
 class ARPGBaseProjectile;
 class ARPGBlackhole;
 class UProjectilePoolerComponent;
+class USoundCue;
 
 UCLASS()
 class RPG_API ARPGSorcererPlayerCharacter : public ARPGBasePlayerCharacter
@@ -106,6 +107,12 @@ protected:
 
 	void SpawnMeteorShowerParticle();
 
+	UFUNCTION(NetMulticast, UnReliable)
+	void SpawnMeteorShowerFireSoundMulticast();
+
+	UFUNCTION(NetMulticast, UnReliable)
+	void SpawnMeteorShowerImpactSoundMulticast();
+
 	/** Ability R */
 
 	UFUNCTION()
@@ -189,10 +196,21 @@ protected:
 
 	FTimerHandle MeteorDamageTimer;
 
+	FTimerHandle MeteorFireTimer;
+
 	UPROPERTY(Replicated)
 	FVector SphereTraceLocation;
 
 	int8 MeteorDamageCount = 0;
+
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteor Shower")
+	USoundCue* MeteorShowerPortalSound;
+
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteor Shower")
+	USoundCue* MeteorShowerFireSound;
+
+	UPROPERTY(EditAnywhere, Category = "Character | Particle | Meteor Shower")
+	USoundCue* MeteorShowerImpactSound;
 
 	/** R ½ºÅ³ */
 

@@ -11,6 +11,7 @@
 DECLARE_MULTICAST_DELEGATE(FDelegateItemDeactivate)
 
 class UWidgetComponent;
+class UPaperSpriteComponent;
 
 UCLASS()
 class RPG_API ARPGItem : public AActor
@@ -88,6 +89,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* ItemMesh;
+
+	UPROPERTY(EditAnywhere, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	UPaperSpriteComponent* ItemIconSprite;
 
 	UPROPERTY(EditAnywhere)
 	UWidgetComponent* NameTagWidget;

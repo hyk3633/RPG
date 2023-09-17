@@ -26,10 +26,18 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 	if (Enemy->GetFormComponent()->GetEnemyType() == EEnemyType::EET_Boss)
 	{
 		const int8 PlayerCount = Players.Num();
-		if (PlayerCount <= 0) return;
+		if (PlayerCount <= 0)
+		{
+			OwnerComp.GetAIOwner()->ClearFocus(EAIFocusPriority::Default);
+			return;
+		}
 
-		const int8 NewTargetIdx = FMath::RandRange(0, PlayerCount - 1);
-		OwnerComp.GetBlackboardComponent()->SetValueAsObject(ARPGEnemyAIController::TargetPlayer, Players[NewTargetIdx]);
+		ClosestTarget = Players[FMath::RandRange(0, PlayerCount - 1)];
+		if (IsValid(ClosestTarget))
+		{
+			OwnerComp.GetBlackboardComponent()->SetValueAsObject(ARPGEnemyAIController::TargetPlayer, ClosestTarget);
+			OwnerComp.GetAIOwner()->SetFocus(ClosestTarget);
+		}
 	}
 	else
 	{
@@ -42,6 +50,9 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 				ClosestTarget = Target;
 			}
 		}
-		OwnerComp.GetBlackboardComponent()->SetValueAsObject(ARPGEnemyAIController::TargetPlayer, ClosestTarget);
+		if (IsValid(ClosestTarget))
+		{
+			OwnerComp.GetBlackboardComponent()->SetValueAsObject(ARPGEnemyAIController::TargetPlayer, ClosestTarget);
+		}
 	}
 }

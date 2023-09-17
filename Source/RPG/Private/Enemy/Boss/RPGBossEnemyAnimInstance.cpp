@@ -7,28 +7,49 @@ void URPGBossEnemyAnimInstance::BindBossEnemyFunction()
 	OnMontageEnded.AddDynamic(this, &URPGBossEnemyAnimInstance::OnSpecialAttackMontageEnded);
 }
 
-void URPGBossEnemyAnimInstance::PlayEmitShockWaveMontage()
+void URPGBossEnemyAnimInstance::PlayEmitShockWaveMontage(const bool HasAuthority)
 {
-	if (EmitShockWaveMontage == nullptr) return;
 	if (IsAnyMontagePlaying()) return;
-
-	Montage_Play(EmitShockWaveMontage);
+	if (HasAuthority)
+	{
+		if (ServerEmitShockWaveMontage == nullptr) return;
+		Montage_Play(ServerEmitShockWaveMontage);
+	}
+	else
+	{
+		if (ClientEmitShockWaveMontage == nullptr) return;
+		Montage_Play(ClientEmitShockWaveMontage);
+	}
 }
 
-void URPGBossEnemyAnimInstance::PlayFireMortarMontage()
+void URPGBossEnemyAnimInstance::PlayFireMortarMontage(const bool HasAuthority)
 {
-	if (FireMortarMontage == nullptr) return;
 	if (IsAnyMontagePlaying()) return;
-
-	Montage_Play(FireMortarMontage);
+	if (HasAuthority)
+	{
+		if (ServerFireMortarMontage == nullptr) return;
+		Montage_Play(ServerFireMortarMontage);
+	}
+	else
+	{
+		if (ClientFireMortarMontage == nullptr) return;
+		Montage_Play(ClientFireMortarMontage);
+	}
 }
 
-void URPGBossEnemyAnimInstance::PlayBulldozeMontage()
+void URPGBossEnemyAnimInstance::PlayBulldozeMontage(const bool HasAuthority)
 {
-	if (BulldozeMontage == nullptr) return;
 	if (IsAnyMontagePlaying()) return;
-
-	Montage_Play(BulldozeMontage);
+	if (HasAuthority)
+	{
+		if (ServerBulldozeMontage == nullptr) return;
+		Montage_Play(ServerBulldozeMontage);
+	}
+	else
+	{
+		if (ClientBulldozeMontage == nullptr) return;
+		Montage_Play(ClientBulldozeMontage);
+	}
 }
 
 bool URPGBossEnemyAnimInstance::GetIsTurning() const
@@ -44,7 +65,8 @@ void URPGBossEnemyAnimInstance::AnimNotify_SpecialAttack(ESpecialAttackType Type
 
 void URPGBossEnemyAnimInstance::OnSpecialAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (Montage == EmitShockWaveMontage || Montage == FireMortarMontage || Montage == BulldozeMontage)
+	if (Montage == ServerEmitShockWaveMontage || Montage == ServerFireMortarMontage || Montage == ServerBulldozeMontage ||
+		Montage == ClientEmitShockWaveMontage || Montage == ClientFireMortarMontage || Montage == ClientBulldozeMontage)
 	{
 		DOnSpecialAttackEnd.Broadcast();
 	}

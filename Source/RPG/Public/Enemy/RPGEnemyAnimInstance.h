@@ -24,9 +24,9 @@ public:
 
 	void BindFunction();
 
-	void PlayMeleeAttackMontage();
+	void PlayMeleeAttackMontage(const bool HasAuthority);
 
-	void PlayRangedAttackMontage();
+	void PlayRangedAttackMontage(const bool HasAuthority);
 
 	void PlayDeathMontage();
 
@@ -66,10 +66,16 @@ private:
 	ARPGBaseEnemyCharacter* MyCharacter;
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
-	UAnimMontage* MeleeAttackMontage;
+	UAnimMontage* ClientMeleeAttackMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
-	UAnimMontage* RangedAttackMontage;
+	UAnimMontage* ServerMeleeAttackMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* ClientRangedAttackMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* ServerRangedAttackMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
 	UAnimMontage* DeathMontage;

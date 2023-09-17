@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "Structs/StatInfo.h"
+#include "Enums/CharacterType.h"
 #include "RPGPlayerController.generated.h"
 
 /**
@@ -40,6 +41,10 @@ protected:
 	void OnRep_MyCharacter();
 
 public:
+
+	FORCEINLINE void SaveUniqueID(const FString& NewUniqueID) { UniqueID = NewUniqueID; }
+	FORCEINLINE const FString& GetUniqueID() { return UniqueID; }
+	ECharacterType GetCharacterType();
 
 	virtual void Tick(float DeltaTime) override;
 
@@ -219,5 +224,9 @@ private:
 	ARPGItem* TracedItem;
 
 	bool bIsInventoryOn = false;
+
+	ECharacterType CharacterType;
+
+	FString UniqueID;
 	
 };

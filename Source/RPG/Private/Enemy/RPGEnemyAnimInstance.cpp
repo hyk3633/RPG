@@ -10,20 +10,34 @@ void URPGEnemyAnimInstance::BindFunction()
 	OnMontageEnded.AddDynamic(this, &URPGEnemyAnimInstance::OnHitReactionMontageEnded);
 }
 
-void URPGEnemyAnimInstance::PlayMeleeAttackMontage()
+void URPGEnemyAnimInstance::PlayMeleeAttackMontage(const bool HasAuthority)
 {
-	if (MeleeAttackMontage == nullptr) return;
 	if (IsAnyMontagePlaying()) return;
-	
-	Montage_Play(MeleeAttackMontage);
+	if (HasAuthority)
+	{
+		if (ServerMeleeAttackMontage == nullptr) return;
+		Montage_Play(ServerMeleeAttackMontage, 1.25f);
+	}
+	else
+	{
+		if (ClientMeleeAttackMontage == nullptr) return;
+		Montage_Play(ClientMeleeAttackMontage, 1.25f);
+	}	
 }
 
-void URPGEnemyAnimInstance::PlayRangedAttackMontage()
+void URPGEnemyAnimInstance::PlayRangedAttackMontage(const bool HasAuthority)
 {
-	if (RangedAttackMontage == nullptr) return;
 	if (IsAnyMontagePlaying()) return;
-
-	Montage_Play(RangedAttackMontage);
+	if (HasAuthority)
+	{
+		if (ServerRangedAttackMontage == nullptr) return;
+		Montage_Play(ServerRangedAttackMontage, 1.25f);
+	}
+	else
+	{
+		if (ClientRangedAttackMontage == nullptr) return;
+		Montage_Play(ClientRangedAttackMontage, 1.25f);
+	}
 }
 
 void URPGEnemyAnimInstance::PlayDeathMontage()
@@ -62,7 +76,8 @@ void URPGEnemyAnimInstance::AnimNotify_RangedAttack()
 
 void URPGEnemyAnimInstance::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if (Montage == MeleeAttackMontage || Montage == RangedAttackMontage)
+	if (Montage == ServerMeleeAttackMontage || Montage == ServerRangedAttackMontage ||
+	    Montage == ClientMeleeAttackMontage || Montage == ClientRangedAttackMontage)
 	{
 		DOnAttackEnded.Broadcast();
 	}

@@ -16,6 +16,8 @@ class URPGEnemyAnimInstance;
 class UWidgetComponent;
 class URPGEnemyHealthBarWidget;
 class AEnemySpawner;
+class UPaperSpriteComponent;
+class USoundCue;
 
 DECLARE_MULTICAST_DELEGATE(FDelegateMoveEnd);
 DECLARE_MULTICAST_DELEGATE(FDelegateOnAttackEnd);
@@ -73,6 +75,9 @@ protected:
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
+	void PlayerOut(ACharacter* TargetPlayer);
+
+	UFUNCTION()
 	void TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser);
 
 	UFUNCTION(NetMulticast, Reliable)
@@ -115,7 +120,9 @@ public:
 
 protected:
 
-	void UpdateMovement();
+	void UpdateMovementFlowField();
+
+	void UpdateMovementAStar();
 
 	virtual bool ShouldIStopMovement();
 
@@ -137,6 +144,9 @@ protected:
 	UFUNCTION()
 	virtual void Attack();
 
+	UFUNCTION(NetMulticast, UnReliable)
+	void PlaySoundMulticast(const FVector_NetQuantize& Location);
+
 	UFUNCTION()
 	virtual void OnAttackMontageEnded();
 
@@ -144,8 +154,15 @@ public:
 
 	/** 설정 반환 함수 */
 
+	void SetSpawner(AEnemySpawner* Spawner);
+
+	bool GetSuckedIn() const;
+
+	APawn* GetTarget() const;
+
+	bool GetIsInAir() const;
+
 	FORCEINLINE URPGEnemyFormComponent* GetFormComponent() const { return EnemyForm; }
-	FORCEINLINE void SetSpawner(AEnemySpawner* Spawner) { MySpawner = Spawner; }
 	FORCEINLINE AEnemySpawner* GetSpawner() const { return MySpawner; }
 	FORCEINLINE void SetAIController(ARPGEnemyAIController* AICont) { MyController = AICont; }
 	FORCEINLINE URPGEnemyAnimInstance* GetAnimInstance() const { return MyAnimInst; }
@@ -154,12 +171,7 @@ public:
 	FORCEINLINE int32 GetAttackDistance() const { return AttackDistance; }
 	FORCEINLINE EEnemyAttackType GetAttackType() const { return AttackType;	}
 	FORCEINLINE float GetSpeedAdjustmentValue() const { return SpeedAdjustmentValue; }
-
-	bool GetSuckedIn() const;
-
-	APawn* GetTarget() const;
-
-	bool GetIsInAir() const;
+	FORCEINLINE bool GetIsAttacking() const { return bIsAttacking; }
 
 protected:
 
@@ -251,6 +263,9 @@ private:
 	UPROPERTY()
 	USkeletalMeshComponent* WeaponMesh;
 
+	UPROPERTY(EditAnywhere, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	UPaperSpriteComponent* EnemyIconSprite;
+
 	UPROPERTY()
 	URPGEnemyHealthBarWidget* ProgressBar;
 
@@ -269,6 +284,15 @@ private:
 	FTimerHandle HideMeshTimer;
 
 	FTimerHandle FalldownTimer;
+
+	UPROPERTY(ReplicatedUsing = OnRep_bIsActivated)
+	bool bIsActivated = false;
+
+	bool bIsAttacking = false;
+
+	EEnemyType EnemyType;
+
+	FDelegateHandle DHandle;
 
 	/** 캐릭터 스탯 */
 
@@ -289,17 +313,6 @@ private:
 
 	int32 AttackDistance;
 
-	UPROPERTY(ReplicatedUsing = OnRep_bIsActivated)
-	bool bIsActivated = false;
-
-	float DefaultSpeed = 20.f;
-
-	float SpeedAdjustmentValue = 1.f;
-
-	FVector OriginLocation;
-
-	EEnemyType EnemyType;
-
 	/** 이동 */
 
 	int32 LastTimeY = -1;
@@ -311,4 +324,17 @@ private:
 
 	FTimerHandle CheckOthersTimer;
 
+	float DefaultSpeed = 20.f;
+
+	UPROPERTY(VisibleInstanceOnly, Category = "Enemy | Movement")
+	float SpeedAdjustmentValue = 1.f;
+
+	FVector OriginLocation;
+
+	// AStar 방식에서만 사용
+	TArray<FPos> PathArr;
+
+	FVector NextPoint;
+	FVector	NextDirection;
+	int32 PathIdx;
 };

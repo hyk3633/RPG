@@ -49,7 +49,7 @@ public:
 	FORCEINLINE const FEnemyAssets& GetEnemyAssets() const { return EnemyAssets; }
 	FORCEINLINE EEnemyType GetEnemyType() const { return EnemyType; }
 
-	void MeleeAttack(ARPGBaseEnemyCharacter* Attacker);
+	bool MeleeAttack(ARPGBaseEnemyCharacter* Attacker, FVector& ImpactPoint);
 
 	void RangedAttack(ARPGBaseEnemyCharacter* Attacker, APawn* HomingTarget = nullptr);
 

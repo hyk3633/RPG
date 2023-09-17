@@ -9,6 +9,7 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Sound/SoundCue.h"
 #include "Net/UnrealNetwork.h"
 
 ARPGBaseProjectile::ARPGBaseProjectile()
@@ -119,11 +120,11 @@ void ARPGBaseProjectile::ProcessHitEvent(const FHitResult& HitResult)
 	ACharacter* Character = Cast<ACharacter>(HitResult.GetActor());
 	if (Character)
 	{
-		SpawnParticleMulticast(EParticleType::EPT_CharacterImpact, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
+		SpawnEffectMulticast(EParticleType::EPT_CharacterImpact, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
 	}
 	else
 	{
-		SpawnParticleMulticast(EParticleType::EPT_WorldImpact, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
+		SpawnEffectMulticast(EParticleType::EPT_WorldImpact, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
 	}
 }
 
@@ -172,24 +173,30 @@ void ARPGBaseProjectile::ActivateProjectile()
 void ARPGBaseProjectile::ExpireProjectile()
 {
 	DeactivateProjectileMulticast();
-	SpawnParticleMulticast(EParticleType::EPT_NoImpact, GetActorLocation(), GetActorRotation());
+	SpawnEffectMulticast(EParticleType::EPT_NoImpact, GetActorLocation(), GetActorRotation());
 }
 
-void ARPGBaseProjectile::SpawnParticleMulticast_Implementation(EParticleType Type, const FVector_NetQuantize& SpawnLocation, const FRotator& SpawnRotation)
+void ARPGBaseProjectile::SpawnEffectMulticast_Implementation(EParticleType Type, const FVector_NetQuantize& SpawnLocation, const FRotator& SpawnRotation)
 {
 	if (HasAuthority()) return;
 
-	if (Type == EParticleType::EPT_CharacterImpact && ProjAssets.CharacterImpactParticle)
+	if (Type == EParticleType::EPT_CharacterImpact)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjAssets.CharacterImpactParticle, SpawnLocation, SpawnRotation);
+		if(ProjAssets.CharacterImpactParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjAssets.CharacterImpactParticle, SpawnLocation, SpawnRotation);
+		if(ProjAssets.ImpactSound) UGameplayStatics::PlaySoundAtLocation(this, ProjAssets.ImpactSound, SpawnLocation);
 	}
-	else if (Type == EParticleType::EPT_WorldImpact && ProjAssets.WorldImpactParticle)
+	else if (Type == EParticleType::EPT_WorldImpact)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjAssets.WorldImpactParticle, SpawnLocation, SpawnRotation);
+		if(ProjAssets.WorldImpactParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjAssets.WorldImpactParticle, SpawnLocation, SpawnRotation);
+		if (ProjAssets.ImpactSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, ProjAssets.ImpactSound, SpawnLocation);
+			CF();
+		}
 	}
-	else if (Type == EParticleType::EPT_NoImpact && ProjAssets.NoImpactParticle)
+	else if (Type == EParticleType::EPT_NoImpact)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjAssets.NoImpactParticle, SpawnLocation, SpawnRotation);
+		if(ProjAssets.NoImpactParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ProjAssets.NoImpactParticle, SpawnLocation, SpawnRotation);
 	}
 }
 

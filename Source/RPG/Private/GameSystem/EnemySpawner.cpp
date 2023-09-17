@@ -3,6 +3,7 @@
 #include "GameSystem/WorldGridManagerComponent.h"
 #include "GameSystem/EnemyPooler.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
+#include "Player/Character/RPGBasePlayerCharacter.h"
 #include "DataAsset/MapNavDataAsset.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
@@ -10,6 +11,7 @@
 #include "Components/BillBoardComponent.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 AEnemySpawner::AEnemySpawner()
 {
@@ -51,6 +53,8 @@ void AEnemySpawner::BeginPlay()
 	
 	GetActorBounds(true, SpawnerOrigin, SpawnerExtent);
 	SpawnEnemies();
+
+	//DrawDebugGrid();
 }
 
 void AEnemySpawner::SpawnEnemies()
@@ -78,7 +82,7 @@ void AEnemySpawner::SpawnEnemies()
 				{
 					Enemy->SetActorRotation(FRotator(0, 180, 0));
 					Enemy->ActivateEnemy(SpawnLocation);
-					Enemy->SetActorLocation(FVector(0, -430, 0));
+					//Enemy->SetActorLocation(FVector(0, 0, 0));
 				}
 			}
 			else ELOG(TEXT("no place to respawn"));
@@ -89,6 +93,8 @@ void AEnemySpawner::SpawnEnemies()
 bool AEnemySpawner::GetSpawnLocation(FVector& SpawnLocation)
 {
 	FHitResult Hit;
+	const FVector Top = FVector(0, 0, 500);
+	const FVector Bottom = FVector(0, 0, -500);
 	for (int8 I = 0; I < 10; I++)
 	{
 		SpawnLocation = FMath::RandPointInBox(FBox(SpawnerOrigin - SpawnerExtent, SpawnerOrigin + SpawnerExtent - FVector(100, 100, 0)));
@@ -111,7 +117,12 @@ bool AEnemySpawner::GetSpawnLocation(FVector& SpawnLocation)
 			true
 		);
 
-		if (!Hit.bBlockingHit) return true;
+		if (!Hit.bBlockingHit)
+		{
+			GetWorld()->LineTraceSingleByChannel(Hit, SpawnLocation + Top, SpawnLocation + Bottom, ECC_HeightCheck);
+			SpawnLocation.Z = Hit.ImpactPoint.Z;
+			return true;
+		}
 	}
 	return false;
 }
@@ -135,7 +146,39 @@ void AEnemySpawner::InitFlowField()
 		BiasX = FlowFieldDA->BiasX;
 
 		IsMovableArr = FlowFieldDA->IsMovableArr;
+		FieldHeights = FlowFieldDA->FieldHeights;
 	}
+	else
+	{
+		ELOG(TEXT("Failed to load Nav data asset!"));
+	}
+}
+
+void AEnemySpawner::DrawDebugGrid()
+{
+	int32 Count = 0;
+	while (Count < TotalSize)
+	{
+		FVector Loc = FVector(OriginLocation.X + (GridDist * (Count % GridWidth)) - BiasX, OriginLocation.Y + (GridDist * (Count / GridWidth)) - BiasY, FieldHeights[Count]);
+		Loc.Z += 10.f;
+		if (IsMovableArr[Count])
+		{
+			DrawDebugBox(GetWorld(), Loc, FVector(GridDist, GridDist, 1), FColor::Red, true, -1.f, 0, 1.5f);
+		}
+		else
+		{
+			DrawDebugBox(GetWorld(), Loc, FVector(GridDist, GridDist, 1), FColor::Green, true, -1.f, 0, 1.5f);
+		}
+		Count++;
+	}
+}
+
+void AEnemySpawner::PlayerDead(ACharacter* PlayerCharacter)
+{
+	DOnPlayerOut.Broadcast(PlayerCharacter);
+	PlayersInArea.Remove(PlayerCharacter);
+	ARPGBasePlayerCharacter* RPGPlayerCharacter = Cast<ARPGBasePlayerCharacter>(PlayerCharacter);
+	if(RPGPlayerCharacter) RPGPlayerCharacter->DOnPlayerDeath.Clear();
 }
 
 void AEnemySpawner::OnAreaBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -143,6 +186,12 @@ void AEnemySpawner::OnAreaBoxBeginOverlap(UPrimitiveComponent* OverlappedCompone
 	ACharacter* PlayerCharacter = Cast<ACharacter>(OtherActor);
 	if (PlayerCharacter)
 	{
+		ARPGBasePlayerCharacter* RPGPlayerCharacter = Cast<ARPGBasePlayerCharacter>(PlayerCharacter);
+		if (RPGPlayerCharacter)
+		{
+			RPGPlayerCharacter->DOnPlayerDeath.AddUFunction(this, FName("PlayerDead"));
+		}
+
 		PlayersInArea.Add(PlayerCharacter);
 		TargetsFlowVectors.Add(PlayerCharacter, FFlowVector(TotalSize));
 	}
@@ -153,12 +202,16 @@ void AEnemySpawner::OnAreaBoxEndOverlap(UPrimitiveComponent* OverlappedComponent
 	ACharacter* PlayerCharacter = Cast<ACharacter>(OtherActor);
 	if (PlayerCharacter)
 	{
+		ARPGBasePlayerCharacter* RPGPlayerCharacter = Cast<ARPGBasePlayerCharacter>(PlayerCharacter);
+		if (RPGPlayerCharacter) RPGPlayerCharacter->DOnPlayerDeath.Clear();
+		
 		if (PlayersInArea.Find(PlayerCharacter) != INDEX_NONE)
 		{
 			PlayersInArea.Remove(PlayerCharacter);
 			TargetsFlowVectors.Remove(PlayerCharacter);
 		}
 	}
+	DOnPlayerOut.Broadcast(PlayerCharacter);
 }
 
 void AEnemySpawner::AddEnemyToRespawnQueue(EEnemyType Type)
@@ -198,11 +251,13 @@ void AEnemySpawner::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (HasAuthority() && PlayersInArea.Num())
+	// 디버깅 시에는 !PlayersInArea로
+	/*if (HasAuthority() && PlayersInArea.Num())
 	{
 		CumulTime += DeltaTime;
-		if (CumulTime >= 0.3f)
+		if (CumulTime >= 1.f)
 		{
+			//CalculateFlowVector(nullptr);
 			for (ACharacter* Target : PlayersInArea)
 			{
 				if (Target->GetVelocity().Length() >= 0)
@@ -212,27 +267,38 @@ void AEnemySpawner::Tick(float DeltaTime)
 			}
 			CumulTime = 0.f;
 		}
-	}
+	}*/
 }
 
-FVector& AEnemySpawner::GetFlowVector(ACharacter* TargetCharacter, ACharacter* EnemyCharacter)
+FVector* AEnemySpawner::GetFlowVector(ACharacter* TargetCharacter, ACharacter* EnemyCharacter)
 {
 	const int32 Idx = GetConvertCurrentLocationToIndex(EnemyCharacter->GetActorLocation());
 	FFlowVector* FlowVector = TargetsFlowVectors.Find(TargetCharacter);
-	return FlowVector->GridFlows[Idx];
+	if (FlowVector) return &FlowVector->GridFlows[Idx];
+	else return nullptr;
 }
 
 int32 AEnemySpawner::GetConvertCurrentLocationToIndex(const FVector& Location)
 {
-	int32 DX = FMath::Floor(((Location.X - OriginLocation.X + BiasX) / GridDist) + 0.5f);
-	int32 DY = FMath::Floor(((Location.Y - OriginLocation.Y + BiasY) / GridDist) + 0.5f);
+	const int32 DX = FMath::Floor(((Location.X - OriginLocation.X + BiasX) / GridDist) + 0.5f);
+	const int32 DY = FMath::Floor(((Location.Y - OriginLocation.Y + BiasY) / GridDist) + 0.5f);
 
 	return (DY * GridWidth + DX);
 }
 
 void AEnemySpawner::CalculateFlowVector(ACharacter* TargetCharacter)
 {
-	double start = FPlatformTime::Seconds();
+	//double start = FPlatformTime::Seconds();
+
+	// 디버그
+	//APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	//FHitResult Hit;
+	//PlayerController->GetHitResultUnderCursor(ECC_GroundTrace, false, Hit);
+	//if (!Hit.bBlockingHit) return;
+	//FFlowVector FVarr2(TotalSize);
+	//FFlowVector* FVArr = &FVarr2;
+	//const int32 DestIdx = GetConvertCurrentLocationToIndex(Hit.ImpactPoint);
+	//if (DestIdx >= TotalSize) return;
 
 	FFlowVector* FVArr = TargetsFlowVectors.Find(TargetCharacter);
 	if (FVArr == nullptr) return;
@@ -240,6 +306,7 @@ void AEnemySpawner::CalculateFlowVector(ACharacter* TargetCharacter)
 	const int32 DestIdx = GetConvertCurrentLocationToIndex(TargetCharacter->GetActorLocation());
 	if (DestIdx >= TotalSize) return;
 
+	// 다른 함수 찾기
 	FVArr->Score.Init(-1, TotalSize);
 
 	int32* DistScore = FVArr->Score.GetData();
@@ -251,10 +318,15 @@ void AEnemySpawner::CalculateFlowVector(ACharacter* TargetCharacter)
 	TQueue<FPos> Next;
 	Next.Enqueue(FPos(DestIdx / GridWidth, DestIdx % GridWidth));
 
+	// 그리드에 목적지로 부터 증가하는 점수 부여
 	while (!Next.IsEmpty())
 	{
 		FPos CPos;
 		Next.Dequeue(CPos);
+
+		DrawDebugString(GetWorld(),
+			FVector(OriginLocation.X + (GridDist * CPos.X) - BiasX, OriginLocation.Y + (GridDist * CPos.Y) - BiasY, FieldHeights[(CPos.Y * GridWidth + CPos.X)] + 10.f),
+			FString::Printf(TEXT("%d"), *(DistScore + CPos.Y * GridWidth + CPos.X)), nullptr, FColor::Black, 1.f);
 
 		for (int8 Idx = 0; Idx < 8; Idx++)
 		{
@@ -265,20 +337,21 @@ void AEnemySpawner::CalculateFlowVector(ACharacter* TargetCharacter)
 			{
 				if (*(DistScore + NextIdx) != -1) continue;
 				if (IsMovableArr[NextIdx] == false) continue;
+				const int32 HeightScore = FMath::Abs(FMath::TruncToInt(FieldHeights[NextIdx] - FieldHeights[DestIdx]));
 
-				*(DistScore + NextIdx) = *(DistScore + (CPos.Y * GridWidth + CPos.X)) + 1;
+				*(DistScore + NextIdx) = *(DistScore + (CPos.Y * GridWidth + CPos.X)) + 1 + HeightScore;
 				Next.Enqueue(NextPos);
 			}
 		}
 	}
 
+	// 각 그리드의 인접 그리드 중 가장 점수가 작은 그리드로 향하는 방향 벡터 계산
 	for (int32 CY = 0; CY < GridLength; CY++)
 	{
 		for (int32 CX = 0; CX < GridWidth; CX++)
 		{
 			if (CY * GridWidth + CX == DestIdx) continue;
 			bool Flag = false;
-			FVector Loc = FVector(OriginLocation.X + (GridDist * CX) - BiasX, OriginLocation.Y + (GridDist * CY) - BiasY, 30);
 			int32 Min = INT_MAX, Idx = 0;
 			for (int8 Dir = 0; Dir < 8; Dir++)
 			{
@@ -286,18 +359,31 @@ void AEnemySpawner::CalculateFlowVector(ACharacter* TargetCharacter)
 				if (NPos.Y >= 0 && NPos.Y < GridLength && NPos.X >= 0 && NPos.X < GridWidth)
 				{
 					int32 NextIdx = NPos.Y * GridWidth + NPos.X;
-					if (Min > *(DistScore+NextIdx) && *(DistScore+NextIdx) >= 0)
+					if (Min > *(DistScore + NextIdx) && *(DistScore + NextIdx) >= 0)
 					{
 						Min = *(DistScore + NextIdx);
 						Idx = Dir;
 					}
 				}
 			}
-			FVector Loc2 = FVector(OriginLocation.X + (GridDist * (CX + Front[Idx].X)) - BiasX, OriginLocation.Y + (GridDist * (CY + Front[Idx].Y)) - BiasY, 30);
+
+			// 현재 그리드
+			FVector Loc = FVector(OriginLocation.X + (GridDist * CX) - BiasX, OriginLocation.Y + (GridDist * CY) - BiasY, 0);
+			// 인접한 그리드 중 가장 값이 작은 그리드
+			FVector Loc2 = FVector(OriginLocation.X + (GridDist * (CX + Front[Idx].X)) - BiasX, OriginLocation.Y + (GridDist * (CY + Front[Idx].Y)) - BiasY, 0);
 			*(FlowVector + (CY * GridWidth + CX)) = (Loc2 - Loc).GetSafeNormal();
+
+			if (Min != INT_MAX)
+			{
+				FVector MidPoint = 0.5f * (Loc + Loc2);
+				FVector HalfwayPoint = MidPoint + (Loc2 - MidPoint) * 0.5f;
+				Loc.Z = FieldHeights[(CY + Front[Idx].Y) * GridWidth + (CX + Front[Idx].X)] + 10.f;
+				HalfwayPoint.Z = FieldHeights[(CY + Front[Idx].Y) * GridWidth + (CX + Front[Idx].X)] + 10.f;
+				DrawDebugDirectionalArrow(GetWorld(), Loc, HalfwayPoint, 20, FColor::Blue, false, 1.f, 0, 1.5f);
+			}
 		}
 	}
 
-	double end = FPlatformTime::Seconds();
+	//double end = FPlatformTime::Seconds();
 	//PLOG(TEXT("time : %f"), end - start);
 }

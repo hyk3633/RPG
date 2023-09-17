@@ -14,7 +14,7 @@ void UItemSpawnManagerComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	CreatePool(5);
+	//CreatePool(5);
 }
 
 void UItemSpawnManagerComponent::DropItem(const FItemInfo& Info, const FVector& Location)

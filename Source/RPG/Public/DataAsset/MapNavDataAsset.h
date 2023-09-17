@@ -21,12 +21,15 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<FPos> FieldLocations;
+	
+	UPROPERTY(VisibleAnywhere)
+	TArray<float> FieldHeights;
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<bool> IsMovableArr;
 
 	UPROPERTY(VisibleAnywhere)
-	TArray<int8> ExtraCost;
+	TArray<int16> ExtraCost;
 
 	UPROPERTY(VisibleAnywhere)
 	FString MapName;

@@ -19,6 +19,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "PaperSpriteComponent.h"
+#include "PaperSprite.h"
+#include "Sound/SoundCue.h"
 #include "Net/UnrealNetwork.h"
 
 ARPGBaseEnemyCharacter::ARPGBaseEnemyCharacter()
@@ -42,6 +45,16 @@ ARPGBaseEnemyCharacter::ARPGBaseEnemyCharacter()
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon Skeletal Mesh"));
 	WeaponMesh->SetVisibility(false);
+
+	EnemyIconSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("Paper Sprite"));
+	EnemyIconSprite->SetupAttachment(RootComponent);
+	static ConstructorHelpers::FObjectFinder<UPaperSprite> EnemyIconAsset(TEXT("PaperSprite'/Game/_Assets/Texture2D/Minimap/EnemyIcon_Sprite.EnemyIcon_Sprite'"));
+	if (EnemyIconAsset.Succeeded()) { EnemyIconSprite->SetSprite(EnemyIconAsset.Object); }
+	EnemyIconSprite->SetRelativeRotation(FRotator(0.f, -90.f, 90.f));
+	EnemyIconSprite->SetRelativeLocation(FVector(0, 0, 299));
+	EnemyIconSprite->SetRelativeScale3D(FVector(0.1f));
+	EnemyIconSprite->bVisibleInSceneCaptureOnly = true;
+	EnemyIconSprite->SetVisibility(false);
 
 	HealthBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Health Bar Widget"));
 	static ConstructorHelpers::FClassFinder<UUserWidget> WidgetAsset(TEXT("WidgetBlueprint'/Game/_Assets/Blueprints/HUD/WBP_EnemyHealthBar.WBP_EnemyHealthBar_C'"));
@@ -96,17 +109,19 @@ void ARPGBaseEnemyCharacter::InitAnimInstance()
 
 void ARPGBaseEnemyCharacter::ActivateEnemy(const FVector& Location)
 {
-
 	Health = MaxHealth;
 	bIsActivated = true;
 	SetCollisionActivate();
 	if (HasAuthority())
 	{
-		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
 		SetCollisionActivate();
 		DOnActivate.Broadcast();
 		OriginLocation = Location;
 		SetActorLocation(Location);
+		if (MySpawner)
+		{
+			DHandle = MySpawner->DOnPlayerOut.AddUFunction(this, FName("PlayerOut"));
+		}
 	}
 }
 
@@ -117,6 +132,7 @@ void ARPGBaseEnemyCharacter::OnRep_bIsActivated()
 		GetMesh()->SetVisibility(true);
 		WeaponMesh->SetVisibility(true);
 		MyAnimInst->CancelMontage();
+		EnemyIconSprite->SetVisibility(true);
 	}
 }
 
@@ -148,6 +164,14 @@ void ARPGBaseEnemyCharacter::BeginPlay()
 	if (ProgressBar) ProgressBar->EnemyHealthProgressBar->SetPercent(1.f);
 }
 
+void ARPGBaseEnemyCharacter::PlayerOut(ACharacter* TargetPlayer)
+{
+	if (bIsActivated && TargetPlayer == GetTarget())
+	{
+		MyController->EmptyTheTarget();
+	}
+}
+
 void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -160,7 +184,8 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 
 	if (HasAuthority() && bUpdateMovement && bIsActivated)
 	{
-		UpdateMovement();
+		//UpdateMovementFlowField();
+		UpdateMovementAStar();
 	}
 }
 
@@ -237,6 +262,7 @@ void ARPGBaseEnemyCharacter::HealthDecrease(const int32& Damage)
 		DOnDeath.Broadcast();
 		DOnDeactivate.Broadcast(EnemyType);
 		DMoveEnd.Broadcast();
+		MySpawner->DOnPlayerOut.Remove(DHandle);
 		DisableSuckedInMulticast();
 		SetCollisionDeactivate();
 		bIsActivated = false;
@@ -306,6 +332,7 @@ void ARPGBaseEnemyCharacter::EnemyDeath()
 {
 	OffRenderCustomDepthEffect();
 	HealthBarWidget->SetVisibility(false);
+	EnemyIconSprite->SetVisibility(false);
 	MyAnimInst->PlayDeathMontage();
 }
 
@@ -317,6 +344,11 @@ void ARPGBaseEnemyCharacter::BTTask_Move()
 	{
 		bUpdateMovement = true;
 		GetWorldTimerManager().SetTimer(CheckOthersTimer, this, &ARPGBaseEnemyCharacter::CheckOthersInFrontOfMe, 0.1f, true);
+
+		// AStar 방식
+		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), GetTarget()->GetActorLocation(), PathArr);
+		NextPoint = FVector(PathArr[0].X, PathArr[0].Y, GetActorLocation().Z);
+		NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
 	}
 	else
 	{
@@ -324,7 +356,7 @@ void ARPGBaseEnemyCharacter::BTTask_Move()
 	}
 }
 
-void ARPGBaseEnemyCharacter::UpdateMovement()
+void ARPGBaseEnemyCharacter::UpdateMovementFlowField()
 {
 	if (ShouldIStopMovement())
 	{
@@ -334,8 +366,59 @@ void ARPGBaseEnemyCharacter::UpdateMovement()
 	}
 	else
 	{
-		const FVector& Loc = MySpawner->GetFlowVector(Cast<ACharacter>(GetTarget()), this);
-		AddMovementInput(Loc * DefaultSpeed * SpeedAdjustmentValue * GetWorld()->GetDeltaSeconds());
+		const FVector* FlowVector = MySpawner->GetFlowVector(Cast<ACharacter>(GetTarget()), this);
+		if (FlowVector)
+		{
+			AddMovementInput(*FlowVector * DefaultSpeed * SpeedAdjustmentValue * GetWorld()->GetDeltaSeconds());
+			FRotator TargetRot = FRotationMatrix::MakeFromX(*FlowVector).Rotator();
+			SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRot, GetWorld()->GetDeltaSeconds(), 10.f));
+		}
+		else
+		{
+			bUpdateMovement = false;
+			GetWorldTimerManager().ClearTimer(CheckOthersTimer);
+			DMoveEnd.Broadcast();
+			MyController->TargetMissed();
+		}
+	}
+}
+
+void ARPGBaseEnemyCharacter::UpdateMovementAStar()
+{
+	const float Dist = FVector::Dist(NextPoint, GetActorLocation());
+	if (Dist > 20.f)
+	{
+		if (Dist > 55.f)
+		{
+			GetMovementComponent()->StopMovementImmediately();
+			bUpdateMovement = false;
+			PathIdx = 0;
+			GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), GetTarget()->GetActorLocation(), PathArr);
+			WLOG(TEXT("get new path"));
+		}
+		else
+		{
+			//AddMovementInput(NextDirection);
+			AddMovementInput(NextDirection * DefaultSpeed * SpeedAdjustmentValue * GetWorld()->GetDeltaSeconds());
+			FRotator TargetRot = FRotationMatrix::MakeFromX(NextDirection).Rotator();
+			SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRot, GetWorld()->GetDeltaSeconds(), 10.f));
+		}
+	}
+	else
+	{
+		PathIdx++;
+		if (PathIdx == PathArr.Num() || ShouldIStopMovement())
+		{
+			bUpdateMovement = false;
+			GetWorldTimerManager().ClearTimer(CheckOthersTimer);
+			DMoveEnd.Broadcast();
+			PathIdx = 0;
+		}
+		else
+		{
+			NextPoint = FVector(PathArr[PathIdx].X, PathArr[PathIdx].Y, GetActorLocation().Z);
+			NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+		}
 	}
 }
 
@@ -377,6 +460,7 @@ void ARPGBaseEnemyCharacter::CheckOthersInFrontOfMe()
 
 void ARPGBaseEnemyCharacter::BTTask_Attack()
 {
+	bIsAttacking = true;
 	PlayMeleeAttackEffectMulticast();
 }
 
@@ -389,7 +473,7 @@ void ARPGBaseEnemyCharacter::PlayMeleeAttackEffect()
 {
 	if (MyAnimInst)
 	{
-		MyAnimInst->PlayMeleeAttackMontage();
+		MyAnimInst->PlayMeleeAttackMontage(HasAuthority());
 	}
 }
 
@@ -397,16 +481,36 @@ void ARPGBaseEnemyCharacter::Attack()
 {
 	if (HasAuthority())
 	{
-		EnemyForm->MeleeAttack(this);
+		FVector SoundPoint;
+		const bool bHitted = EnemyForm->MeleeAttack(this, SoundPoint);
+		if (bHitted)
+		{
+			PlaySoundMulticast(SoundPoint);
+		}
+	}
+}
+
+void ARPGBaseEnemyCharacter::PlaySoundMulticast_Implementation(const FVector_NetQuantize& Location)
+{
+	if (HasAuthority() == false)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, EnemyAssets.MeleeHitSound, Location);
 	}
 }
 
 void ARPGBaseEnemyCharacter::OnAttackMontageEnded()
 {
 	DOnAttackEnd.Broadcast();
+	bIsAttacking = false;
 }
 
 /** 반환 함수 */
+
+void ARPGBaseEnemyCharacter::SetSpawner(AEnemySpawner* Spawner)
+{
+	MySpawner = Spawner;
+	DHandle = MySpawner->DOnPlayerOut.AddUFunction(this, FName("PlayerOut"));
+}
 
 bool ARPGBaseEnemyCharacter::GetSuckedIn() const
 {

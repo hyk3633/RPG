@@ -71,6 +71,22 @@ APawn* ARPGEnemyAIController::GetTarget() const
 	return nullptr;
 }
 
+void ARPGEnemyAIController::EmptyTheTarget()
+{
+	if (BBComp)
+	{
+		BBComp->SetValueAsObject(TargetPlayer, nullptr);
+	}
+}
+
+void ARPGEnemyAIController::TargetMissed()
+{
+	if (BBComp)
+	{
+		BBComp->SetValueAsObject(TargetPlayer, nullptr);
+	}
+}
+
 void ARPGEnemyAIController::SetIsFalldown(const bool bIsFalldown)
 {
 	if (BBComp)

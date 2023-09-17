@@ -14,6 +14,7 @@
 #include "Kismet/KismetSystemlibrary.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
+#include "Sound/SoundCue.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
@@ -287,7 +288,7 @@ void ARPGSorcererPlayerCharacter::MeteorliteFallServer_Implementation()
 
 void ARPGSorcererPlayerCharacter::SpawnMeteorProjectile()
 {
-	const FVector SpawnPoint = GetActorLocation() + (GetActorUpVector() * 300.f);
+	const FVector SpawnPoint = GetActorLocation() + (GetActorUpVector() * 500.f);
 	const FRotator SpawnDirection = (TargetingHitResult.ImpactPoint - SpawnPoint).Rotation();
 	
 	SpawnMeteorlietPortalParticleMulticast(SpawnPoint, SpawnDirection);
@@ -320,6 +321,7 @@ void ARPGSorcererPlayerCharacter::MeteorShowerServer_Implementation()
 	SphereTraceLocation = TargetingHitResult.ImpactPoint;
 	SpawnMeteorPortalParticleMulticast();
 	GetWorldTimerManager().SetTimer(MeteorShowerTimer, this, &ARPGSorcererPlayerCharacter::MeteorShowerOn, 0.5f, false);
+	GetWorldTimerManager().SetTimer(MeteorFireTimer, this, &ARPGSorcererPlayerCharacter::SpawnMeteorShowerFireSoundMulticast, 0.3f, true, 0.3f);
 }
 
 void ARPGSorcererPlayerCharacter::SpawnMeteorPortalParticleMulticast_Implementation()
@@ -330,6 +332,7 @@ void ARPGSorcererPlayerCharacter::SpawnMeteorPortalParticleMulticast_Implementat
 		FVector PSpawnLoc = TargetingHitResult.ImpactPoint;
 		PSpawnLoc.Z = 500.f;
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorPortalParticle, PSpawnLoc, FRotator::ZeroRotator);
+		if (MeteorShowerPortalSound) UGameplayStatics::PlaySoundAtLocation(this, MeteorShowerPortalSound, PSpawnLoc, 0.3f);
 	}
 }
 
@@ -345,6 +348,7 @@ void ARPGSorcererPlayerCharacter::ApplyMeteorDamage()
 	if (MeteorDamageCount == 5)
 	{
 		GetWorldTimerManager().ClearTimer(MeteorDamageTimer);
+		GetWorldTimerManager().ClearTimer(MeteorFireTimer);
 		AbilityActiveBitOffClient(EPressedKey::EPK_E);
 		AbilityCooldownStart(EPressedKey::EPK_E);
 	}
@@ -369,6 +373,7 @@ void ARPGSorcererPlayerCharacter::ApplyMeteorDamage()
 		if (Enemy == nullptr || Enemy->GetIsActivated() == false) continue;
 		ApplyDamageToEnemy(Enemy, Damage);
 	}
+	SpawnMeteorShowerImpactSoundMulticast();
 	MeteorDamageCount++;
 }
 
@@ -384,6 +389,18 @@ void ARPGSorcererPlayerCharacter::SpawnMeteorShowerParticle()
 	FVector PSpawnLoc = SphereTraceLocation;
 	PSpawnLoc.Z = 500.f;
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MeteorShowerParticle, PSpawnLoc, FRotator::ZeroRotator, true);
+}
+
+void ARPGSorcererPlayerCharacter::SpawnMeteorShowerFireSoundMulticast_Implementation()
+{
+	if (HasAuthority()) return;
+	if (MeteorShowerFireSound) UGameplayStatics::PlaySoundAtLocation(this, MeteorShowerFireSound, SphereTraceLocation, 2.f);
+}
+
+void ARPGSorcererPlayerCharacter::SpawnMeteorShowerImpactSoundMulticast_Implementation()
+{
+	if (HasAuthority()) return;
+	if (MeteorShowerImpactSound) UGameplayStatics::PlaySoundAtLocation(this, MeteorShowerImpactSound, SphereTraceLocation, 2.f);
 }
 
 /** --------------------------- R ½ºÅ³ --------------------------- */

@@ -7,6 +7,7 @@
 #include "Enemy/RPGEnemyAnimInstance.h"
 #include "Projectile/RPGBaseProjectile.h"
 #include "GameSystem/ProjectilePoolerComponent.h"
+#include "DamageType/DamageTypeBase.h"
 #include "../RPG.h"
 #include "../RPGGameModeBase.h"
 #include "Kismet/GameplayStatics.h"
@@ -91,7 +92,7 @@ void URPGEnemyFormComponent::InitEnemy(ARPGBaseEnemyCharacter* SpawnedEnemy)
 	SpawnedEnemy->AttackType = EnemyAssets.AttackType;
 }
 
-void URPGEnemyFormComponent::MeleeAttack(ARPGBaseEnemyCharacter* Attacker)
+bool URPGEnemyFormComponent::MeleeAttack(ARPGBaseEnemyCharacter* Attacker, FVector& ImpactPoint)
 {
 	const FVector TraceStart = Attacker->GetMesh()->GetSocketTransform(FName("Melee_Socket")).GetLocation();
 
@@ -101,8 +102,11 @@ void URPGEnemyFormComponent::MeleeAttack(ARPGBaseEnemyCharacter* Attacker)
 
 	if (HitResult.bBlockingHit)
 	{
-		UGameplayStatics::ApplyDamage(HitResult.GetActor(), EnemyInfo.StrikingPower, Attacker->GetController(), Attacker, nullptr);
+		UGameplayStatics::ApplyDamage(HitResult.GetActor(), EnemyInfo.StrikingPower, Attacker->GetController(), Attacker, UDamageTypeBase::StaticClass());
+		ImpactPoint = HitResult.ImpactPoint;
 	}
+
+	return HitResult.bBlockingHit;
 }
 
 void URPGEnemyFormComponent::RangedAttack(ARPGBaseEnemyCharacter* Attacker, APawn* HomingTarget)
@@ -161,7 +165,7 @@ void URPGEnemyFormComponent::StraightMultiAttack(ARPGBaseEnemyCharacter* Attacke
 	{
 		if (Hit.bBlockingHit)
 		{
-			UGameplayStatics::ApplyDamage(Hit.GetActor(), EnemyInfo.StrikingPower, Attacker->GetController(), Attacker, nullptr);
+			UGameplayStatics::ApplyDamage(Hit.GetActor(), EnemyInfo.StrikingPower, Attacker->GetController(), Attacker, UDamageTypeBase::StaticClass());
 			ImpactLocation.Add(Hit.ImpactPoint);
 			ImpactRotation.Add(Hit.ImpactNormal.Rotation());
 		}

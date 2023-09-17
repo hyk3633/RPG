@@ -65,7 +65,7 @@ bool ARPGRangedEnemyCharacter::CheckCanFireToTarget()
 void ARPGRangedEnemyCharacter::PlayRangedAttackEffectMulticast_Implementation()
 {
 	if (MyAnimInst == nullptr) return;
-	MyAnimInst->PlayRangedAttackMontage();
+	MyAnimInst->PlayRangedAttackMontage(HasAuthority());
 }
 
 void ARPGRangedEnemyCharacter::RangedAttack()

@@ -20,6 +20,7 @@
 
 class UWorldGridManagerComponent;
 class UItemSpawnManagerComponent;
+class ARPGBasePlayerCharacter;
 class UDataTable;
 class AEnemyPooler;
 
@@ -32,17 +33,22 @@ public:
 
 	ARPGGameModeBase();
 
+
+	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
+
 protected:
 
 	virtual void BeginPlay() override;
 
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+
 public:
+
+	void SpawnPlayerCharacterAndPossess(APlayerController* Player);
 
 	FORCEINLINE UWorldGridManagerComponent* GetWorldGridManager() const { return WorldGridManager; }
 
 	void GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest);
-
-	void UpdateCharacterExtraCost(int32& CoordinateY, int32& CoordinateX, const FVector& Location);
 
 	void SpawnItems(const FVector& Location);
 
@@ -63,6 +69,12 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 	UItemSpawnManagerComponent* ItemSpawnManager;
+
+	UPROPERTY()
+	TSubclassOf<ARPGBasePlayerCharacter> WarriorCharacterClass;
+
+	UPROPERTY()
+	TSubclassOf<ARPGBasePlayerCharacter> SorcererCharacterClass;
 
 	UPROPERTY()
 	UDataTable* EnemyInfoDataTable;

@@ -27,6 +27,8 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	AutoPossessPlayer = EAutoReceiveInput::Disabled;
+
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
@@ -62,24 +64,32 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic;
 	MinimapCapture->OrthoWidth = 1000.f;
 	MinimapCapture->ShowFlags.SkeletalMeshes = 0;
+	MinimapCapture->ShowFlags.Particles = 0;
+	MinimapCapture->ShowFlags.Atmosphere = 0;
+	MinimapCapture->ShowFlags.Fog = 0;
+	MinimapCapture->ShowFlags.DynamicShadows = 0;
 
 	PlayerIconSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("Paper Sprite"));
 	PlayerIconSprite->SetupAttachment(RootComponent);
 	static ConstructorHelpers::FObjectFinder<UPaperSprite> PlayerIconAsset(TEXT("PaperSprite'/Game/_Assets/Texture2D/Minimap/PlayerIcon_Sprite.PlayerIcon_Sprite'"));
 	if (PlayerIconAsset.Succeeded()) { PlayerIconSprite->SetSprite(PlayerIconAsset.Object); }
+	static ConstructorHelpers::FObjectFinder<UPaperSprite> OtherPlayerIconAsset(TEXT("PaperSprite'/Game/_Assets/Texture2D/Minimap/OtherPlayerIcon_Sprite.OtherPlayerIcon_Sprite'"));
+	if (OtherPlayerIconAsset.Succeeded()) { OtherPlayerIcon = OtherPlayerIconAsset.Object; }
 	PlayerIconSprite->SetRelativeRotation(FRotator(0.f, -90.f, 90.f));
 	PlayerIconSprite->SetRelativeLocation(FVector(0, 0, 299));
-	PlayerIconSprite->SetRelativeScale3D(FVector(0.3));
+	PlayerIconSprite->SetRelativeScale3D(FVector(0.2));
 	PlayerIconSprite->bOwnerNoSee = true;
 	PlayerIconSprite->bVisibleInSceneCaptureOnly = true;
 
 	GetMesh()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_ObstacleCheck, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECC_EnemyBody, ECollisionResponse::ECR_Overlap);
 
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	GetCapsuleComponent()->SetCapsuleRadius(60.f);
 	GetCapsuleComponent()->SetCollisionObjectType(ECC_PlayerBody);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyBody, ECollisionResponse::ECR_Overlap);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_EnemyAttack, ECollisionResponse::ECR_Block);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_PlayerProjectile, ECollisionResponse::ECR_Ignore);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_GroundTrace, ECollisionResponse::ECR_Ignore);
@@ -123,6 +133,7 @@ void ARPGBasePlayerCharacter::BeginPlay()
 	{
 		TargetingComp->OnComponentBeginOverlap.AddDynamic(this, &ARPGBasePlayerCharacter::OnTargetingComponentBeginOverlap);
 		TargetingComp->OnComponentEndOverlap.AddDynamic(this, &ARPGBasePlayerCharacter::OnTargetingComponentEndOverlap);
+		//DrawDebugGrid();
 	}
 	RPGAnimInstance = Cast<URPGAnimInstance>(GetMesh()->GetAnimInstance());
 	if (RPGAnimInstance)
@@ -135,7 +146,11 @@ void ARPGBasePlayerCharacter::BeginPlay()
 	}
 	if (HasAuthority())
 	{
-		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
+		PlayerIconSprite->SetVisibility(false);
+	}
+	else if (IsLocallyControlled() == false && OtherPlayerIcon)
+	{
+		PlayerIconSprite->SetSprite(OtherPlayerIcon);
 	}
 }
 
@@ -152,7 +167,8 @@ void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, 
 
 		if (Health == 0.f)
 		{
-			TempController = GetController();
+			DOnPlayerDeath.Broadcast(this);
+			TempController = Cast<APlayerController>(GetController());
 			SetCharacterDeadStateMulticast();
 			GetWorldTimerManager().SetTimer(RespawnTimer, this, &ARPGBasePlayerCharacter::PlayerRespawn, 5.f);
 			SetLifeSpan(6.f);
@@ -238,7 +254,8 @@ void ARPGBasePlayerCharacter::SetCharacterDeadStateMulticast_Implementation()
 void ARPGBasePlayerCharacter::PlayerRespawn()
 {
 	DetachFromControllerPendingDestroy();
-	GetWorld()->GetAuthGameMode()->RestartPlayer(TempController);
+	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->SpawnPlayerCharacterAndPossess(TempController);
+	//GetWorld()->GetAuthGameMode()->RestartPlayer(TempController);
 }
 
 void ARPGBasePlayerCharacter::PlayerDie()
@@ -310,15 +327,6 @@ void ARPGBasePlayerCharacter::Tick(float DeltaTime)
 		{
 			UpdateMovement();
 		}
-		else if (HasAuthority())
-		{
-			CulmulativeTime += DeltaTime;
-			if (CulmulativeTime >= 0.1f)
-			{
-				GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
-				CulmulativeTime = 0.f;
-			}
-		}
 	}
 	
 	if (bAiming && IsLocallyControlled())
@@ -381,7 +389,6 @@ void ARPGBasePlayerCharacter::StopMove()
 {
 	GetMovementComponent()->StopMovementImmediately();
 	bUpdateMovement = false;
-	ReplicatebUpdateMovementServer(bUpdateMovement);
 	PathIdx = 0;
 }
 
@@ -391,25 +398,16 @@ void ARPGBasePlayerCharacter::SetDestinationAndPath()
 	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
 	if (Hit.bBlockingHit == false) return;
 
-	SpawnClickParticle(Hit.ImpactPoint);
-	SetDestinaionAndPathServer(Hit.ImpactPoint);
+	Destination = Hit.ImpactPoint;
+	SpawnClickParticle(Destination);
+	SetDestinaionAndPathServer(Destination);
 }
 
 void ARPGBasePlayerCharacter::InitDestAndDir()
 {
 	bUpdateMovement = true;
-	ReplicatebUpdateMovementServer(bUpdateMovement);
 	NextPoint = FVector(PathArr[0].X, PathArr[0].Y, GetActorLocation().Z);
 	NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
-}
-
-void ARPGBasePlayerCharacter::ReplicatebUpdateMovementServer_Implementation(const bool UpdateMovement)
-{
-	bUpdateMovement = UpdateMovement;
-	if (!bUpdateMovement)
-	{
-		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->UpdateCharacterExtraCost(LastTimeY, LastTimeX, GetActorLocation());
-	}
 }
 
 void ARPGBasePlayerCharacter::SetDestinaionAndPathServer_Implementation(const FVector_NetQuantize& HitLocation)
@@ -419,9 +417,18 @@ void ARPGBasePlayerCharacter::SetDestinaionAndPathServer_Implementation(const FV
 
 void ARPGBasePlayerCharacter::UpdateMovement()
 {
-	if (FVector::Dist(NextPoint, GetActorLocation()) > 20.f)
+	const float Dist = FVector::Dist(NextPoint, GetActorLocation());
+	if (Dist > 20.f)
 	{
-		AddMovementInput(NextDirection);
+		if (Dist > 55.f)
+		{
+			StopMove();
+			SetDestinaionAndPathServer(Destination);
+		}
+		else
+		{
+			AddMovementInput(NextDirection);
+		}
 	}
 	else
 	{
@@ -429,7 +436,6 @@ void ARPGBasePlayerCharacter::UpdateMovement()
 		if (PathIdx == PathArr.Num())
 		{
 			bUpdateMovement = false;
-			ReplicatebUpdateMovementServer(bUpdateMovement);
 			PathIdx = 0;
 		}
 		else
@@ -860,6 +866,33 @@ void ARPGBasePlayerCharacter::SetSkillPowerCorrectionValues(const float& QPower,
 void ARPGBasePlayerCharacter::GetTargetingCompOverlappingEnemies(TArray<AActor*>& Enemies)
 {
 	TargetingComp->GetOverlappingActors(Enemies);
+}
+
+void ARPGBasePlayerCharacter::DrawDebugGrid()
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	FAssetData AssetData = AssetRegistryModule.Get().GetAssetByObjectPath("MapNavDataAsset'/Game/_Assets/DataAsset/LowHeightTestAsset.LowHeightTestAsset'");
+	if (AssetData.IsValid())
+	{
+		UMapNavDataAsset* MapNavDataAsset = Cast<UMapNavDataAsset>(AssetData.GetAsset());
+		if (MapNavDataAsset == nullptr) return;
+
+		int32 Count = 0;
+		while (Count < MapNavDataAsset->GridWidthSize * MapNavDataAsset->GridLengthSize)
+		{
+			int32 X = MapNavDataAsset->FieldLocations[Count].X;
+			int32 Y = MapNavDataAsset->FieldLocations[Count].Y;
+			if (MapNavDataAsset->ExtraCost[Count] == 0)
+				DrawDebugPoint(GetWorld(), FVector(X, Y, MapNavDataAsset->FieldHeights[Count] + 10.f), 5.f, FColor::Green, true);
+			else if (MapNavDataAsset->ExtraCost[Count] < 8)
+				DrawDebugPoint(GetWorld(), FVector(X, Y, MapNavDataAsset->FieldHeights[Count] + 10.f), 5.f, FColor::Yellow, true);
+			else if (MapNavDataAsset->ExtraCost[Count] < 12)
+				DrawDebugPoint(GetWorld(), FVector(X, Y, MapNavDataAsset->FieldHeights[Count] + 10.f), 5.f, FColor::Orange, true);
+			else
+				DrawDebugPoint(GetWorld(), FVector(X, Y, MapNavDataAsset->FieldHeights[Count] + 10.f), 5.f, FColor::Red, true);
+			Count++;
+		}
+	}
 }
 
 void ARPGBasePlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -19,8 +19,7 @@ struct FAStarNode
 	int32 G;
 	FPos Pos;
 
-	FAStarNode(int32 _F, int32 _G, FPos _Pos)
-		: F(_F), G(_G), Pos(_Pos) {}
+	FAStarNode(int32 _F, int32 _G, FPos _Pos) : F(_F), G(_G), Pos(_Pos) {}
 	FAStarNode() {}
 	bool operator<(const FAStarNode& Other) const { return F < Other.F; }
 	bool operator>(const FAStarNode& Other) const { return F > Other.F; }
@@ -37,23 +36,15 @@ public:
 
 	FORCEINLINE bool GetIsNavigationEnable() const { return bMapNavDataUsable; }
 
+	void DrawGrid();
+
 protected:
 
 	virtual void InitializeComponent() override;
 	
 	virtual void BeginPlay() override;
 
-	void DrawGrid();
-
 	void InitWorldGrid();
-
-public:	
-	
-	void UpdateCharacterExtraCost(int32& CoordinateY, int32& CoordinateX, const FVector& Location);
-
-protected:
-
-	void UpdateCharacterExtraCostValue(const int32& CoordinateY, const int32& CoordinateX, const int8 Value);
 
 public:
 
@@ -104,14 +95,14 @@ private:
 	// 그리드 포인트 배열
 	TArray<FPos> FieldLocations;
 
+	// 그리드 높이
+	TArray<float> FieldHeights;
+
 	// 해당 인덱스 그리드의 장애물 여부
 	TArray<bool> IsMovableArr;
 
 	// 장애물 회피를 위한 추가 가중치
-	TArray<int8> ObstacleExtraCost;
-
-	// 캐릭터 위치의 추가 가중치
-	TArray<int8> CharacterExtraCost;
+	TArray<int16> ObstacleExtraCost;
 
 	UPROPERTY()
 	UMapNavDataAsset* MapNavDataAsset;

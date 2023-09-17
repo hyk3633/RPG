@@ -16,6 +16,7 @@
 #define ECC_GroundTrace			ECollisionChannel::ECC_GameTraceChannel10
 #define ECC_ObstacleCheck		ECollisionChannel::ECC_GameTraceChannel11
 #define ECC_IsSafeToSpawn		ECollisionChannel::ECC_GameTraceChannel12
+#define ECC_HeightCheck			ECollisionChannel::ECC_GameTraceChannel13
 
 
 #define CALLINFO			(FString(__FUNCTION__) + TEXT("(")+FString::FromInt(__LINE__) + TEXT(")")) 

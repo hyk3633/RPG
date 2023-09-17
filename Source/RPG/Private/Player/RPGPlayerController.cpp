@@ -5,9 +5,11 @@
 #include "Item/RPGItem.h"
 #include "UI/RPGHUD.h"
 #include "UI/RPGDamageWidget.h"
+#include "GameInstance/RPGGameInstance.h"
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Enums/PressedKey.h"
+#include "GameInstance/RPGGameInstance.h"
 #include "GameFramework/HUD.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -126,6 +128,11 @@ void ARPGPlayerController::OnRep_MyCharacter()
 		TracedItem->SetRenderCustomDepthOff();
 		TracedItem = nullptr;
 	}
+}
+
+ECharacterType ARPGPlayerController::GetCharacterType()
+{
+	return GetWorld()->GetGameInstance<URPGGameInstance>()->GetCharacterType();
 }
 
 void ARPGPlayerController::Tick(float DeltaTime)

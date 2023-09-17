@@ -12,6 +12,8 @@ class UWorldGridManagerComponent;
 class AEnemyPooler;
 class UBoxComponent;
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnPlayerOutDelegate, ACharacter* PlayerCharacter);
+
 USTRUCT()
 struct FFlowVector
 {
@@ -42,6 +44,8 @@ public:
 
 	AEnemySpawner();
 
+	FOnPlayerOutDelegate DOnPlayerOut;
+
 protected:
 
 	virtual void PostInitializeComponents() override;
@@ -53,6 +57,11 @@ protected:
 	bool GetSpawnLocation(FVector& SpawnLocation);
 
 	void InitFlowField();
+
+	void DrawDebugGrid();
+
+	UFUNCTION()
+	void PlayerDead(ACharacter* PlayerCharacter);
 
 	UFUNCTION()
 	void OnAreaBoxBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -71,7 +80,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	FVector& GetFlowVector(ACharacter* TargetCharacter, ACharacter* EnemyCharacter);
+	FVector* GetFlowVector(ACharacter* TargetCharacter, ACharacter* EnemyCharacter);
 
 protected:
 
@@ -128,6 +137,8 @@ private:
 	float BiasX = 0;
 
 	TArray<bool> IsMovableArr;
+
+	TArray<float> FieldHeights;
 
 	UPROPERTY()
 	TMap<ACharacter*, FFlowVector> TargetsFlowVectors;

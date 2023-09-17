@@ -22,11 +22,11 @@ public:
 
 	void BindBossEnemyFunction();
 
-	void PlayEmitShockWaveMontage();
+	void PlayEmitShockWaveMontage(const bool HasAuthority);
 
-	void PlayFireMortarMontage();
+	void PlayFireMortarMontage(const bool HasAuthority);
 
-	void PlayBulldozeMontage();
+	void PlayBulldozeMontage(const bool HasAuthority);
 
 	bool GetIsTurning() const;
 
@@ -48,13 +48,22 @@ protected:
 protected:
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
-	UAnimMontage* EmitShockWaveMontage;
+	UAnimMontage* ClientEmitShockWaveMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
-	UAnimMontage* FireMortarMontage;
+	UAnimMontage* ServerEmitShockWaveMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Montages")
-	UAnimMontage* BulldozeMontage;
+	UAnimMontage* ClientFireMortarMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* ServerFireMortarMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* ClientBulldozeMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Montages")
+	UAnimMontage* ServerBulldozeMontage;
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	float AimPitch;

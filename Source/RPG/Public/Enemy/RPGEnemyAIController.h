@@ -44,8 +44,14 @@ protected:
 
 public:
 
+	void BindFunctionToTargetDeadDelegate(ACharacter* NewTarget);
+
 	UFUNCTION(BlueprintCallable)
 	APawn* GetTarget() const;
+
+	void EmptyTheTarget();
+
+	void TargetMissed();
 
 	void SetIsFalldown(const bool bIsFalldown);
 

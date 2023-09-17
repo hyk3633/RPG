@@ -21,6 +21,8 @@ void UBTService_AttackOrMove::TickNode(UBehaviorTreeComponent& OwnerComp, uint8*
 	ARPGBaseEnemyCharacter* Enemy = Cast<ARPGBaseEnemyCharacter>(OwnerComp.GetAIOwner()->GetPawn());
 	if (Enemy == nullptr) return;
 
+	if (Enemy->GetIsAttacking()) return;
+
 	ARPGBasePlayerCharacter* Player = Cast<ARPGBasePlayerCharacter>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(ARPGEnemyAIController::TargetPlayer));
 	if (Player == nullptr) return;
 

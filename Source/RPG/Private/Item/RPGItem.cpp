@@ -3,6 +3,8 @@
 #include "UI/RPGItemNameTag.h"
 #include "../RPG.h"
 #include "Components/WidgetComponent.h"
+#include "PaperSpriteComponent.h"
+#include "PaperSprite.h"
 #include "Net/UnrealNetwork.h"
 
 ARPGItem::ARPGItem()
@@ -27,6 +29,20 @@ ARPGItem::ARPGItem()
 	ItemMesh->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	ItemMesh->SetCollisionResponseToChannel(ECC_ItemMesh, ECollisionResponse::ECR_Block);
 	ItemMesh->SetCollisionResponseToChannel(ECC_ItemTrace, ECollisionResponse::ECR_Block);
+	ItemMesh->SetCollisionResponseToChannel(ECC_IsSafeToSpawn, ECollisionResponse::ECR_Ignore);
+	ItemMesh->SetCollisionResponseToChannel(ECC_ObstacleCheck, ECollisionResponse::ECR_Ignore);
+	ItemMesh->SetCollisionResponseToChannel(ECC_HeightCheck, ECollisionResponse::ECR_Ignore);
+	ItemMesh->bHiddenInSceneCapture = true;
+
+	ItemIconSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("Paper Sprite"));
+	ItemIconSprite->SetupAttachment(RootComponent);
+	static ConstructorHelpers::FObjectFinder<UPaperSprite> ItemIconAsset(TEXT("PaperSprite'/Game/_Assets/Texture2D/Minimap/ItemIcon_Sprite.ItemIcon_Sprite'"));
+	if (ItemIconAsset.Succeeded()) { ItemIconSprite->SetSprite(ItemIconAsset.Object); }
+	ItemIconSprite->SetRelativeRotation(FRotator(0.f, -90.f, 90.f));
+	ItemIconSprite->SetRelativeLocation(FVector(0, 0, 299));
+	ItemIconSprite->SetRelativeScale3D(FVector(0.2f));
+	ItemIconSprite->bVisibleInSceneCaptureOnly = true;
+	ItemIconSprite->SetVisibility(false);
 
 	NameTagWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("NameTag Widget"));
 	static ConstructorHelpers::FClassFinder<UUserWidget> WidgetBPAsset(TEXT("WidgetBlueprint'/Game/_Assets/Blueprints/HUD/WBP_ItemNameTag.WBP_ItemNameTag_C'"));
@@ -65,6 +81,7 @@ void ARPGItem::DeactivateItem()
 	ItemMesh->SetEnableGravity(false);
 	ItemMesh->SetSimulatePhysics(false);
 	ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ItemIconSprite->SetVisibility(false);
 	NameTagWidget->SetVisibility(false);
 	if (HasAuthority()) DDeactivateItem.Broadcast();
 }
@@ -85,7 +102,11 @@ void ARPGItem::ActivateItem(const FTransform& SpawnTransform)
 	ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	ItemMesh->SetSimulatePhysics(true);
 	ItemMesh->SetEnableGravity(true);
-	ItemMesh->SetVisibility(true);
+	if (HasAuthority() == false)
+	{
+		ItemMesh->SetVisibility(true);
+		ItemIconSprite->SetVisibility(true);
+	}
 }
 
 void ARPGItem::Tick(float DeltaTime)

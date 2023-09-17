@@ -13,6 +13,7 @@
 #include "Kismet/KismetSystemlibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Sound/SoundCue.h"
 #include "EngineUtils.h"
 #include "Net/UnrealNetwork.h"
 #include "Materials/MaterialInstanceConstant.h"
@@ -194,15 +195,17 @@ void ARPGWarriorPlayerCharacter::NormalAttackLineTrace()
 		if (IsValid(Hit.GetActor()))
 		{
 			UGameplayStatics::ApplyDamage(Hit.GetActor(), GetStrikingPower(), GetController(), this, UDamageTypeBase::StaticClass());
-			SpawnNormalAttackImpactParticleMulticast(Hit.GetActor()->GetActorLocation());
+			SpawnNormalAttackEffectMulticast(Hit.GetActor()->GetActorLocation());
 		}
 	}
+	
 }
 
-void ARPGWarriorPlayerCharacter::SpawnNormalAttackImpactParticleMulticast_Implementation(const FVector_NetQuantize& SpawnLocation)
+void ARPGWarriorPlayerCharacter::SpawnNormalAttackEffectMulticast_Implementation(const FVector_NetQuantize& SpawnLocation)
 {
 	if (HasAuthority()) return;
 	SpawnParticle(NormalAttackImpactParticle, SpawnLocation);
+	if (AttackHitSound) UGameplayStatics::PlaySoundAtLocation(this, AttackHitSound, SpawnLocation);
 }
 
 /** --------------------------- Q ½ºÅ³ --------------------------- */
@@ -263,6 +266,7 @@ void ARPGWarriorPlayerCharacter::SpawnWieldImpactParticleMulticast_Implementatio
 	if (HasAuthority() == false)
 	{
 		SpawnParticle(WieldImpactParticle, SpawnLocation, GetActorRotation());
+		if (AttackHitSound) UGameplayStatics::PlaySoundAtLocation(this, AttackHitSound, SpawnLocation);
 	}
 }
 
