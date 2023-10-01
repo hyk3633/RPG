@@ -42,6 +42,7 @@ ARPGBaseEnemyCharacter::ARPGBaseEnemyCharacter()
 	GetMesh()->SetGenerateOverlapEvents(true);
 
 	GetCapsuleComponent()->SetCollisionProfileName(FName("DeactivatedEnemyCapsule"));
+	GetCapsuleComponent()->SetNotifyRigidBodyCollision(true);
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon Skeletal Mesh"));
 	WeaponMesh->SetVisibility(false);
@@ -70,6 +71,7 @@ void ARPGBaseEnemyCharacter::SetEnemyAssets(const FEnemyAssets& NewEnemyAssets)
 {
 	EnemyAssets = NewEnemyAssets;
 	SetMeshAndController();
+	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &ARPGBaseEnemyCharacter::OnCapsuleCollisionEvent);
 }
 
 void ARPGBaseEnemyCharacter::SetMeshAndController()
@@ -162,6 +164,8 @@ void ARPGBaseEnemyCharacter::BeginPlay()
 
 	ProgressBar = Cast<URPGEnemyHealthBarWidget>(HealthBarWidget->GetWidget());
 	if (ProgressBar) ProgressBar->EnemyHealthProgressBar->SetPercent(1.f);
+
+	if (HasAuthority()) RPGGameMode = GetWorld()->GetAuthGameMode<ARPGGameModeBase>();
 }
 
 void ARPGBaseEnemyCharacter::PlayerOut(ACharacter* TargetPlayer)
@@ -169,6 +173,7 @@ void ARPGBaseEnemyCharacter::PlayerOut(ACharacter* TargetPlayer)
 	if (bIsActivated && TargetPlayer == GetTarget())
 	{
 		MyController->EmptyTheTarget();
+		StopMovement();
 	}
 }
 
@@ -186,6 +191,16 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 	{
 		//UpdateMovementFlowField();
 		UpdateMovementAStar();
+	}
+
+	if (HasAuthority())
+	{
+		ctime += DeltaTime;
+		if (ctime >= 0.1f)
+		{
+			RPGGameMode->DrawScore(GetActorLocation());
+			ctime = 0.f;
+		}
 	}
 }
 
@@ -259,15 +274,20 @@ void ARPGBaseEnemyCharacter::HealthDecrease(const int32& Damage)
 	Health = FMath::Clamp(Health - Damage, 0, MaxHealth);
 	if (Health == 0)
 	{
+		if (PathCost.Num()) RPGGameMode->ClearEnemiesPathCost(PathCost);
+		GetWorldTimerManager().ClearTimer(CheckTargetLocationTimer);
+		GetWorldTimerManager().ClearTimer(HealthBarTimer);
+		GetWorldTimerManager().ClearTimer(RestrictionTimer);
+		GetWorldTimerManager().ClearTimer(FalldownTimer);
 		DOnDeath.Broadcast();
-		DOnDeactivate.Broadcast(EnemyType);
+		DOnDeactivate.Broadcast(EnemyType, this);
 		DMoveEnd.Broadcast();
 		MySpawner->DOnPlayerOut.Remove(DHandle);
 		DisableSuckedInMulticast();
 		SetCollisionDeactivate();
 		bIsActivated = false;
 		bUpdateMovement = false;
-		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->SpawnItems(GetActorLocation());
+		RPGGameMode->SpawnItems(GetActorLocation());
 		RespawnDelay();
 	}
 }
@@ -343,12 +363,17 @@ void ARPGBaseEnemyCharacter::BTTask_Move()
 	if (HasAuthority() && GetTarget())
 	{
 		bUpdateMovement = true;
-		GetWorldTimerManager().SetTimer(CheckOthersTimer, this, &ARPGBaseEnemyCharacter::CheckOthersInFrontOfMe, 0.1f, true);
+		GetWorldTimerManager().SetTimer(CheckTargetLocationTimer, this, &ARPGBaseEnemyCharacter::CheckTargetLocation, 0.3f, true);
 
 		// AStar 방식
-		GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), GetTarget()->GetActorLocation(), PathArr);
-		NextPoint = FVector(PathArr[0].X, PathArr[0].Y, GetActorLocation().Z);
-		NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+		TargetLocation = GetTarget()->GetActorLocation();
+		if (PathCost.Num())
+		{
+			ResetCurrentGridPassbility();
+			RPGGameMode->ClearEnemiesPathCost(PathCost);
+		}
+		RPGGameMode->GetPathToDestination(GetActorLocation(), TargetLocation, PathArr, PathCost);
+		InitPathStatus();
 	}
 	else
 	{
@@ -356,12 +381,46 @@ void ARPGBaseEnemyCharacter::BTTask_Move()
 	}
 }
 
+void ARPGBaseEnemyCharacter::OnCapsuleCollisionEvent(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (Cast<ARPGBaseEnemyCharacter>(OtherActor) && !ShouldIStopMovement() && bUpdateMovement)
+	{
+		RecalculatingPathToTarget();
+	}
+}
+
+void ARPGBaseEnemyCharacter::InitPathStatus()
+{
+	CurrentPathIdx = -1;
+	UpdatePathIndexAndGridPassability();
+	NextPoint = FVector(PathArr[0].X, PathArr[0].Y, GetActorLocation().Z);
+	NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+}
+
+void ARPGBaseEnemyCharacter::UpdatePathIndexAndGridPassability()
+{
+	if (CurrentPathIdx + 1 < PathArr.Num())
+	{
+		RPGGameMode->SetGridToImpassable(PathArr[CurrentPathIdx + 1]);
+	}
+	if (CurrentPathIdx > 0)
+	{
+		RPGGameMode->SetGridToPassable(PathArr[CurrentPathIdx - 1]);
+	}
+	CurrentPathIdx++;
+}
+
+void ARPGBaseEnemyCharacter::ResetCurrentGridPassbility()
+{
+	if (CurrentPathIdx >= 0) RPGGameMode->SetGridToPassable(PathArr[CurrentPathIdx]);
+	if (CurrentPathIdx > 0) RPGGameMode->SetGridToPassable(PathArr[CurrentPathIdx - 1]);
+}
+
 void ARPGBaseEnemyCharacter::UpdateMovementFlowField()
 {
 	if (ShouldIStopMovement())
 	{
 		bUpdateMovement = false;
-		GetWorldTimerManager().ClearTimer(CheckOthersTimer);
 		DMoveEnd.Broadcast();
 	}
 	else
@@ -370,13 +429,12 @@ void ARPGBaseEnemyCharacter::UpdateMovementFlowField()
 		if (FlowVector)
 		{
 			AddMovementInput(*FlowVector * DefaultSpeed * SpeedAdjustmentValue * GetWorld()->GetDeltaSeconds());
-			FRotator TargetRot = FRotationMatrix::MakeFromX(*FlowVector).Rotator();
+			const FRotator TargetRot = FRotationMatrix::MakeFromX(*FlowVector).Rotator();
 			SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRot, GetWorld()->GetDeltaSeconds(), 10.f));
 		}
 		else
 		{
 			bUpdateMovement = false;
-			GetWorldTimerManager().ClearTimer(CheckOthersTimer);
 			DMoveEnd.Broadcast();
 			MyController->TargetMissed();
 		}
@@ -385,75 +443,67 @@ void ARPGBaseEnemyCharacter::UpdateMovementFlowField()
 
 void ARPGBaseEnemyCharacter::UpdateMovementAStar()
 {
-	const float Dist = FVector::Dist(NextPoint, GetActorLocation());
-	if (Dist > 20.f)
+	const int32 Dist = FMath::FloorToInt(FVector::Dist(NextPoint, GetActorLocation()));
+	if (ShouldIStopMovement() || CurrentPathIdx == PathArr.Num() || Dist > 56)
 	{
-		if (Dist > 55.f)
+		if (Dist > 56)
 		{
-			GetMovementComponent()->StopMovementImmediately();
-			bUpdateMovement = false;
-			PathIdx = 0;
-			GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), GetTarget()->GetActorLocation(), PathArr);
-			WLOG(TEXT("get new path"));
+			RecalculatingPathToTarget();
 		}
 		else
 		{
-			//AddMovementInput(NextDirection);
-			AddMovementInput(NextDirection * DefaultSpeed * SpeedAdjustmentValue * GetWorld()->GetDeltaSeconds());
-			FRotator TargetRot = FRotationMatrix::MakeFromX(NextDirection).Rotator();
-			SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRot, GetWorld()->GetDeltaSeconds(), 10.f));
+			StopMovement();
 		}
 	}
 	else
 	{
-		PathIdx++;
-		if (PathIdx == PathArr.Num() || ShouldIStopMovement())
+		if (Dist <= 20)
 		{
-			bUpdateMovement = false;
-			GetWorldTimerManager().ClearTimer(CheckOthersTimer);
-			DMoveEnd.Broadcast();
-			PathIdx = 0;
+			UpdatePathIndexAndGridPassability();
+			NextPoint = FVector(PathArr[CurrentPathIdx].X, PathArr[CurrentPathIdx].Y, GetActorLocation().Z);
+			NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
 		}
 		else
 		{
-			NextPoint = FVector(PathArr[PathIdx].X, PathArr[PathIdx].Y, GetActorLocation().Z);
-			NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+			AddMovementInput(NextDirection * DefaultSpeed * SpeedAdjustmentValue * GetWorld()->GetDeltaSeconds());
+			const FRotator TargetRot = FRotationMatrix::MakeFromX(NextDirection).Rotator();
+			SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRot, GetWorld()->GetDeltaSeconds(), 10.f));
 		}
 	}
+}
+
+void ARPGBaseEnemyCharacter::RecalculatingPathToTarget()
+{
+	GetMovementComponent()->StopMovementImmediately();
+	ResetCurrentGridPassbility();
+	RPGGameMode->ClearEnemiesPathCost(PathCost);
+	RPGGameMode->GetPathToDestination(GetActorLocation(), GetTarget()->GetActorLocation(), PathArr, PathCost);
+	InitPathStatus();
 }
 
 bool ARPGBaseEnemyCharacter::ShouldIStopMovement()
 {
-	return GetDistanceTo(GetTarget()) <= AttackDistance;
+	return GetTarget() && FMath::FloorToInt(GetDistanceTo(GetTarget())) <= AttackDistance;
 }
 
-void ARPGBaseEnemyCharacter::CheckOthersInFrontOfMe()
+void ARPGBaseEnemyCharacter::CheckTargetLocation()
 {
-	FHitResult Hit;
-	UKismetSystemLibrary::LineTraceSingle(
-		this,
-		GetActorLocation(),
-		GetActorLocation() + GetActorForwardVector() * 150,
-		UEngineTypes::ConvertToTraceType(ECC_PlayerAttack),
-		false,
-		TArray<AActor*>(),
-		EDrawDebugTrace::ForOneFrame,
-		Hit,
-		true
-	);
-	if (Hit.bBlockingHit)
+	FVector NewTargetLocation = GetTarget()->GetActorLocation();
+	if (NewTargetLocation != TargetLocation)
 	{
-		ARPGBaseEnemyCharacter* OtherEnemy = Cast<ARPGBaseEnemyCharacter>(Hit.GetActor());
-		if (OtherEnemy)
-		{
-			SpeedAdjustmentValue = OtherEnemy->GetSpeedAdjustmentValue() * 0.75f;
-			PLOG(TEXT("%s's speed value is %f"), *GetName(), SpeedAdjustmentValue);
-		}
+		TargetLocation = NewTargetLocation;
+		RecalculatingPathToTarget();
 	}
-	else
-	{
-		SpeedAdjustmentValue = 1.f;
-	}
+}
+
+void ARPGBaseEnemyCharacter::StopMovement()
+{
+	bUpdateMovement = false;
+	GetMovementComponent()->StopMovementImmediately();
+	ResetCurrentGridPassbility();
+	RPGGameMode->ClearEnemiesPathCost(PathCost);
+	GetWorldTimerManager().ClearTimer(CheckTargetLocationTimer);
+	DMoveEnd.Broadcast();
 }
 
 /** 공격 */
@@ -564,6 +614,7 @@ void ARPGBaseEnemyCharacter::Falldown()
 	{
 		GetWorldTimerManager().SetTimer(FalldownTimer, this, &ARPGBaseEnemyCharacter::GetupMulticast, 3.f);
 		MyController->SetIsFalldown(true);
+		if (bUpdateMovement) StopMovement();
 	}
 	else
 	{
@@ -582,12 +633,17 @@ void ARPGBaseEnemyCharacter::Getup()
 {
 	if (HasAuthority())
 	{
-		MyController->SetIsFalldown(false);
+		GetWorldTimerManager().SetTimer(GetupDelayTimer, this, &ARPGBaseEnemyCharacter::GetupDelayEnd, 1.f);
 	}
 	else
 	{
 		MyAnimInst->PlayGetupMontage();
 	}
+}
+
+void ARPGBaseEnemyCharacter::GetupDelayEnd()
+{
+	MyController->SetIsFalldown(false);
 }
 
 /** 커스텀 뎁스 온/오프 */
@@ -608,6 +664,7 @@ void ARPGBaseEnemyCharacter::OffRenderCustomDepthEffect()
 void ARPGBaseEnemyCharacter::EnableSuckedInToAllClients()
 {
 	MyController->SetSuckedIn(true);
+	if (bUpdateMovement) StopMovement();
 	EnableSuckedInMulticast();
 }
 
@@ -651,6 +708,7 @@ void ARPGBaseEnemyCharacter::StopAction()
 	if (HasAuthority())
 	{
 		MyController->SetIsRestrained(true);
+		if (bUpdateMovement) StopMovement();
 		GetWorldTimerManager().SetTimer(RestrictionTimer, this, &ARPGBaseEnemyCharacter::ResumeActionMulticast, 5.f);
 	}
 	else

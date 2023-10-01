@@ -24,8 +24,6 @@ AEnemySpawner::AEnemySpawner()
 
 	BillBoard = CreateDefaultSubobject<UBillboardComponent>(TEXT("BillBoard"));
 	BillBoard->SetupAttachment(RootComponent);
-
-	WorldGridManager = CreateDefaultSubobject<UWorldGridManagerComponent>(TEXT("World Grid Manager"));
 }
 
 void AEnemySpawner::PostInitializeComponents()
@@ -62,7 +60,7 @@ void AEnemySpawner::SpawnEnemies()
 	for (auto Pair : EnemyToSpawnMap)
 	{
 		AEnemyPooler* EnemyPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
-		EnemyPooler->CreatePool(Pair.Value * 1, Pair.Key);
+		EnemyPooler->CreatePool(Pair.Value * 3, Pair.Key);
 		EnemyPoolerMap.Add(StaticCast<int8>(Pair.Key), EnemyPooler);
 
 		for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
@@ -82,7 +80,9 @@ void AEnemySpawner::SpawnEnemies()
 				{
 					Enemy->SetActorRotation(FRotator(0, 180, 0));
 					Enemy->ActivateEnemy(SpawnLocation);
-					//Enemy->SetActorLocation(FVector(0, 0, 0));
+					Enemy->SetActorLocation(TempLoc);
+					TempLoc.Y += 150.f;
+					EnemiesInArea.Add(Enemy);
 				}
 			}
 			else ELOG(TEXT("no place to respawn"));
@@ -214,8 +214,9 @@ void AEnemySpawner::OnAreaBoxEndOverlap(UPrimitiveComponent* OverlappedComponent
 	DOnPlayerOut.Broadcast(PlayerCharacter);
 }
 
-void AEnemySpawner::AddEnemyToRespawnQueue(EEnemyType Type)
+void AEnemySpawner::AddEnemyToRespawnQueue(EEnemyType Type, ARPGBaseEnemyCharacter* Enemy)
 {
+	EnemiesInArea.Remove(Enemy);
 	RespawnWaitingQueue.Enqueue(Type);
 }
 
@@ -278,12 +279,18 @@ FVector* AEnemySpawner::GetFlowVector(ACharacter* TargetCharacter, ACharacter* E
 	else return nullptr;
 }
 
+FPos AEnemySpawner::LocationToPos(const FVector& Location)
+{
+	const int32 DY = FMath::Floor(((Location.Y - OriginLocation.Y + BiasY) / GridDist) + 0.5f);
+	const int32 DX = FMath::Floor(((Location.X - OriginLocation.X + BiasX) / GridDist) + 0.5f);
+
+	return FPos(DY, DX);
+}
+
 int32 AEnemySpawner::GetConvertCurrentLocationToIndex(const FVector& Location)
 {
-	const int32 DX = FMath::Floor(((Location.X - OriginLocation.X + BiasX) / GridDist) + 0.5f);
-	const int32 DY = FMath::Floor(((Location.Y - OriginLocation.Y + BiasY) / GridDist) + 0.5f);
-
-	return (DY * GridWidth + DX);
+	FPos Pos = LocationToPos(Location);
+	return (Pos.Y * GridWidth + Pos.X);
 }
 
 void AEnemySpawner::CalculateFlowVector(ACharacter* TargetCharacter)

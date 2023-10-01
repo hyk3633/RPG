@@ -70,17 +70,20 @@ protected:
 	void OnAreaBoxEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
-	void AddEnemyToRespawnQueue(EEnemyType Type);
+	void AddEnemyToRespawnQueue(EEnemyType Type, ARPGBaseEnemyCharacter* Enemy);
 
 public:
 
 	FORCEINLINE TArray<ACharacter*>& GetPlayersInArea() { return PlayersInArea; };
+	FORCEINLINE TArray<ARPGBaseEnemyCharacter*>& GetEnemiesInArea() { return EnemiesInArea; }
 
 	void EnemyRespawn();
 
 	virtual void Tick(float DeltaTime) override;
 
 	FVector* GetFlowVector(ACharacter* TargetCharacter, ACharacter* EnemyCharacter);
+
+	FPos LocationToPos(const FVector& Location);
 
 protected:
 
@@ -96,9 +99,6 @@ private:
 	UPROPERTY(EditAnywhere)
 	UBoxComponent* AreaBox;
 
-	UPROPERTY(EditAnywhere)
-	UWorldGridManagerComponent* WorldGridManager;
-
 	UPROPERTY(EditAnywhere, Category = "Flow Field Data")
 	FString FlowFieldDataReference;
 
@@ -110,6 +110,9 @@ private:
 
 	UPROPERTY()
 	TArray<ACharacter*> PlayersInArea;
+
+	UPROPERTY()
+	TArray<ARPGBaseEnemyCharacter*> EnemiesInArea;
 
 	FVector SpawnerOrigin;
 	FVector SpawnerExtent;
@@ -146,4 +149,6 @@ private:
 	float CumulTime = 0.f;
 
 	TQueue<EEnemyType> RespawnWaitingQueue;
+
+	FVector TempLoc = FVector(0, -100, 215);
 };

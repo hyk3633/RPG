@@ -9,6 +9,7 @@
 #include "Structs/Pos.h"
 #include "RPGBaseEnemyCharacter.generated.h"
 
+class ARPGGameModeBase;
 class AEnemySpawner;
 class URPGEnemyFormComponent;
 class ARPGEnemyAIController;
@@ -23,7 +24,7 @@ DECLARE_MULTICAST_DELEGATE(FDelegateMoveEnd);
 DECLARE_MULTICAST_DELEGATE(FDelegateOnAttackEnd);
 DECLARE_MULTICAST_DELEGATE(FOnDeathDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnActivateDelegate);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnDeactivateDelegate, EEnemyType Type);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnDeactivateDelegate, EEnemyType Type, ARPGBaseEnemyCharacter* Enemy);
 DECLARE_MULTICAST_DELEGATE_OneParam(FDelegateOnHealthChanged, float HealthPercentage);
 
 UCLASS()
@@ -120,13 +121,26 @@ public:
 
 protected:
 
+	UFUNCTION()
+	void OnCapsuleCollisionEvent(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+	void InitPathStatus();
+
+	void UpdatePathIndexAndGridPassability();
+
+	void ResetCurrentGridPassbility();
+
 	void UpdateMovementFlowField();
 
 	void UpdateMovementAStar();
 
+	void RecalculatingPathToTarget();
+
 	virtual bool ShouldIStopMovement();
 
-	void CheckOthersInFrontOfMe();
+	void CheckTargetLocation();
+
+	void StopMovement();
 
 public:
 	
@@ -197,6 +211,8 @@ protected:
 
 	void Getup();
 
+	void GetupDelayEnd();
+
 public: 
 
 	/** 커스텀 뎁스 온 / 오프 */
@@ -258,6 +274,9 @@ protected:
 private:
 
 	UPROPERTY()
+	ARPGGameModeBase* RPGGameMode;
+
+	UPROPERTY()
 	AEnemySpawner* MySpawner;
 
 	UPROPERTY()
@@ -284,6 +303,8 @@ private:
 	FTimerHandle HideMeshTimer;
 
 	FTimerHandle FalldownTimer;
+
+	FTimerHandle GetupDelayTimer;
 
 	UPROPERTY(ReplicatedUsing = OnRep_bIsActivated)
 	bool bIsActivated = false;
@@ -318,11 +339,10 @@ private:
 	int32 LastTimeY = -1;
 	int32 LastTimeX = -1;
 
+	UPROPERTY(VisibleInstanceOnly, Category = "Enemy | Movement")
 	bool bUpdateMovement = false;
 
 	FTimerHandle RespawnTimer;
-
-	FTimerHandle CheckOthersTimer;
 
 	float DefaultSpeed = 20.f;
 
@@ -333,8 +353,18 @@ private:
 
 	// AStar 방식에서만 사용
 	TArray<FPos> PathArr;
+	TArray<int32> PathCost;
 
 	FVector NextPoint;
 	FVector	NextDirection;
-	int32 PathIdx;
+	int32 CurrentPathIdx;
+
+	FVector TargetLocation;
+
+	FTimerHandle CheckTargetLocationTimer;
+
+	const float Seperation_Distance = 50.f;
+	int8 Count_Sep;
+
+	float ctime = 0.f;
 };

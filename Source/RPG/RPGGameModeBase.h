@@ -33,7 +33,6 @@ public:
 
 	ARPGGameModeBase();
 
-
 	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 
 protected:
@@ -50,6 +49,14 @@ public:
 
 	void GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest);
 
+	void GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, TArray<int32>& GridIndexArr);
+
+	void ClearEnemiesPathCost(TArray<int32>& GridIndexArr);
+
+	void SetGridToImpassable(const FPos& _Pos);
+
+	void SetGridToPassable(const FPos& _Pos);
+
 	void SpawnItems(const FVector& Location);
 
 	void DropItem(const FItemInfo& Info, const FVector& Location);
@@ -61,6 +68,8 @@ public:
 	FProjectileInfo* GetProjectileInfo(const EProjectileType Type);
 
 	FProjectileAssets* GetProjectileAssets(const EProjectileType Type);
+
+	void DrawScore(const FVector& Location);
 
 private:
 

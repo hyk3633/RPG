@@ -48,7 +48,11 @@ protected:
 
 public:
 
-	void AStarPlayer(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest);
+	void GetAStarPath(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest);
+
+	void GetAStarPath(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, TArray<int32>& GridIndexArr);
+
+	void ClearEnemiesPathCost(TArray<int32>& GridIndexArr);
 
 	int32 VectorToCoordinatesY(const double& VectorComponent);
 
@@ -59,6 +63,11 @@ public:
 	int32 CoordinatesToVectorX(const int32 Coordinates);
 
 	bool CanGo(const FPos& _Pos);
+
+	// 캐릭터의 현재 그리드와 이전 그리드 노드와 그 주위 8칸의 통행 가능 여부 설정 (캐릭터 끼리 충돌 방지를 위해)
+	void SetGridPassability(const FPos& _Pos, const bool IsPassable);
+
+	void DrawScore(const FVector& Location);
 
 private:
 
@@ -103,6 +112,9 @@ private:
 
 	// 장애물 회피를 위한 추가 가중치
 	TArray<int16> ObstacleExtraCost;
+
+	// 적의 경로 계산을 위한 가중치
+	TArray<int16> EnemiesPathCost;
 
 	UPROPERTY()
 	UMapNavDataAsset* MapNavDataAsset;

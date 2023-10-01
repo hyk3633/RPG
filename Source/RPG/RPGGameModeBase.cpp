@@ -128,11 +128,47 @@ void ARPGGameModeBase::GetPathToDestination(const FVector& Start, const FVector&
 {
 	if (WorldGridManager->GetIsNavigationEnable())
 	{
-		WorldGridManager->AStarPlayer(Start, Dest, PathToDest);
+		WorldGridManager->GetAStarPath(Start, Dest, PathToDest);
 	}
 	else
 	{
 		ELOG(TEXT("Navigation is disable!"));
+	}
+}
+
+void ARPGGameModeBase::GetPathToDestination(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, TArray<int32>& GridIndexArr)
+{
+	if (WorldGridManager->GetIsNavigationEnable())
+	{
+		WorldGridManager->GetAStarPath(Start, Dest, PathToDest, GridIndexArr);
+	}
+	else
+	{
+		ELOG(TEXT("Navigation is disable!"));
+	}
+}
+
+void ARPGGameModeBase::ClearEnemiesPathCost(TArray<int32>& GridIndexArr)
+{
+	if (WorldGridManager->GetIsNavigationEnable())
+	{
+		WorldGridManager->ClearEnemiesPathCost(GridIndexArr);
+	}
+}
+
+void ARPGGameModeBase::SetGridToImpassable(const FPos& _Pos)
+{
+	if (WorldGridManager->GetIsNavigationEnable())
+	{
+		WorldGridManager->SetGridPassability(_Pos, false);
+	}
+}
+
+void ARPGGameModeBase::SetGridToPassable(const FPos& _Pos)
+{
+	if (WorldGridManager->GetIsNavigationEnable())
+	{
+		WorldGridManager->SetGridPassability(_Pos, true);
 	}
 }
 
@@ -184,5 +220,10 @@ FProjectileAssets* ARPGGameModeBase::GetProjectileAssets(const EProjectileType T
 		if (Data) return Data;
 	}
 	return nullptr;
+}
+
+void ARPGGameModeBase::DrawScore(const FVector& Location)
+{
+	WorldGridManager->DrawScore(Location);
 }
 

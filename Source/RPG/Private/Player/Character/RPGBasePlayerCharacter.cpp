@@ -68,6 +68,7 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 	MinimapCapture->ShowFlags.Atmosphere = 0;
 	MinimapCapture->ShowFlags.Fog = 0;
 	MinimapCapture->ShowFlags.DynamicShadows = 0;
+	MinimapCapture->ShowFlags.Decals = 0;
 
 	PlayerIconSprite = CreateDefaultSubobject<UPaperSpriteComponent>(TEXT("Paper Sprite"));
 	PlayerIconSprite->SetupAttachment(RootComponent);
