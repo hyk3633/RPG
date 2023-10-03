@@ -3,7 +3,7 @@
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "AIController.h"
-
+#include "../RPG.h"
 UBTTask_AIMove::UBTTask_AIMove()
 {
 	bNotifyTick = true;

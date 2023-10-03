@@ -193,7 +193,7 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 		UpdateMovementAStar();
 	}
 
-	if (HasAuthority())
+	/*if (HasAuthority() && bIsActivated)
 	{
 		ctime += DeltaTime;
 		if (ctime >= 0.1f)
@@ -201,7 +201,7 @@ void ARPGBaseEnemyCharacter::Tick(float DeltaTime)
 			RPGGameMode->DrawScore(GetActorLocation());
 			ctime = 0.f;
 		}
-	}
+	}*/
 }
 
 void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
@@ -274,7 +274,11 @@ void ARPGBaseEnemyCharacter::HealthDecrease(const int32& Damage)
 	Health = FMath::Clamp(Health - Damage, 0, MaxHealth);
 	if (Health == 0)
 	{
-		if (PathCost.Num()) RPGGameMode->ClearEnemiesPathCost(PathCost);
+		if (PathCost.Num())
+		{
+			RPGGameMode->ClearEnemiesPathCost(PathCost);
+			PathCost.Empty();
+		}
 		GetWorldTimerManager().ClearTimer(CheckTargetLocationTimer);
 		GetWorldTimerManager().ClearTimer(HealthBarTimer);
 		GetWorldTimerManager().ClearTimer(RestrictionTimer);
@@ -363,15 +367,11 @@ void ARPGBaseEnemyCharacter::BTTask_Move()
 	if (HasAuthority() && GetTarget())
 	{
 		bUpdateMovement = true;
-		GetWorldTimerManager().SetTimer(CheckTargetLocationTimer, this, &ARPGBaseEnemyCharacter::CheckTargetLocation, 0.3f, true);
+		GetWorldTimerManager().SetTimer(CheckTargetLocationTimer, this, &ARPGBaseEnemyCharacter::CheckTargetLocation, 1.f, true);
 
 		// AStar 방식
 		TargetLocation = GetTarget()->GetActorLocation();
-		if (PathCost.Num())
-		{
-			ResetCurrentGridPassbility();
-			RPGGameMode->ClearEnemiesPathCost(PathCost);
-		}
+		ResetCurrentGridPassbility();
 		RPGGameMode->GetPathToDestination(GetActorLocation(), TargetLocation, PathArr, PathCost);
 		InitPathStatus();
 	}
@@ -383,10 +383,17 @@ void ARPGBaseEnemyCharacter::BTTask_Move()
 
 void ARPGBaseEnemyCharacter::OnCapsuleCollisionEvent(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (Cast<ARPGBaseEnemyCharacter>(OtherActor) && !ShouldIStopMovement() && bUpdateMovement)
+	if (bAllowCapsuleCollision && bUpdateMovement && Cast<ARPGBaseEnemyCharacter>(OtherActor) && !ShouldIStopMovement())
 	{
+		bAllowCapsuleCollision = false;
+		GetWorldTimerManager().SetTimer(ReactivateCapsuleCollisionTimer, this, &ARPGBaseEnemyCharacter::ReactivateCapsuleCollision, 0.5f);
 		RecalculatingPathToTarget();
 	}
+}
+
+void ARPGBaseEnemyCharacter::ReactivateCapsuleCollision()
+{
+	bAllowCapsuleCollision = true;
 }
 
 void ARPGBaseEnemyCharacter::InitPathStatus()
@@ -412,7 +419,7 @@ void ARPGBaseEnemyCharacter::UpdatePathIndexAndGridPassability()
 
 void ARPGBaseEnemyCharacter::ResetCurrentGridPassbility()
 {
-	if (CurrentPathIdx >= 0) RPGGameMode->SetGridToPassable(PathArr[CurrentPathIdx]);
+	if (CurrentPathIdx >= 0 && CurrentPathIdx < PathArr.Num()) RPGGameMode->SetGridToPassable(PathArr[CurrentPathIdx]);
 	if (CurrentPathIdx > 0) RPGGameMode->SetGridToPassable(PathArr[CurrentPathIdx - 1]);
 }
 
@@ -452,7 +459,7 @@ void ARPGBaseEnemyCharacter::UpdateMovementAStar()
 		}
 		else
 		{
-			StopMovement();
+			StopMovement(false);
 		}
 	}
 	else
@@ -460,8 +467,11 @@ void ARPGBaseEnemyCharacter::UpdateMovementAStar()
 		if (Dist <= 20)
 		{
 			UpdatePathIndexAndGridPassability();
-			NextPoint = FVector(PathArr[CurrentPathIdx].X, PathArr[CurrentPathIdx].Y, GetActorLocation().Z);
-			NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+			if (CurrentPathIdx < PathArr.Num())
+			{
+				NextPoint = FVector(PathArr[CurrentPathIdx].X, PathArr[CurrentPathIdx].Y, GetActorLocation().Z);
+				NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+			}
 		}
 		else
 		{
@@ -496,14 +506,18 @@ void ARPGBaseEnemyCharacter::CheckTargetLocation()
 	}
 }
 
-void ARPGBaseEnemyCharacter::StopMovement()
+void ARPGBaseEnemyCharacter::StopMovement(bool bResetPassbility)
 {
+	DMoveEnd.Broadcast();
 	bUpdateMovement = false;
 	GetMovementComponent()->StopMovementImmediately();
-	ResetCurrentGridPassbility();
 	RPGGameMode->ClearEnemiesPathCost(PathCost);
+	if (bResetPassbility)
+	{
+		ResetCurrentGridPassbility();
+		PathCost.Empty();
+	}
 	GetWorldTimerManager().ClearTimer(CheckTargetLocationTimer);
-	DMoveEnd.Broadcast();
 }
 
 /** 공격 */

@@ -35,7 +35,7 @@ ECharacterType URPGGameInstance::GetPlayersCharacterType(const FString& ID)
 
 void URPGGameInstance::Host()
 {
-	GetWorld()->ServerTravel("/Game/_Assets/Maps/TestMap2?listen");
+	GetWorld()->ServerTravel("/Game/_Assets/Maps/MainLevel.MainLevel?listen");
 }
 
 void URPGGameInstance::Join()

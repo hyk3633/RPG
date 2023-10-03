@@ -50,7 +50,7 @@ void AEnemySpawner::BeginPlay()
 	if (HasAuthority() == false) return;
 	
 	GetActorBounds(true, SpawnerOrigin, SpawnerExtent);
-	SpawnEnemies();
+	if(bLoadingDataAssetSuccessful) SpawnEnemies();
 
 	//DrawDebugGrid();
 }
@@ -80,8 +80,6 @@ void AEnemySpawner::SpawnEnemies()
 				{
 					Enemy->SetActorRotation(FRotator(0, 180, 0));
 					Enemy->ActivateEnemy(SpawnLocation);
-					Enemy->SetActorLocation(TempLoc);
-					TempLoc.Y += 150.f;
 					EnemiesInArea.Add(Enemy);
 				}
 			}
@@ -129,29 +127,34 @@ bool AEnemySpawner::GetSpawnLocation(FVector& SpawnLocation)
 
 void AEnemySpawner::InitFlowField()
 {
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-	FAssetData AssetData = AssetRegistryModule.Get().GetAssetByObjectPath(*FlowFieldDataReference);
-	if (AssetData.IsValid())
+	if (FlowFieldDataReference.Len())
 	{
-		UMapNavDataAsset* FlowFieldDA = Cast<UMapNavDataAsset>(AssetData.GetAsset());
+		FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+		FAssetData AssetData = AssetRegistryModule.Get().GetAssetByObjectPath(*FlowFieldDataReference);
+		if (AssetData.IsValid())
+		{
+			UMapNavDataAsset* FlowFieldDA = Cast<UMapNavDataAsset>(AssetData.GetAsset());
 
-		OriginLocation = FlowFieldDA->NavOrigin;
+			OriginLocation = FlowFieldDA->NavOrigin;
 
-		GridDist = FlowFieldDA->GridDist;
-		GridWidth = FlowFieldDA->GridWidthSize;
-		GridLength = FlowFieldDA->GridLengthSize;
-		TotalSize = GridWidth * GridLength;
+			GridDist = FlowFieldDA->GridDist;
+			GridWidth = FlowFieldDA->GridWidthSize;
+			GridLength = FlowFieldDA->GridLengthSize;
+			TotalSize = GridWidth * GridLength;
 
-		BiasY = FlowFieldDA->BiasY;
-		BiasX = FlowFieldDA->BiasX;
+			BiasY = FlowFieldDA->BiasY;
+			BiasX = FlowFieldDA->BiasX;
 
-		IsMovableArr = FlowFieldDA->IsMovableArr;
-		FieldHeights = FlowFieldDA->FieldHeights;
+			IsMovableArr = FlowFieldDA->IsMovableArr;
+			FieldHeights = FlowFieldDA->FieldHeights;
+
+			bLoadingDataAssetSuccessful = true;
+
+			return;
+		}
 	}
-	else
-	{
-		ELOG(TEXT("Failed to load Nav data asset!"));
-	}
+	
+	ELOG(TEXT("Failed to load Nav data asset!"));
 }
 
 void AEnemySpawner::DrawDebugGrid()

@@ -26,7 +26,7 @@ void UBTService_AttackOrMove::TickNode(UBehaviorTreeComponent& OwnerComp, uint8*
 	ARPGBasePlayerCharacter* Player = Cast<ARPGBasePlayerCharacter>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(ARPGEnemyAIController::TargetPlayer));
 	if (Player == nullptr) return;
 
-	if (FMath::FloorToInt(Enemy->GetDistanceTo(Player)) <= Enemy->GetAttackDistance())
+	if (FMath::FloorToInt(Enemy->GetDistanceTo(Player)) <= Enemy->GetAttackDistance() + 50)
 	{
 		if (Enemy->GetAttackType() == EEnemyAttackType::EEAT_Ranged)
 		{

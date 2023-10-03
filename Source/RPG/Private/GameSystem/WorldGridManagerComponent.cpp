@@ -148,7 +148,7 @@ void UWorldGridManagerComponent::GetAStarPath(const FVector& Start, const FVecto
 				continue;
 
 			// 현재 그리드와 다음 그리드의 높이 차를 가중치로 부여
-			const int32 HeightConst = FMath::TruncToInt(FieldHeights[NodeIdx] - FieldHeights[NextIdx]) * (bIsGoingUp ? 100.f : -100.f);
+			const int32 HeightConst = FMath::TruncToInt(FieldHeights[NodeIdx] - FieldHeights[NextIdx]) * (bIsGoingUp ? 10 : -10);
 			const int32 G = Node.G + Cost[Dir] + ObstacleExtraCost[NextIdx] + HeightConst;
 
 			const int32 H = 10 * (abs(DestPos.Y - NextPos.Y) + abs(DestPos.X - NextPos.X));
@@ -160,14 +160,6 @@ void UWorldGridManagerComponent::GetAStarPath(const FVector& Start, const FVecto
 			Parent.Add(NextPos, Node.Pos);
 		}
 	}
-
-	/*FPos NextPos = DestPos;
-	while (true)
-	{
-		PathToDest.Add(FieldLocations[NextPos.Y * GridWidthSize + NextPos.X]);
-		if (NextPos == *Parent.Find(NextPos)) break;
-		NextPos = Parent[NextPos];
-	}*/
 
 	if (Parent.Find(DestPos) == nullptr)
 	{
@@ -320,7 +312,6 @@ void UWorldGridManagerComponent::ClearEnemiesPathCost(TArray<int32>& GridIndexAr
 	{
 		EnemiesPathCost[Idx] = FMath::Max(EnemiesPathCost[Idx] - 140, 0);
 	}
-	GridIndexArr.Empty();
 }
 
 int32 UWorldGridManagerComponent::VectorToCoordinatesY(const double& VectorComponent)
@@ -375,14 +366,14 @@ void UWorldGridManagerComponent::SetGridPassability(const FPos& _Pos, const bool
 
 void UWorldGridManagerComponent::DrawScore(const FVector& Location)
 {
-	int32 Y = VectorToCoordinatesY(Location.Y) - 15;
-	int32 X = VectorToCoordinatesX(Location.X) + 15;
+	int32 Y = VectorToCoordinatesY(Location.Y) - 5;
+	int32 X = VectorToCoordinatesX(Location.X) - 5;
 
-	for (int32 i = 0; i < 30; i++)
+	for (int32 i = 0; i < 10; i++)
 	{
-		for (int32 j = 0; j < 30; j++)
+		for (int32 j = 0; j < 10; j++)
 		{
-			int32 NewIdx = (Y + i) * GridWidthSize + (X - j);
+			int32 NewIdx = (Y + i) * GridWidthSize + (X + j);
 			if (NewIdx >= 0 && NewIdx < GridWidthSize * GridLengthSize)
 			{
 				DrawDebugString(GetWorld(),

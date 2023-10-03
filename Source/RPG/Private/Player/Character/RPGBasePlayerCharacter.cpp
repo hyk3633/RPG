@@ -172,7 +172,7 @@ void ARPGBasePlayerCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, 
 			TempController = Cast<APlayerController>(GetController());
 			SetCharacterDeadStateMulticast();
 			GetWorldTimerManager().SetTimer(RespawnTimer, this, &ARPGBasePlayerCharacter::PlayerRespawn, 5.f);
-			SetLifeSpan(6.f);
+			SetLifeSpan(5.2f);
 		}
 		else
 		{

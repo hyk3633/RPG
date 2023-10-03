@@ -188,14 +188,14 @@ void AObstacleChecker::CheckFlowFieldData()
 		if (Hit.bBlockingHit)
 		{
 			Loc.Z = 10;
-			DrawDebugBox(GetWorld(), Loc, FVector(GridDist, GridDist, 1), FColor::Red, true, -1.f, 0, 1.5f);
+			DrawDebugBox(GetWorld(), Loc, FVector(GridDist, GridDist, 1), FColor::Red, true, -1.f, 0, 2.f);
 		}
 		else
 		{
 			GetWorld()->LineTraceSingleByChannel(Hit, Loc, Loc2, ECC_HeightCheck);
 			FieldHeights[LastIdx] = Hit.ImpactPoint.Z; // 높이값 저장
 			Loc.Z = Hit.ImpactPoint.Z;
-			DrawDebugBox(GetWorld(), Loc, FVector(GridDist, GridDist, 1), FColor::Green, true, -1.f, 0, 1.5f);
+			DrawDebugBox(GetWorld(), Loc, FVector(GridDist, GridDist, 1), FColor::Blue, true, -1.f, 0, 2.f);
 		}
 
 		LastIdx++;
@@ -283,14 +283,15 @@ void AObstacleChecker::CheckHeightDifference()
 				{
 					IsMovableArr[LastIdx] = false;
 					const FVector Loc = FVector(Origin.X + (GridDist * (LastIdx % GridWidthSize)) - BiasX, Origin.Y + (GridDist * (LastIdx / GridWidthSize)) - BiasY, FieldHeights[LastIdx] + 15.f);
-					DrawDebugBox(GetWorld(), Loc, FVector(GridDist, GridDist, 1), FColor::Magenta, true, -1.f, 0, 1.5f);
+					DrawDebugBox(GetWorld(), Loc, FVector(GridDist, GridDist, 1), FColor::Magenta, true, -1.f, 0, 2.f);
 					
 					for (int8 Adj = 0; Adj < 4; Adj++)
 					{
 						int32 NextGrid2 = (CY + Front[Adj].Y) * GridWidthSize + (CX + Front[Adj].X);
+						if (NextGrid2 < 0 || NextGrid >= TotalSize) continue;
 						IsMovableArr[NextGrid2] = false;
 						const FVector Loc2 = FVector(Origin.X + (GridDist * (NextGrid2 % GridWidthSize)) - BiasX, Origin.Y + (GridDist * (NextGrid2 / GridWidthSize)) - BiasY, FieldHeights[NextGrid2] + 15.f);
-						DrawDebugBox(GetWorld(), Loc2, FVector(GridDist, GridDist, 1), FColor::Magenta, true, -1.f, 0, 1.5f);
+						DrawDebugBox(GetWorld(), Loc2, FVector(GridDist, GridDist, 1), FColor::Magenta, true, -1.f, 0, 2.f);
 					}
 				}
 			}
@@ -344,7 +345,6 @@ void AObstacleChecker::BFS(int32 GridIdx)
 	TArray<int32> NextGrid;
 	NextGrid.Add(GridIdx);
 	int16 CurrentCost = ExtraCost[GridIdx] ? (ExtraCost[GridIdx] / 100) - 2 : ObstacleCost - 2;
-	//int8 CurrentCost = ObstacleCost - 2;
 	while (!NextGrid.IsEmpty() && CurrentCost >= 4)
 	{
 		TArray<int32> TempArr;
@@ -356,7 +356,6 @@ void AObstacleChecker::BFS(int32 GridIdx)
 				int32 NextIdx = (CY + Front[Idx].Y) * GridWidthSize + (CX + Front[Idx].X);
 				if (NextIdx < 0 || NextIdx >= TotalSize) continue;
 				if (ExtraCost[NextIdx] / 100 >= CurrentCost) continue;
-				//if (FMath::Abs(FieldHeights[NextIdx] - FieldHeights[NextGrid[Idx_L]]) > HeightDifferenceLimit) continue;
 				
 				ExtraCost[NextIdx] = CurrentCost * 100;
 

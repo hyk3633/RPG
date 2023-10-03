@@ -124,6 +124,8 @@ protected:
 	UFUNCTION()
 	void OnCapsuleCollisionEvent(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+	void ReactivateCapsuleCollision();
+
 	void InitPathStatus();
 
 	void UpdatePathIndexAndGridPassability();
@@ -140,7 +142,7 @@ protected:
 
 	void CheckTargetLocation();
 
-	void StopMovement();
+	void StopMovement(bool bResetPassbility = true);
 
 public:
 	
@@ -306,10 +308,14 @@ private:
 
 	FTimerHandle GetupDelayTimer;
 
-	UPROPERTY(ReplicatedUsing = OnRep_bIsActivated)
-	bool bIsActivated = false;
+	FTimerHandle ReactivateCapsuleCollisionTimer;
 
-	bool bIsAttacking = false;
+	UPROPERTY(ReplicatedUsing = OnRep_bIsActivated)
+	bool bIsActivated;
+
+	bool bIsAttacking;
+
+	bool bAllowCapsuleCollision = true;
 
 	EEnemyType EnemyType;
 
@@ -344,7 +350,7 @@ private:
 
 	FTimerHandle RespawnTimer;
 
-	float DefaultSpeed = 20.f;
+	float DefaultSpeed = 40.f;
 
 	UPROPERTY(VisibleInstanceOnly, Category = "Enemy | Movement")
 	float SpeedAdjustmentValue = 1.f;

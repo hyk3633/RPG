@@ -98,7 +98,6 @@ bool URPGEnemyFormComponent::MeleeAttack(ARPGBaseEnemyCharacter* Attacker, FVect
 
 	FHitResult HitResult;
 	GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceStart + Attacker->GetActorForwardVector() * 150.f, ECC_EnemyAttack);
-	DrawDebugLine(GetWorld(), TraceStart, TraceStart + Attacker->GetActorForwardVector() * 200.f, FColor::Red, false, 3.f, 0U, 2.f);
 
 	if (HitResult.bBlockingHit)
 	{
@@ -121,8 +120,6 @@ void URPGEnemyFormComponent::GetSocketLocationAndSpawn(ARPGBaseEnemyCharacter* A
 	const FVector TraceStart = (bIsWeaponed ? Attacker->WeaponMesh : Attacker->GetMesh())->GetSocketTransform(FName("Muzzle_Socket")).GetLocation();
 	FVector TraceEnd = TraceStart;
 
-	DrawDebugPoint(GetWorld(), TraceStart, 20, FColor::Blue, true);
-
 	if (IsValid(HomingTarget))
 	{
 		TraceEnd += (HomingTarget->GetActorLocation() - TraceStart);
@@ -130,7 +127,6 @@ void URPGEnemyFormComponent::GetSocketLocationAndSpawn(ARPGBaseEnemyCharacter* A
 
 	FHitResult HitResult;
 	GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_EnemyAttack);
-	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Blue, true);
 	if (HitResult.bBlockingHit)
 	{
 		FRotator FireRotation = (HitResult.ImpactPoint - TraceStart).Rotation();

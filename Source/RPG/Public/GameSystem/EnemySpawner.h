@@ -99,8 +99,10 @@ private:
 	UPROPERTY(EditAnywhere)
 	UBoxComponent* AreaBox;
 
-	UPROPERTY(EditAnywhere, Category = "Flow Field Data")
+	UPROPERTY(EditAnywhere, Category = "Enemy Spawner")
 	FString FlowFieldDataReference;
+
+	bool bLoadingDataAssetSuccessful;
 
 	UPROPERTY(EditInstanceOnly, Category = "Enemy Spawner")
 	TMap<EEnemyType, int8> EnemyToSpawnMap;
@@ -149,6 +151,4 @@ private:
 	float CumulTime = 0.f;
 
 	TQueue<EEnemyType> RespawnWaitingQueue;
-
-	FVector TempLoc = FVector(0, -100, 215);
 };
