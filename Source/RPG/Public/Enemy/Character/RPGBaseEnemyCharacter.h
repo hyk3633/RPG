@@ -186,7 +186,6 @@ public:
 	FORCEINLINE int32 GetDetectDistance() const { return DetectDistance; }
 	FORCEINLINE int32 GetAttackDistance() const { return AttackDistance; }
 	FORCEINLINE EEnemyAttackType GetAttackType() const { return AttackType;	}
-	FORCEINLINE float GetSpeedAdjustmentValue() const { return SpeedAdjustmentValue; }
 	FORCEINLINE bool GetIsAttacking() const { return bIsAttacking; }
 
 protected:
@@ -351,9 +350,6 @@ private:
 	FTimerHandle RespawnTimer;
 
 	float DefaultSpeed = 40.f;
-
-	UPROPERTY(VisibleInstanceOnly, Category = "Enemy | Movement")
-	float SpeedAdjustmentValue = 1.f;
 
 	FVector OriginLocation;
 

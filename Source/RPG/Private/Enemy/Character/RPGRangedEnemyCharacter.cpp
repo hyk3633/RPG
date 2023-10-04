@@ -90,16 +90,14 @@ bool ARPGRangedEnemyCharacter::ShouldIStopMovement()
 		// 원/근거리 적
 		if (GetAttackType() == EEnemyAttackType::EEAT_Hybrid)
 		{
-			// 타겟과의 거리가 공격 거리보단 멀다면
-			if (DistToTarget > GetAttackDistance() && CheckCanFireToTarget())
+			// 사격 가능한 위치 또는 타겟과의 거리가 근접 공격 거리 이내라면
+			if (CheckCanFireToTarget() || DistToTarget <= GetAttackDistance())
 			{
-				// 사격 가능한 위치라면 멈추고 그렇지 않으면 계속 움직이기
 				return true;
 			}
 			else
 			{
-				// 타겟과의 거리가 공격 거리 이내라면 멈추기
-				return true;
+				return false;
 			}
 		}
 		// 원거리 적

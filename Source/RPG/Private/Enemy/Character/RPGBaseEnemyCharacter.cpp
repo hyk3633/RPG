@@ -367,9 +367,9 @@ void ARPGBaseEnemyCharacter::BTTask_Move()
 	if (HasAuthority() && GetTarget())
 	{
 		bUpdateMovement = true;
-		GetWorldTimerManager().SetTimer(CheckTargetLocationTimer, this, &ARPGBaseEnemyCharacter::CheckTargetLocation, 1.f, true);
 
 		// AStar ¹æ½Ä
+		GetWorldTimerManager().SetTimer(CheckTargetLocationTimer, this, &ARPGBaseEnemyCharacter::CheckTargetLocation, 1.f, true);
 		TargetLocation = GetTarget()->GetActorLocation();
 		ResetCurrentGridPassbility();
 		RPGGameMode->GetPathToDestination(GetActorLocation(), TargetLocation, PathArr, PathCost);
@@ -435,7 +435,7 @@ void ARPGBaseEnemyCharacter::UpdateMovementFlowField()
 		const FVector* FlowVector = MySpawner->GetFlowVector(Cast<ACharacter>(GetTarget()), this);
 		if (FlowVector)
 		{
-			AddMovementInput(*FlowVector * DefaultSpeed * SpeedAdjustmentValue * GetWorld()->GetDeltaSeconds());
+			AddMovementInput(*FlowVector * DefaultSpeed * GetWorld()->GetDeltaSeconds());
 			const FRotator TargetRot = FRotationMatrix::MakeFromX(*FlowVector).Rotator();
 			SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRot, GetWorld()->GetDeltaSeconds(), 10.f));
 		}
@@ -475,7 +475,7 @@ void ARPGBaseEnemyCharacter::UpdateMovementAStar()
 		}
 		else
 		{
-			AddMovementInput(NextDirection * DefaultSpeed * SpeedAdjustmentValue * GetWorld()->GetDeltaSeconds());
+			AddMovementInput(NextDirection * DefaultSpeed * GetWorld()->GetDeltaSeconds());
 			const FRotator TargetRot = FRotationMatrix::MakeFromX(NextDirection).Rotator();
 			SetActorRotation(FMath::RInterpTo(GetActorRotation(), TargetRot, GetWorld()->GetDeltaSeconds(), 10.f));
 		}

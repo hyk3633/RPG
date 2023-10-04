@@ -119,6 +119,9 @@ private:
 	FVector SpawnerOrigin;
 	FVector SpawnerExtent;
 
+	FPos TopLeftPos;
+	FPos BottomRightPos;
+
 	FPos Front[8] =
 	{
 		FPos { -1, 0},

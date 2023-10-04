@@ -256,7 +256,6 @@ void ARPGBasePlayerCharacter::PlayerRespawn()
 {
 	DetachFromControllerPendingDestroy();
 	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->SpawnPlayerCharacterAndPossess(TempController);
-	//GetWorld()->GetAuthGameMode()->RestartPlayer(TempController);
 }
 
 void ARPGBasePlayerCharacter::PlayerDie()
@@ -428,7 +427,7 @@ void ARPGBasePlayerCharacter::UpdateMovement()
 		}
 		else
 		{
-			AddMovementInput(NextDirection);
+			AddMovementInput(NextDirection * 40 * (CharacterDexterity + EquipmentDexterity));
 		}
 	}
 	else

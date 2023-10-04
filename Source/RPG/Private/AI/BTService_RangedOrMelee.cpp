@@ -30,7 +30,7 @@ void UBTService_RangedOrMelee::TickNode(UBehaviorTreeComponent& OwnerComp, uint8
 		const float DistToTarget = RangedEnemy->GetDistanceTo(Player);
 		if (RangedEnemy->GetAttackType() == EEnemyAttackType::EEAT_Hybrid)
 		{
-			if (DistToTarget > RangedEnemy->GetAttackDistance() && DistToTarget <= RangedEnemy->GetDetectDistance())
+			if (DistToTarget > RangedEnemy->GetAttackDistance() && DistToTarget <= RangedEnemy->GetDetectDistance() + 50)
 			{
 				OwnerComp.GetBlackboardComponent()->SetValueAsBool(ARPGEnemyAIController::CanRangedAttack, true);
 				return;
@@ -38,7 +38,7 @@ void UBTService_RangedOrMelee::TickNode(UBehaviorTreeComponent& OwnerComp, uint8
 		}
 		else
 		{
-			if (DistToTarget <= RangedEnemy->GetAttackDistance())
+			if (DistToTarget <= RangedEnemy->GetAttackDistance() + 50)
 			{
 				OwnerComp.GetBlackboardComponent()->SetValueAsBool(ARPGEnemyAIController::CanRangedAttack, true);
 				return;
