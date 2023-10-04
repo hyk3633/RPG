@@ -53,34 +53,6 @@ void AEnemySpawner::BeginPlay()
 		if (bLoadingDataAssetSuccessful) SpawnEnemies();
 	}
 
-	if (HasAuthority() == false) return;
-
-	FVector vec = FVector(SpawnerOrigin.X + SpawnerExtent.X, SpawnerOrigin.Y - SpawnerExtent.Y, 0);
-	TopLeftPos = LocationToPos(vec);
-	PLOG(TEXT("%s TopLeft %s Pos %d %d"), *GetName(), *vec.ToString(), TopLeftPos.X, TopLeftPos.Y);
-	//FVector Loc = FVector(OriginLocation.X + (GridDist * p.X) - BiasX, OriginLocation.Y + (GridDist * p.Y) - BiasY, 30);
-	//DrawDebugPoint(GetWorld(), Loc, 30, FColor::Purple, true);
-	//
-	//vec = FVector(SpawnerOrigin.X + SpawnerExtent.X, SpawnerOrigin.Y + SpawnerExtent.Y, 30);
-	//p = LocationToPos(vec);
-	//Loc = FVector(OriginLocation.X + (GridDist * p.X) - BiasX, OriginLocation.Y + (GridDist * p.Y) - BiasY, 30);
-	//DrawDebugPoint(GetWorld(), Loc, 30, FColor::Cyan, true);
-	//
-	//vec = FVector(SpawnerOrigin.X - SpawnerExtent.X, SpawnerOrigin.Y - SpawnerExtent.Y, 30);
-	//p = LocationToPos(vec);
-	//Loc = FVector(OriginLocation.X + (GridDist * p.X) - BiasX, OriginLocation.Y + (GridDist * p.Y) - BiasY, 30);
-	//DrawDebugPoint(GetWorld(), Loc, 30, FColor::Orange, true);
-	//
-	vec = FVector(SpawnerOrigin.X - SpawnerExtent.X, SpawnerOrigin.Y + SpawnerExtent.Y, 0);
-	BottomRightPos = LocationToPos(vec);
-	PLOG(TEXT("%s BottomRight %s Pos %d %d"), *GetName(), *vec.ToString(), BottomRightPos.X, BottomRightPos.Y);
-	//Loc = FVector(OriginLocation.X + (GridDist * p.X) - BiasX, OriginLocation.Y + (GridDist * p.Y) - BiasY, 30);
-	//DrawDebugPoint(GetWorld(), Loc, 30, FColor::Black, true);
-
-	int32 TL = TopLeftPos.Y * GridWidth + TopLeftPos.X;
-	int32 BR = BottomRightPos.Y * GridWidth + BottomRightPos.X;
-	PLOG(TEXT("%d %d"), TL, BR);
-
 	//DrawDebugGrid();
 }
 
@@ -371,9 +343,6 @@ void AEnemySpawner::CalculateFlowVector(ACharacter* TargetCharacter)
 		{
 			FPos NextPos = CPos + Front[Idx];
 			const int32 NextIdx = NextPos.Y * GridWidth + NextPos.X;
-			//if (NextPos.Y >= 0 && NextPos.Y < GridLength &&
-			//	NextPos.X >= 0 && NextPos.X < GridWidth)
-			//if(NextIdx >= 0 && NextIdx < TotalSize)
 			if (NextPos.Y >= TopLeftPos.Y && NextPos.Y <= BottomRightPos.Y &&
 				NextPos.X >= BottomRightPos.X && NextPos.X <= TopLeftPos.X)
 			{
@@ -398,7 +367,6 @@ void AEnemySpawner::CalculateFlowVector(ACharacter* TargetCharacter)
 			for (int8 Dir = 0; Dir < 8; Dir++)
 			{
 				FPos NextPos = FPos(CY, CX) + Front[Dir];
-				//if (NPos.Y >= 0 && NPos.Y < GridLength && NPos.X >= 0 && NPos.X < GridWidth)
 				if (NextPos.Y >= TopLeftPos.Y && NextPos.Y <= BottomRightPos.Y &&
 					NextPos.X >= BottomRightPos.X && NextPos.X <= TopLeftPos.X)
 				{
