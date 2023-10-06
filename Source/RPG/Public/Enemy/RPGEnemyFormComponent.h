@@ -37,7 +37,7 @@ protected:
 
 public:	
 
-	ARPGBaseEnemyCharacter* CreateNewEnemy();
+	ARPGBaseEnemyCharacter* CreateNewEnemy(const FVector& WaitingLocation);
 
 protected:
 

@@ -18,7 +18,7 @@ public:
 
 	AEnemyPooler();
 
-	void CreatePool(const int32 Size, const EEnemyType Type);
+	void CreatePool(const int32 Size, const EEnemyType Type, const FVector& WaitingLocation);
 
 	void DestroyPool();
 

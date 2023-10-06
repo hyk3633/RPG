@@ -88,7 +88,7 @@ void ARPGBossEnemyCharacter::ActivateEnemy(const FVector& Location)
 {
 	Super::ActivateEnemy(Location);
 
-	GetWorldTimerManager().SetTimer(SpecialAttackCooldownTimer, this, &ARPGBossEnemyCharacter::SpecialAttackCooldownEnd, 10);
+	GetWorldTimerManager().SetTimer(SpecialAttackCooldownTimer, this, &ARPGBossEnemyCharacter::SpecialAttackCooldownEnd, 5);
 }
 
 void ARPGBossEnemyCharacter::CalculateAimYawAndPitch(float DeltaTime)
@@ -183,25 +183,11 @@ void ARPGBossEnemyCharacter::Attack()
 		TArray<FVector> ImpactLocations;
 		TArray<FRotator> ImpactRotations;
 		EnemyForm->StraightMultiAttack(this, TargetLocation, ImpactLocations, ImpactRotations);
-		if (ImpactLocations.Num())
+		for (int32 Idx = 0; Idx < ImpactLocations.Num(); Idx++)
 		{
-			for (int32 Idx = 0; Idx < ImpactLocations.Num(); Idx++)
-			{
-				SpawnParticleMulticast(PrimaryAttackCharacterImpactParticle, ImpactLocations[Idx], ImpactRotations[Idx]);
-			}
+			SpawnParticleMulticast(PrimaryAttackCharacterImpactParticle, ImpactLocations[Idx], ImpactRotations[Idx]);
 		}
-		else
-		{
-			FHitResult HitResult;
-			const FVector TraceStart = GetMesh()->GetSocketTransform(FName("Melee_Socket")).GetLocation();
-			const FVector TraceEnd = GetMesh()->GetSocketTransform(FName("Melee_Socket")).GetRotation().Vector() * 1000;
-			GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_GroundTrace);
-			if (HitResult.bBlockingHit)
-			{
-				SpawnParticleMulticast(PrimaryAttackWorldImpactParticle, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation());
-				PlaySoundMulticast(HitResult.ImpactPoint);
-			}
-		}
+		if(ImpactLocations.Num()) PlaySoundMulticast(ImpactLocations[0]);
 	}
 }
 
@@ -218,8 +204,8 @@ void ARPGBossEnemyCharacter::BTTask_SpecialAttack()
 	MyController->SetCanSpecialAttack(false);
 	bIsAttacking = true;
 
-	const ESpecialAttackType SpecialAttackType = StaticCast<ESpecialAttackType>(FMath::RandRange(0, 2));
-	
+	const ESpecialAttackType SpecialAttackType = StaticCast<ESpecialAttackType>(SpecialAttackIndex);
+
 	if (SpecialAttackType == ESpecialAttackType::ESAT_EmitShockWave)
 	{
 		ActivateAttackRangeMarkMulticast(SpecialAttackType, 500);
@@ -234,6 +220,8 @@ void ARPGBossEnemyCharacter::BTTask_SpecialAttack()
 		ActivateAttackRangeMarkMulticast(SpecialAttackType, 430);
 		GetWorldTimerManager().SetTimer(SpecialAttackTimer, this, &ARPGBossEnemyCharacter::PlayBulldozeMontageEffectMulticast, 2);
 	}
+
+	SpecialAttackIndex = (SpecialAttackIndex + 1) % 3;
 }
 
 void ARPGBossEnemyCharacter::PlayEmitShockwaveMontageEffectMulticast_Implementation()
@@ -257,7 +245,7 @@ void ARPGBossEnemyCharacter::ActivateAttackRangeMarkMulticast_Implementation(ESp
 	if (Type == ESpecialAttackType::ESAT_EmitShockWave)
 	{
 		AttackRangeMark->SetRelativeLocation(FVector(0, 0, -200));
-		AttackRangeMark->SetWorldScale3D(FVector(Size / 30 - 2, Size / 30 - 2, 1));
+		AttackRangeMark->SetWorldScale3D(FVector(Size / 30 - 3, Size / 30 - 3, 1));
 		AttackRangeMark->SetMaterial(0, Circle);
 	}
 	else if (Type == ESpecialAttackType::ESAT_Bulldoze)
@@ -274,7 +262,7 @@ void ARPGBossEnemyCharacter::EmitShockWave(ESpecialAttackType Type)
 	{
 		TArray<FVector> ImpactLocations;
 		TArray<FRotator> ImpactRotations;
-		EnemyForm->SphericalRangeAttack(this, 500, ImpactLocations, ImpactRotations);
+		EnemyForm->SphericalRangeAttack(this, 650, ImpactLocations, ImpactRotations);
 		if (ImpactLocations.Num())
 		{
 			for (int32 Idx = 0; Idx < ImpactLocations.Num(); Idx++)

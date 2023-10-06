@@ -14,10 +14,8 @@ AEnemyPooler::AEnemyPooler()
 	EnemyFormComponent = CreateDefaultSubobject<URPGEnemyFormComponent>(TEXT("Enemy Form Component"));
 }
 
-void AEnemyPooler::CreatePool(const int32 Size, const EEnemyType Type)
+void AEnemyPooler::CreatePool(const int32 Size, const EEnemyType Type, const FVector& WaitingLocation)
 {
-	if (HasAuthority() == false) return;
-
 	PoolSize = ActivatedNum = DeactivatedNum = Size;
 	EnemyArr.Init(nullptr, Size);
 
@@ -25,7 +23,7 @@ void AEnemyPooler::CreatePool(const int32 Size, const EEnemyType Type)
 
 	for (int8 Idx = 0; Idx < PoolSize; Idx++)
 	{
-		EnemyArr[Idx] = EnemyFormComponent->CreateNewEnemy();
+		EnemyArr[Idx] = EnemyFormComponent->CreateNewEnemy(WaitingLocation);
 		EnemyArr[Idx]->DOnDeath.AddUFunction(this, FName("AddDeactivatedNum"));
 	}
 }

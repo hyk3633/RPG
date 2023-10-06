@@ -52,27 +52,28 @@ void URPGEnemyFormComponent::CreateProjectilePooler()
 	ProjectilePooler->CreatePool(EnemyAssets.ProjectileClass, 20, EnemyAssets.ProjectileType);
 }
 
-ARPGBaseEnemyCharacter* URPGEnemyFormComponent::CreateNewEnemy()
+ARPGBaseEnemyCharacter* URPGEnemyFormComponent::CreateNewEnemy(const FVector& WaitingLocation)
 {
 	ARPGBaseEnemyCharacter* NewEnemy = nullptr;
+	const FTransform SpawnTransform{ FRotator::ZeroRotator, WaitingLocation };
 	if (EnemyAssets.AttackType == EEnemyAttackType::EEAT_Melee)
 	{
-		NewEnemy = GetWorld()->SpawnActorDeferred<ARPGBaseEnemyCharacter>(ARPGBaseEnemyCharacter::StaticClass(), FTransform(FRotator::ZeroRotator, FVector::ZeroVector));
+		NewEnemy = GetWorld()->SpawnActorDeferred<ARPGBaseEnemyCharacter>(ARPGBaseEnemyCharacter::StaticClass(), SpawnTransform);
 	}
 	else if(EnemyAssets.AttackType == EEnemyAttackType::EEAT_Boss)
 	{
-		NewEnemy = GetWorld()->SpawnActorDeferred<ARPGBossEnemyCharacter>(ARPGBossEnemyCharacter::StaticClass(), FTransform(FRotator::ZeroRotator, FVector::ZeroVector));
+		NewEnemy = GetWorld()->SpawnActorDeferred<ARPGBossEnemyCharacter>(ARPGBossEnemyCharacter::StaticClass(), SpawnTransform);
 	}
 	else
 	{
-		NewEnemy = GetWorld()->SpawnActorDeferred<ARPGRangedEnemyCharacter>(ARPGRangedEnemyCharacter::StaticClass(), FTransform(FRotator::ZeroRotator, FVector::ZeroVector));
+		NewEnemy = GetWorld()->SpawnActorDeferred<ARPGRangedEnemyCharacter>(ARPGRangedEnemyCharacter::StaticClass(), SpawnTransform);
 	}
 
 	if (NewEnemy)
 	{
 		InitEnemy(NewEnemy);
 		NewEnemy->SetEnemyAssets(EnemyAssets);
-		NewEnemy->FinishSpawning(FTransform(FRotator::ZeroRotator, FVector::ZeroVector));
+		NewEnemy->FinishSpawning(SpawnTransform);
 		return NewEnemy;
 	}
 	else return nullptr;
@@ -156,7 +157,6 @@ void URPGEnemyFormComponent::StraightMultiAttack(ARPGBaseEnemyCharacter* Attacke
 
 	TArray<FHitResult> HitResults;
 	GetWorld()->LineTraceMultiByChannel(HitResults, TraceStart, LocationToAttack, ECC_EnemyAttack);
-
 	for (FHitResult Hit : HitResults)
 	{
 		if (Hit.bBlockingHit)
@@ -171,11 +171,13 @@ void URPGEnemyFormComponent::StraightMultiAttack(ARPGBaseEnemyCharacter* Attacke
 void URPGEnemyFormComponent::SphericalRangeAttack(ARPGBaseEnemyCharacter* Attacker, const int32& Radius, TArray<FVector>& ImpactLocation, TArray<FRotator>& ImpactRotation)
 {
 	TArray<FHitResult> HitResults;
+	FVector TraceLocation = Attacker->GetActorLocation();
+	TraceLocation.Z = 10;
 	UKismetSystemLibrary::SphereTraceMulti
 	(
 		this,
-		Attacker->GetActorLocation(),
-		Attacker->GetActorLocation(),
+		TraceLocation,
+		TraceLocation,
 		Radius,
 		UEngineTypes::ConvertToTraceType(ECC_EnemyAttack),
 		false,
@@ -199,14 +201,14 @@ void URPGEnemyFormComponent::SphericalRangeAttack(ARPGBaseEnemyCharacter* Attack
 void URPGEnemyFormComponent::RectangularRangeAttack(ARPGBaseEnemyCharacter* Attacker, const int32& Length, TArray<FVector>& ImpactLocation, TArray<FRotator>& ImpactRotation)
 {
 	TArray<FHitResult> HitResults;
-	FVector Location = Attacker->GetActorForwardVector() * 450;
+	FVector Location = Attacker->GetActorLocation() + Attacker->GetActorForwardVector() * 450;
 	Location.Z = 10;
 	UKismetSystemLibrary::BoxTraceMulti
 	(
 		this,
 		Location,
 		Location,
-		FVector(600, 200, 10),
+		FVector(600, 200, 100),
 		FRotator::ZeroRotator,
 		UEngineTypes::ConvertToTraceType(ECC_EnemyAttack),
 		false,

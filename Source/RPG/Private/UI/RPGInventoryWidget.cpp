@@ -97,12 +97,14 @@ void URPGInventoryWidget::ClearEquipmentSlot(const EItemType ItemType)
 
 	if (ItemType == EItemType::EIT_Armour)
 	{
-		ArmourSlotIcon->SetBrushFromMaterial(nullptr);
+		ArmourSlotIcon->SetBrush(Brush);
+		//ArmourSlotIcon->SetBrushFromMaterial(nullptr);
 		ArmourSlotIcon->SetBrushTintColor(FSlateColor(FColor(0, 0, 0, 0)));
 	}
 	else if (ItemType == EItemType::EIT_Accessories)
 	{
-		AccessoriesSlotIcon->SetBrushFromMaterial(nullptr);
+		AccessoriesSlotIcon->SetBrush(Brush);
+		//AccessoriesSlotIcon->SetBrushFromMaterial(nullptr);
 		AccessoriesSlotIcon->SetBrushTintColor(FSlateColor(FColor(0, 0, 0, 0)));
 	}
 }

@@ -362,7 +362,7 @@ void ARPGSorcererPlayerCharacter::ApplyMeteorDamage()
 		UEngineTypes::ConvertToTraceType(ECC_PlayerAttack),
 		false,
 		TArray<AActor*>(),
-		EDrawDebugTrace::Persistent,
+		EDrawDebugTrace::None,
 		Hits,
 		true
 	);

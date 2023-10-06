@@ -180,12 +180,12 @@ void UWorldGridManagerComponent::GetAStarPath(const FVector& Start, const FVecto
 	//PLOG(TEXT("time : %f"), end - start);
 
 	// 경로 디버그
-	for (int32 i = 0; i < PathToDest.Num(); i++)
+	/*for (int32 i = 0; i < PathToDest.Num(); i++)
 	{
 		int32 Y = VectorToCoordinatesY(PathToDest[i].Y);
 		int32 X = VectorToCoordinatesY(PathToDest[i].X);
 		DrawDebugPoint(GetWorld(), FVector(PathToDest[i].X, PathToDest[i].Y, FieldHeights[Y * GridWidthSize + X] + 10.f), 10.f, FColor::Blue, false, 2.f);
-	}
+	}*/
 }
 
 void UWorldGridManagerComponent::GetAStarPath(const FVector& Start, const FVector& Dest, TArray<FPos>& PathToDest, TArray<int32>& GridIndexArr)
@@ -298,12 +298,12 @@ void UWorldGridManagerComponent::GetAStarPath(const FVector& Start, const FVecto
 	//PLOG(TEXT("time : %f"), end - start);
 
 	// 경로 디버그
-	for (int32 i = 0; i < PathToDest.Num(); i++)
+	/*for (int32 i = 0; i < PathToDest.Num(); i++)
 	{
 		int32 Y = VectorToCoordinatesY(PathToDest[i].Y);
 		int32 X = VectorToCoordinatesY(PathToDest[i].X);
 		DrawDebugPoint(GetWorld(), FVector(PathToDest[i].X, PathToDest[i].Y, FieldHeights[Y * GridWidthSize + X] + 10.f), 10.f, FColor::Blue, false, 2.f);
-	}
+	}*/
 }
 
 void UWorldGridManagerComponent::ClearEnemiesPathCost(TArray<int32>& GridIndexArr)

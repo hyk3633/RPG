@@ -187,11 +187,14 @@ private:
 
 	bool bIsItemSlotMenuWidgetOn = false;
 
+	UPROPERTY(VisibleInstanceOnly, Category = "HUD | Inventory Status")
 	int32 SelectedItemUniqueNum = -1;
 
-	int32 EquippedArmourUnieuqNum = -1;
+	UPROPERTY(VisibleInstanceOnly, Category = "HUD | Inventory Status")
+	int32 EquippedArmourUniqueNum = -1;
 
-	int32 EquippedAccessoriesUnieuqNum = -1;
+	UPROPERTY(VisibleInstanceOnly, Category = "HUD | Inventory Status")
+	int32 EquippedAccessoriesUniqueNum = -1;
 
 	/** 아이템 스탯 정보창 */
 	UPROPERTY(EditAnywhere, Category = "HUD")

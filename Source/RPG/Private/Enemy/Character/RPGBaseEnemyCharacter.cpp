@@ -573,7 +573,7 @@ void ARPGBaseEnemyCharacter::OnAttackMontageEnded()
 void ARPGBaseEnemyCharacter::SetSpawner(AEnemySpawner* Spawner)
 {
 	MySpawner = Spawner;
-	DHandle = MySpawner->DOnPlayerOut.AddUFunction(this, FName("PlayerOut"));
+	//DHandle = MySpawner->DOnPlayerOut.AddUFunction(this, FName("PlayerOut"));
 }
 
 bool ARPGBaseEnemyCharacter::GetSuckedIn() const

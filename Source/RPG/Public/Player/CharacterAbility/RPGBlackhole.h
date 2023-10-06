@@ -41,7 +41,7 @@ private:
 
 	FTimerHandle ExpireTimer;
 
-	float ExpireTime = 3.f;
+	float ExpireTime = 4.f;
 
 	bool bBlackholeOn = true;
 

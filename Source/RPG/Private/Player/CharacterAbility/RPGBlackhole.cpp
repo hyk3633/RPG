@@ -1,6 +1,7 @@
 
 #include "Player/CharacterAbility/RPGBlackhole.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
+#include "DamageType/DamageTypeBase.h"
 #include "../RPG.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -24,7 +25,7 @@ void ARPGBlackhole::BeginPlay()
 	Super::BeginPlay();
 	
 	GetWorldTimerManager().SetTimer(ExpireTimer, this, &ARPGBlackhole::ExpireBlackhole, ExpireTime);
-	GetWorldTimerManager().SetTimer(DamageTimer, this, &ARPGBlackhole::ApplyDamageToEnemies, 0.3f, true);
+	GetWorldTimerManager().SetTimer(DamageTimer, this, &ARPGBlackhole::ApplyDamageToEnemies, 0.5f, true);
 }
 
 void ARPGBlackhole::InitiateSuckingUpEnemies()
@@ -44,7 +45,7 @@ void ARPGBlackhole::ApplyDamageToEnemies()
 	CollisionComponent->GetOverlappingActors(OverlappingEnemies);
 	for (AActor* Actor : OverlappingEnemies)
 	{
-		UGameplayStatics::ApplyDamage(Actor, Damage, nullptr, this, UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(Actor, Damage, nullptr, this, UDamageTypeBase::StaticClass());
 	}
 }
 

@@ -132,6 +132,8 @@ private:
 
 	FTimerHandle StunTimer;
 
+	int8 SpecialAttackIndex;
+
 	/** 기본 공격 */
 
 	UPROPERTY()

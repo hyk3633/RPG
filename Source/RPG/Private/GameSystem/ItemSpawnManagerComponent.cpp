@@ -13,8 +13,12 @@ UItemSpawnManagerComponent::UItemSpawnManagerComponent()
 void UItemSpawnManagerComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	//CreatePool(5);
+
+}
+
+void UItemSpawnManagerComponent::InitItemSpawnManager()
+{
+	CreatePool(30);
 }
 
 void UItemSpawnManagerComponent::DropItem(const FItemInfo& Info, const FVector& Location)
@@ -29,10 +33,6 @@ void UItemSpawnManagerComponent::DropItem(const FItemInfo& Info, const FVector& 
 		ActivatedItem->SetItemInfo(Info);
 		ActivatedItem->ActivateItemFromAllClients(FTransform(FRotator::ZeroRotator, Location));
 	}
-	else
-	{
-		// 풀 늘리기
-	}
 }
 
 void UItemSpawnManagerComponent::SpawnItems(const FVector& Location)
@@ -42,8 +42,6 @@ void UItemSpawnManagerComponent::SpawnItems(const FVector& Location)
 
 	// 코인 무조건 스폰
 	ItemInitializeBeforeSpawn(EItemType::EIT_Coin, GetRandomVector(Location));
-	ItemInitializeBeforeSpawn(EItemType::EIT_Armour, GetRandomVector(Location));
-	ItemInitializeBeforeSpawn(EItemType::EIT_Accessories, GetRandomVector(Location));
 
 	if (FMath::RandRange(1, 100) < 50)
 	{
@@ -135,10 +133,6 @@ void UItemSpawnManagerComponent::ItemInitializeBeforeSpawn(const EItemType ItemT
 		ActivatedItem->SetItemInfo(NewItemInfo);
 		ActivatedItem->ActivateItemFromAllClients(FTransform(FRotator::ZeroRotator, Location));
 	}
-	else
-	{
-		// 풀 늘리기
-	}
 }
 
 ARPGItem* UItemSpawnManagerComponent::GetPooledItem()
@@ -162,6 +156,7 @@ void UItemSpawnManagerComponent::ArmourStatRandomInitialize(FItemInfo& Info)
 	// 스탯 옵션 개수
 	const int8 MaxStatNum = 4;
 	Info.ItemStatArr.Init(0, MaxStatNum);
+	Info.ItemStatArr[1] = 1.f;
 
 	int32 StatBit = 0;
 
@@ -228,6 +223,7 @@ void UItemSpawnManagerComponent::AccessoriesStatRandomInitialize(FItemInfo& Info
 	// 스탯 옵션 개수
 	const int8 MaxStatNum = 3;
 	Info.ItemStatArr.Init(0, MaxStatNum);
+	Info.ItemStatArr[2] = 1.f;
 
 	int32 StatBit = 0;
 

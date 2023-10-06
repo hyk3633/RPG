@@ -72,5 +72,5 @@ protected:
 	float AimYaw;
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	bool bStunned = false;
+	bool bStunned;
 };

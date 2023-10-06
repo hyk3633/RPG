@@ -372,7 +372,7 @@ void ARPGHUD::OnItemSlotButtonClickEvent(const int32 UniqueNum)
 	}
 	else
 	{
-		if (UniqueNum == EquippedArmourUnieuqNum || UniqueNum == EquippedAccessoriesUnieuqNum)
+		if (UniqueNum == EquippedArmourUniqueNum || UniqueNum == EquippedAccessoriesUniqueNum)
 		{
 			ItemSlotMenuWidget->SetUseText(FString(TEXT("장착해제")));
 		}
@@ -414,19 +414,41 @@ void ARPGHUD::OnUseOrEquipButtonClicked()
 	}
 	else
 	{
-		if (SelectedItemUniqueNum == EquippedArmourUnieuqNum)
+		if (SelectedItemUniqueNum == EquippedArmourUniqueNum)
 		{
-			RPGController->DoUnequipItem(EquippedArmourUnieuqNum);
-			UnequipItem(EquippedArmourUnieuqNum);
+			RPGController->DoUnequipItem(EquippedArmourUniqueNum);
+			UnequipItem(EquippedArmourUniqueNum);
 		}
-		else if (SelectedItemUniqueNum == EquippedAccessoriesUnieuqNum)
+		else if (SelectedItemUniqueNum == EquippedAccessoriesUniqueNum)
 		{
-			RPGController->DoUnequipItem(EquippedAccessoriesUnieuqNum);
-			UnequipItem(EquippedAccessoriesUnieuqNum);
+			RPGController->DoUnequipItem(EquippedAccessoriesUniqueNum);
+			UnequipItem(EquippedAccessoriesUniqueNum);
 		}
+		else
+		{
+			URPGInventorySlotWidget* SelectedSlot = (*ItemSlotMap.Find(SelectedItemUniqueNum));
+			const EItemType SelectedItemType = SelectedSlot->GetSavedItemType();
 
-		RPGController->DoEquipItem(SelectedItemUniqueNum);
-		EquipItem(SelectedItemUniqueNum);
+			if (SelectedItemType == EItemType::EIT_Armour)
+			{
+				if (EquippedArmourUniqueNum != -1)
+				{
+					RPGController->DoUnequipItem(EquippedArmourUniqueNum);
+					UnequipItem(EquippedArmourUniqueNum);
+				}
+			}
+			else if (SelectedItemType == EItemType::EIT_Accessories)
+			{
+				if (EquippedAccessoriesUniqueNum != -1)
+				{
+					RPGController->DoUnequipItem(EquippedAccessoriesUniqueNum);
+					UnequipItem(EquippedAccessoriesUniqueNum);
+				}
+			}
+
+			RPGController->DoEquipItem(SelectedItemUniqueNum);
+			EquipItem(SelectedItemUniqueNum);
+		}
 	}
 
 	SelectedItemUniqueNum = -1;
@@ -448,11 +470,11 @@ void ARPGHUD::EquipItem(const int32& UniqueNum)
 
 	if (SelectedItemType == EItemType::EIT_Armour)
 	{
-		EquippedArmourUnieuqNum = UniqueNum;
+		EquippedArmourUniqueNum = UniqueNum;
 	}
 	else if (SelectedItemType == EItemType::EIT_Accessories)
 	{
-		EquippedAccessoriesUnieuqNum = UniqueNum;
+		EquippedAccessoriesUniqueNum = UniqueNum;
 	}
 }
 
@@ -470,11 +492,11 @@ void ARPGHUD::UnequipItem(const int32& UniqueNum)
 
 	if (SelectedItemType == EItemType::EIT_Armour)
 	{
-		EquippedArmourUnieuqNum = -1;
+		EquippedArmourUniqueNum = -1;
 	}
 	else if (SelectedItemType == EItemType::EIT_Accessories)
 	{
-		EquippedAccessoriesUnieuqNum = -1;
+		EquippedAccessoriesUniqueNum = -1;
 	}
 }
 
@@ -489,7 +511,7 @@ void ARPGHUD::OnDiscardButtonClicked()
 
 	RPGController->DiscardItem(SelectedItemUniqueNum);
 
-	if (SelectedItemUniqueNum == EquippedArmourUnieuqNum || SelectedItemUniqueNum == EquippedAccessoriesUnieuqNum)
+	if (SelectedItemUniqueNum == EquippedArmourUniqueNum || SelectedItemUniqueNum == EquippedAccessoriesUniqueNum)
 	{
 		UnequipItem(SelectedItemUniqueNum);
 		RPGController->DoUpdateEquippedItemStat();

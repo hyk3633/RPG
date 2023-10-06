@@ -61,30 +61,38 @@ void AEnemySpawner::SpawnEnemies()
 	for (auto Pair : EnemyToSpawnMap)
 	{
 		AEnemyPooler* EnemyPooler = GetWorld()->SpawnActor<AEnemyPooler>(FVector::ZeroVector, FRotator::ZeroRotator);
-		EnemyPooler->CreatePool(Pair.Value * 3, Pair.Key);
+		const int8 PoolingNumber = FMath::Clamp(Pair.Value * (Pair.Key == EEnemyType::EET_Boss ? 1 : 3), 1, 15);
+		EnemyPooler->CreatePool(PoolingNumber, Pair.Key, WaitingLocation);
 		EnemyPoolerMap.Add(StaticCast<int8>(Pair.Key), EnemyPooler);
 
 		for (ARPGBaseEnemyCharacter* Enemy : EnemyPooler->GetEnemyArr())
 		{
-			Enemy->DOnDeactivate.AddUFunction(this, FName("AddEnemyToRespawnQueue"));
+			if (Pair.Key != EEnemyType::EET_Boss)
+			{
+				Enemy->DOnDeactivate.AddUFunction(this, FName("AddEnemyToRespawnQueue"));
+			}
 			Enemy->SetSpawner(this);
 		}
 
 		for (int8 Idx = 0; Idx < Pair.Value; Idx++)
 		{
-			FVector SpawnLocation;
-			const bool bIsSafeLocation = GetSpawnLocation(SpawnLocation);
-			if (bIsSafeLocation)
+			FVector SpawnLocation = GetActorLocation();
+			if (Pair.Key != EEnemyType::EET_Boss)
 			{
-				ARPGBaseEnemyCharacter* Enemy = EnemyPooler->GetPooledEnemy();
-				if (Enemy)
+				if (GetSpawnLocation(SpawnLocation) == false)
 				{
-					Enemy->SetActorRotation(FRotator(0, 180, 0));
-					Enemy->ActivateEnemy(SpawnLocation);
-					EnemiesInArea.Add(Enemy);
+					ELOG(TEXT("no place to respawn"));
+					continue;
 				}
 			}
-			else ELOG(TEXT("no place to respawn"));
+
+			ARPGBaseEnemyCharacter* Enemy = EnemyPooler->GetPooledEnemy();
+			if (Enemy)
+			{
+				Enemy->SetActorRotation(FRotator(0, 180, 0));
+				Enemy->ActivateEnemy(SpawnLocation);
+				EnemiesInArea.Add(Enemy);
+			}
 		}
 	}
 }
@@ -111,7 +119,7 @@ bool AEnemySpawner::GetSpawnLocation(FVector& SpawnLocation)
 			UEngineTypes::ConvertToTraceType(ECC_IsSafeToSpawn),
 			false,
 			TArray<AActor*>(),
-			EDrawDebugTrace::ForDuration,
+			EDrawDebugTrace::None,
 			Hit,
 			true
 		);
@@ -257,7 +265,7 @@ void AEnemySpawner::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// 디버깅 시에는 !PlayersInArea로
-	if (HasAuthority() && PlayersInArea.Num())
+	/*if (HasAuthority() && PlayersInArea.Num())
 	{
 		CumulTime += DeltaTime;
 		if (CumulTime >= 1.f)
@@ -272,7 +280,7 @@ void AEnemySpawner::Tick(float DeltaTime)
 			}
 			CumulTime = 0.f;
 		}
-	}
+	}*/
 }
 
 FVector* AEnemySpawner::GetFlowVector(ACharacter* TargetCharacter, ACharacter* EnemyCharacter)

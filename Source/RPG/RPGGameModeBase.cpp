@@ -58,6 +58,7 @@ void ARPGGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 
+	ItemSpawnManager->InitItemSpawnManager();
 }
 
 void ARPGGameModeBase::PostLogin(APlayerController* NewPlayer)

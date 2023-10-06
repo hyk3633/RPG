@@ -154,4 +154,7 @@ private:
 	float CumulTime = 0.f;
 
 	TQueue<EEnemyType> RespawnWaitingQueue;
+
+	UPROPERTY(EditInstanceOnly, Category = "Enemy Spawner")
+	FVector WaitingLocation;
 };

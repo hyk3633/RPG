@@ -32,6 +32,8 @@ void UBTService_FindClosestTarget::TickNode(UBehaviorTreeComponent& OwnerComp, u
 			return;
 		}
 
+		CF();
+
 		ClosestTarget = Players[FMath::RandRange(0, PlayerCount - 1)];
 		if (IsValid(ClosestTarget))
 		{
