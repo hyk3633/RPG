@@ -133,7 +133,7 @@ void ARPGBaseEnemyCharacter::OnRep_bIsActivated()
 	{
 		GetMesh()->SetVisibility(true);
 		WeaponMesh->SetVisibility(true);
-		MyAnimInst->CancelMontage();
+		MyAnimInst->CancelDeathMontage();
 		EnemyIconSprite->SetVisibility(true);
 	}
 }
@@ -239,6 +239,11 @@ void ARPGBaseEnemyCharacter::TakeAnyDamage(AActor* DamagedActor, float Damage, c
 			{
 				if (0.5f >= FMath::RandRange(0.f, 1.f))
 				{
+					if (bIsAttacking)
+					{
+						bIsAttacking = false;
+						DOnAttackEnd.Broadcast();
+					}
 					HitReactionMulticast();
 				}
 			}
@@ -288,6 +293,13 @@ void ARPGBaseEnemyCharacter::HealthDecrease(const int32& Damage)
 		DMoveEnd.Broadcast();
 		MySpawner->DOnPlayerOut.Remove(DHandle);
 		DisableSuckedInMulticast();
+		MyAnimInst->PlayDeathMontage();
+		if (bIsAttacking)
+		{
+			MyAnimInst->CancelAttackMontage();
+			DOnAttackEnd.Broadcast();
+			bIsAttacking = false;
+		}
 		SetCollisionDeactivate();
 		bIsActivated = false;
 		bUpdateMovement = false;
@@ -329,6 +341,7 @@ void ARPGBaseEnemyCharacter::OnHealthChanged()
 	{
 		GetWorldTimerManager().SetTimer(HideMeshTimer, this, &ARPGBaseEnemyCharacter::HideMesh, 5.f);
 		SetCollisionDeactivate();
+		MyAnimInst->CancelAttackMontage();
 		EnemyDeath();
 	}
 }
@@ -600,14 +613,8 @@ void ARPGBaseEnemyCharacter::HitReactionMulticast_Implementation()
 
 void ARPGBaseEnemyCharacter::HitReaction()
 {
-	if (HasAuthority())
-	{
-		MyController->SetIsStunned(true);
-	}
-	else
-	{
-		MyAnimInst->PlayHitReactionMontage();
-	}
+	if (HasAuthority()) MyController->SetIsStunned(true);
+	MyAnimInst->PlayHitReactionMontage();
 }
 
 void ARPGBaseEnemyCharacter::OnHitReactionEnded()

@@ -56,12 +56,21 @@ void URPGEnemyAnimInstance::PlayHitReactionMontage()
 {
 	if (HitReactionMontage == nullptr) return;
 	if (Montage_IsPlaying(GetupMontage)) return;
+	CancelAttackMontage();
 	Montage_Play(HitReactionMontage, 1.5f);
 }
 
-void URPGEnemyAnimInstance::CancelMontage()
+void URPGEnemyAnimInstance::CancelDeathMontage()
 {
 	Montage_Stop(0.f, DeathMontage);
+}
+
+void URPGEnemyAnimInstance::CancelAttackMontage()
+{
+	if (ClientMeleeAttackMontage && Montage_IsPlaying(ClientMeleeAttackMontage)) Montage_Stop(0.f, ClientMeleeAttackMontage);
+	if (ServerMeleeAttackMontage && Montage_IsPlaying(ServerMeleeAttackMontage)) Montage_Stop(0.f, ServerMeleeAttackMontage);
+	if (ClientRangedAttackMontage && Montage_IsPlaying(ClientRangedAttackMontage)) Montage_Stop(0.f, ClientRangedAttackMontage);
+	if (ServerRangedAttackMontage && Montage_IsPlaying(ServerRangedAttackMontage)) Montage_Stop(0.f, ServerRangedAttackMontage);
 }
 
 void URPGEnemyAnimInstance::AnimNotify_Attack()

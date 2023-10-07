@@ -17,6 +17,7 @@ bool UBTDecorator_IsAbleToAction::CalculateRawConditionValue(UBehaviorTreeCompon
 	if (OwnerComp.GetBlackboardComponent()->GetValueAsBool(ARPGEnemyAIController::IsFalldown)) return false;
 	if (OwnerComp.GetBlackboardComponent()->GetValueAsBool(ARPGEnemyAIController::IsRestrained)) return false;
 	if (OwnerComp.GetBlackboardComponent()->GetValueAsBool(ARPGEnemyAIController::IsSuckedIn)) return false;
+	if (OwnerComp.GetBlackboardComponent()->GetValueAsBool(ARPGEnemyAIController::IsStunned)) return false;
 
 	return true;
 }

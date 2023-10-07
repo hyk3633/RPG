@@ -34,7 +34,9 @@ public:
 
 	void PlayHitReactionMontage();
 
-	void CancelMontage();
+	void CancelDeathMontage();
+
+	void CancelAttackMontage();
 
 	FOnAttackDelegate DOnAttack;
 

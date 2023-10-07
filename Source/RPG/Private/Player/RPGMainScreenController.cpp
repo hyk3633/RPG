@@ -37,15 +37,9 @@ void ARPGMainScreenController::BeginPlay()
 
 void ARPGMainScreenController::CharacterSelected(ECharacterType Type)
 {
-	// 서버이면 타입 저장 후 레벨 체인지
-	if (HasAuthority())
+	// 클라이언트면 플레이어가 선택한 캐릭터 타입 서버로 전달
+	if (!HasAuthority())
 	{
-		GetWorld()->GetGameInstance<URPGGameInstance>()->SaveCharacterTypeToSpawn(Type);
-		GetWorld()->GetGameInstance<URPGGameInstance>()->Host();
-	}
-	else
-	{
-		// 클라이언트면 플레이어가 선택한 캐릭터 타입 서버로 전달
 		DeliverCharacterTypeServer(Type);
 	}
 }
@@ -54,6 +48,8 @@ void ARPGMainScreenController::DeliverCharacterTypeServer_Implementation(ECharac
 {
 	// 고유 ID를 키, 캐릭터 타입을 값으로 하는 서버의 게임 인스턴스의 맵에 저장
 	GetWorld()->GetGameInstance<URPGGameInstance>()->SaveCharacterTypeToSpawn(UniqueID, Type);
+	// 게임 모드에서 Open Level 호출
+	GetWorld()->GetAuthGameMode<ARPGMainScreenGameMode>()->ConnectToMainMap();
 }
 
 void ARPGMainScreenController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

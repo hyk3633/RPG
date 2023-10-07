@@ -23,6 +23,8 @@ public:
 
 	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 
+	void ConnectToMainMap();
+
 protected:
 
 	virtual void BeginPlay() override;
