@@ -64,9 +64,6 @@ private:
 	UPROPERTY(EditInstanceOnly)
 	UBoxComponent* BoxComponent;
 
-	UPROPERTY(EditInstanceOnly)
-	UBillboardComponent* BillBoard;
-
 	FVector Origin;
 	FVector Extent;
 

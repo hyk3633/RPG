@@ -2,7 +2,6 @@
 #include "GameSystem/ObstacleChecker.h"
 #include "DataAsset/MapNavDataAsset.h"
 #include "Components/BoxComponent.h"
-#include "Components/BillBoardComponent.h"
 #include "../RPG.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -16,9 +15,6 @@ AObstacleChecker::AObstacleChecker()
 	SetRootComponent(BoxComponent);
 	BoxComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	BoxComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-
-	BillBoard = CreateDefaultSubobject<UBillboardComponent>(TEXT("BillBoard"));
-	BillBoard->SetupAttachment(RootComponent);
 
 	AssetPath = TEXT("/Game/_Assets/DataAsset/");
 }
@@ -56,6 +52,7 @@ bool AObstacleChecker::CheckAssetValidity()
 	return false;
 }
 
+// 변수 초기화
 void AObstacleChecker::InitMapSpecification()
 {
 	GetActorBounds(true, Origin, Extent);
@@ -68,6 +65,7 @@ void AObstacleChecker::InitMapSpecification()
 	BiasY = FMath::TruncToInt(((GridLengthSize * GridDist) / 2.f) - (GridDist / 2.f));
 }
 
+// 영역 내의 모든 그리드 위치 값 저장
 void AObstacleChecker::InitFieldLocations()
 {
 	if (CheckMode == ECheckMode::ECM_ObstacleCheck)
@@ -129,6 +127,7 @@ void AObstacleChecker::Tick(float DeltaTime)
 	}
 }
 
+// 그리드를 0.05초당 200개씩 검사
 void AObstacleChecker::CheckGridSequentially(float DeltaTime)
 {
 	CumulatedTime += DeltaTime;
@@ -160,6 +159,7 @@ void AObstacleChecker::CheckGridSequentially(float DeltaTime)
 	}
 }
 
+// Flow Field 전용 그리드 데이터 생성
 void AObstacleChecker::CheckFlowFieldData()
 {
 	int32 Count = 0;
@@ -210,18 +210,23 @@ void AObstacleChecker::CheckFlowFieldData()
 	}
 }
 
+// 각 그리드의 장애물 여부와 높이 값 체크
 void AObstacleChecker::CheckObstacle()
 {
 	int32 Count = 0;
 	FHitResult Hit;
 	while (Count++ < 200 && LastIdx < TotalSize)
 	{
-		GetWorld()->LineTraceSingleByChannel
-		(
-			Hit,
+		UKismetSystemLibrary::LineTraceSingle(
+			this,
 			FVector(FieldLocations[LastIdx].X, FieldLocations[LastIdx].Y, 1000),
 			FVector(FieldLocations[LastIdx].X, FieldLocations[LastIdx].Y, -1000),
-			ECC_ObstacleCheck
+			UEngineTypes::ConvertToTraceType(ECC_ObstacleCheck),
+			false,
+			TArray<AActor*>(),
+			EDrawDebugTrace::None,
+			Hit,
+			true
 		);
 
 		IsMovableArr[LastIdx] = !Hit.bBlockingHit;
@@ -235,15 +240,29 @@ void AObstacleChecker::CheckObstacle()
 		}
 		else
 		{
-			GetWorld()->LineTraceSingleByChannel
-			(
-				Hit,
+			UKismetSystemLibrary::LineTraceSingle(
+				this,
 				FVector(FieldLocations[LastIdx].X, FieldLocations[LastIdx].Y, 1000),
 				FVector(FieldLocations[LastIdx].X, FieldLocations[LastIdx].Y, -1000),
-				ECC_HeightCheck
+				UEngineTypes::ConvertToTraceType(ECC_HeightCheck),
+				false,
+				TArray<AActor*>(),
+				EDrawDebugTrace::None,
+				Hit,
+				true
 			);
+			
 			FieldHeights[LastIdx] = Hit.ImpactPoint.Z; // 높이값 저장
-			DrawDebugPoint(GetWorld(), FVector(FieldLocations[LastIdx].X, FieldLocations[LastIdx].Y, Hit.ImpactPoint.Z + 10), 7.5f, FColor::Green, true);
+
+			if (Hit.bBlockingHit)
+			{
+				DrawDebugPoint(GetWorld(), FVector(FieldLocations[LastIdx].X, FieldLocations[LastIdx].Y, Hit.ImpactPoint.Z + 10), 7.5f, FColor::Green, true);
+			}
+			else
+			{
+				IsMovableArr[LastIdx] = false;
+				DrawDebugPoint(GetWorld(), FVector(FieldLocations[LastIdx].X, FieldLocations[LastIdx].Y, Hit.ImpactPoint.Z + 10), 7.5f, FColor::Red, true);
+			}
 		}
 
 		LastIdx++;
@@ -258,6 +277,7 @@ void AObstacleChecker::CheckObstacle()
 	}
 }
 
+// 높이 값 차이가 일정 수치 이상인 그리드를 장애물 그리드로 설정
 void AObstacleChecker::CheckHeightDifference()
 {
 	int32 Count = 0;
@@ -318,6 +338,7 @@ void AObstacleChecker::CheckHeightDifference()
 	}
 }
 
+// 장애물 그리드 근처의 인전 그리드에 가중치 부여
 void AObstacleChecker::GiveExtraScoreToGrid(float DeltaTime)
 {
 	CumulatedTime += DeltaTime;
@@ -340,6 +361,7 @@ void AObstacleChecker::GiveExtraScoreToGrid(float DeltaTime)
 	}
 }
 
+// BFS 방식으로 가중치 부여
 void AObstacleChecker::BFS(int32 GridIdx)
 {
 	TArray<int32> NextGrid;
@@ -375,6 +397,7 @@ void AObstacleChecker::BFS(int32 GridIdx)
 	}
 }
 
+// 데이터 에셋 생성 후 데이터 값 저장
 void AObstacleChecker::CreateMapNavDataAsset()
 {
 	if (AssetName.Len() == 0)

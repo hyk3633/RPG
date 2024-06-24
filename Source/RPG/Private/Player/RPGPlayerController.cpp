@@ -69,6 +69,16 @@ void ARPGPlayerController::BeginPlay()
 	}
 }
 
+void ARPGPlayerController::OnCharacterSelected(ECharacterType Type)
+{
+	OnCharacterSelectedServer(Type);
+}
+
+void ARPGPlayerController::OnCharacterSelectedServer_Implementation(ECharacterType Type)
+{
+	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->SpawnPlayerCharacterAndPossess(this, Type);
+}
+
 void ARPGPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
@@ -128,11 +138,6 @@ void ARPGPlayerController::OnRep_MyCharacter()
 		TracedItem->SetRenderCustomDepthOff();
 		TracedItem = nullptr;
 	}
-}
-
-ECharacterType ARPGPlayerController::GetCharacterType()
-{
-	return GetWorld()->GetGameInstance<URPGGameInstance>()->GetCharacterType();
 }
 
 void ARPGPlayerController::Tick(float DeltaTime)

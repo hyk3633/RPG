@@ -1,5 +1,6 @@
 ﻿
 #include "UI/RPGHUD.h"
+#include "UI/RPGCharacterSelectionInterface.h"
 #include "UI/RPGGameplayInterface.h"
 #include "UI/RPGInventoryWidget.h"
 #include "UI/RPGInventorySlotWidget.h"
@@ -23,6 +24,9 @@ ARPGHUD::ARPGHUD()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	static ConstructorHelpers::FClassFinder<URPGCharacterSelectionInterface> WBP_CharacterSelect(TEXT("WidgetBlueprint'/Game/_Assets/Blueprints/HUD/WBP_CharacterSelect.WBP_CharacterSelect_C'"));
+	if (WBP_CharacterSelect.Succeeded()) CharacterSelectWBPClass = WBP_CharacterSelect.Class;
+
 	static ConstructorHelpers::FObjectFinder<UMaterialInstance> Obj_CooldownProgress(TEXT("/Game/_Assets/Materials/Circular/MI_ClockProgress.MI_ClockProgress"));
 	if (Obj_CooldownProgress.Succeeded()) ClockProgressMatInst = Obj_CooldownProgress.Object;
 
@@ -43,6 +47,35 @@ void ARPGHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (CharacterSelectWBPClass)
+	{
+		CharacterSelectionInterface = CreateWidget<URPGCharacterSelectionInterface>(GetOwningPlayerController(), CharacterSelectWBPClass);
+
+		CharacterSelectionInterface->Button_Warrior->OnClicked.AddDynamic(this, &ARPGHUD::OnWarriorSelected);
+		CharacterSelectionInterface->Button_Sorcerer->OnClicked.AddDynamic(this, &ARPGHUD::OnSorcererSelected);
+
+		CharacterSelectionInterface->AddToViewport();
+	}
+}
+
+void ARPGHUD::OnWarriorSelected()
+{
+	OnCharacterSelected(ECharacterType::ECT_Warrior);
+	CharacterSelectionInterface->RemoveFromParent();
+}
+
+void ARPGHUD::OnSorcererSelected()
+{
+	OnCharacterSelected(ECharacterType::ECT_Sorcerer);
+	CharacterSelectionInterface->RemoveFromParent();
+}
+
+void ARPGHUD::OnCharacterSelected(ECharacterType Type)
+{
+	ARPGPlayerController* RPGController = Cast<ARPGPlayerController>(GetOwningPlayerController());
+	if (RPGController == nullptr) return;
+
+	RPGController->OnCharacterSelected(Type);
 }
 
 void ARPGHUD::Tick(float DeltaTime)
@@ -109,6 +142,7 @@ void ARPGHUD::ReloadHUD()
 	bIsStatInfoWidgetOn = false;
 	bIsItemSlotMenuWidgetOn = false;
 
+	GameplayInterface->MinimapWidget->SetBrushFromMaterial(PlayerPawn->GetMinimapMatInst());
 	GameplayInterface->StatInfoWidget->SetVisibility(ESlateVisibility::Hidden);
 	GameplayInterface->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
 	ItemStatBoxWidget->SetVisibility(ESlateVisibility::Hidden);
@@ -127,6 +161,7 @@ void ARPGHUD::DrawOverlay()
 	{
 		GameplayInterface = CreateWidget<URPGGameplayInterface>(GetOwningPlayerController(), GameplayInterfaceClass);
 		GameplayInterface->InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
+		GameplayInterface->MinimapWidget->SetBrushFromMaterial(PlayerPawn->GetMinimapMatInst());
 		GameplayInterface->AddToViewport(0);
 		InitInventorySlot();
 	}

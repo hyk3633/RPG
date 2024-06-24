@@ -32,6 +32,7 @@ APlayerController* ARPGMainScreenGameMode::Login(UPlayer* NewPlayer, ENetRole In
 void ARPGMainScreenGameMode::ConnectToMainMap()
 {
 	UGameplayStatics::OpenLevel(this, TEXT("127.0.0.1"));
+	
 }
 
 void ARPGMainScreenGameMode::BeginPlay()

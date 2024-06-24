@@ -47,4 +47,7 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	URPGStatInfoWidget* StatInfoWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* MinimapWidget;
 };

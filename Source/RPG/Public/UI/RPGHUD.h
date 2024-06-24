@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/HUD.h"
+#include "Enums/CharacterType.h"
 #include "Enums/ItemType.h"
 #include "Structs/StatInfo.h"
 #include "Structs/ItemInfo.h"
@@ -12,6 +13,7 @@
  * 
  */
 
+class URPGCharacterSelectionInterface;
 class URPGGameplayInterface;
 class ARPGBasePlayerCharacter;
 class URPGInventoryWidget;
@@ -38,6 +40,14 @@ public:
 protected:
 
 	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void OnWarriorSelected();
+
+	UFUNCTION()
+	void OnSorcererSelected();
+
+	void OnCharacterSelected(ECharacterType Type);
 
 public:
 
@@ -137,6 +147,11 @@ public:
 	void PopUpDamageWidget(const FVector_NetQuantize& PopupPosition, const int32 Damage);
 
 private:
+
+	UPROPERTY()
+	TSubclassOf<URPGCharacterSelectionInterface> CharacterSelectWBPClass;
+
+	URPGCharacterSelectionInterface* CharacterSelectionInterface;
 
 	UPROPERTY(EditAnywhere, Category = "HUD")
 	TSubclassOf<UUserWidget> GameplayInterfaceClass;

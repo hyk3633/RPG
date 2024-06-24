@@ -54,6 +54,8 @@ public:
 
 	FORCEINLINE void SetHomingTarget(ACharacter* NewTarget) { TargetCharacter = NewTarget; }
 
+	FORCEINLINE bool GetActivated() const { return bActivated; }
+
 	DeactivateProjectileDelegate DDeactivateProjectile;
 
 protected:
@@ -116,4 +118,6 @@ private:
 	ACharacter* TargetCharacter;
 
 	bool bTrackingOn = false;
+
+	bool bActivated = false;
 };

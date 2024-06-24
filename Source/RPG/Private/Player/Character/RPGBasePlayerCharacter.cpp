@@ -17,6 +17,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetRenderingLibrary.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "PaperSpriteComponent.h"
@@ -59,8 +60,6 @@ ARPGBasePlayerCharacter::ARPGBasePlayerCharacter()
 
 	MinimapCapture = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("Minimap Capture"));
 	MinimapCapture->SetupAttachment(MinimapArm);
-	static ConstructorHelpers::FObjectFinder<UTextureRenderTarget2D> RenderTargetAsset(TEXT("TextureRenderTarget2D'/Game/_Assets/Texture2D/Minimap/Minimap_RenderTarget.Minimap_RenderTarget'"));
-	if (RenderTargetAsset.Succeeded()) { MinimapCapture->TextureTarget = RenderTargetAsset.Object; }
 	MinimapCapture->ProjectionType = ECameraProjectionMode::Orthographic;
 	MinimapCapture->OrthoWidth = 1000.f;
 	MinimapCapture->ShowFlags.SkeletalMeshes = 0;
@@ -134,7 +133,14 @@ void ARPGBasePlayerCharacter::BeginPlay()
 	{
 		TargetingComp->OnComponentBeginOverlap.AddDynamic(this, &ARPGBasePlayerCharacter::OnTargetingComponentBeginOverlap);
 		TargetingComp->OnComponentEndOverlap.AddDynamic(this, &ARPGBasePlayerCharacter::OnTargetingComponentEndOverlap);
-		//DrawDebugGrid();
+
+		MinimapRenderTarget = UKismetRenderingLibrary::CreateRenderTarget2D(this, 256, 256);
+		if (MinimapRenderTarget)
+		{
+			MinimapCapture->TextureTarget = MinimapRenderTarget;
+		}
+		MinimapMatInstDynamic = GetMesh()->CreateDynamicMaterialInstance(0, MinimapMatInterface);
+		MinimapMatInstDynamic->SetTextureParameterValue(FName("RenderTargetAsset"), MinimapRenderTarget);
 	}
 	RPGAnimInstance = Cast<URPGAnimInstance>(GetMesh()->GetAnimInstance());
 	if (RPGAnimInstance)
@@ -255,7 +261,7 @@ void ARPGBasePlayerCharacter::SetCharacterDeadStateMulticast_Implementation()
 void ARPGBasePlayerCharacter::PlayerRespawn()
 {
 	DetachFromControllerPendingDestroy();
-	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->SpawnPlayerCharacterAndPossess(TempController);
+	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->SpawnPlayerCharacterAndPossess(TempController, CharacterType);
 }
 
 void ARPGBasePlayerCharacter::PlayerDie()
@@ -385,36 +391,6 @@ void ARPGBasePlayerCharacter::CameraZoomInOut(int8 Value)
 
 /** --------------------------- 이동 --------------------------- */
 
-void ARPGBasePlayerCharacter::StopMove()
-{
-	GetMovementComponent()->StopMovementImmediately();
-	bUpdateMovement = false;
-	PathIdx = 0;
-}
-
-void ARPGBasePlayerCharacter::SetDestinationAndPath()
-{
-	FHitResult Hit;
-	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
-	if (Hit.bBlockingHit == false) return;
-
-	Destination = Hit.ImpactPoint;
-	SpawnClickParticle(Destination);
-	SetDestinaionAndPathServer(Destination);
-}
-
-void ARPGBasePlayerCharacter::InitDestAndDir()
-{
-	bUpdateMovement = true;
-	NextPoint = FVector(PathArr[0].X, PathArr[0].Y, GetActorLocation().Z);
-	NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
-}
-
-void ARPGBasePlayerCharacter::SetDestinaionAndPathServer_Implementation(const FVector_NetQuantize& HitLocation)
-{
-	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), HitLocation, PathArr);
-}
-
 void ARPGBasePlayerCharacter::UpdateMovement()
 {
 	const float Dist = FVector::Dist(NextPoint, GetActorLocation());
@@ -427,7 +403,7 @@ void ARPGBasePlayerCharacter::UpdateMovement()
 		}
 		else
 		{
-			AddMovementInput(NextDirection * 40 * (CharacterDexterity + EquipmentDexterity));
+			AddMovementInput(NextDirection * 200 * (CharacterDexterity + EquipmentDexterity));
 		}
 	}
 	else
@@ -446,6 +422,35 @@ void ARPGBasePlayerCharacter::UpdateMovement()
 	}
 }
 
+void ARPGBasePlayerCharacter::StopMove()
+{
+	GetMovementComponent()->StopMovementImmediately();
+	bUpdateMovement = false;
+	PathIdx = 0;
+}
+
+void ARPGBasePlayerCharacter::SetDestinationAndPath()
+{
+	FHitResult Hit;
+	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
+	if (Hit.bBlockingHit == false) return;
+
+	Destination = Hit.ImpactPoint;
+	SpawnClickParticle(Destination);
+	SetDestinaionAndPathServer(Destination);
+}
+
+void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)
+{
+	if (ClickParticle == nullptr) return;
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ClickParticle, EmitLocation);
+}
+
+void ARPGBasePlayerCharacter::SetDestinaionAndPathServer_Implementation(const FVector_NetQuantize& HitLocation)
+{
+	GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetPathToDestination(GetActorLocation(), HitLocation, PathArr);
+}
+
 void ARPGBasePlayerCharacter::OnRep_PathArr()
 {
 	if (IsLocallyControlled())
@@ -455,10 +460,16 @@ void ARPGBasePlayerCharacter::OnRep_PathArr()
 	}
 }
 
-void ARPGBasePlayerCharacter::SpawnClickParticle(const FVector& EmitLocation)
+void ARPGBasePlayerCharacter::InitDestAndDir()
 {
-	if (ClickParticle == nullptr) return;
-	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ClickParticle, EmitLocation);
+	bUpdateMovement = true;
+	NextPoint = FVector(PathArr[0].X, PathArr[0].Y, GetActorLocation().Z);
+	NextDirection = (NextPoint - GetActorLocation()).GetSafeNormal();
+}
+
+void ARPGBasePlayerCharacter::InitDestAndDirServer_Implementation()
+{
+	InitDestAndDir();
 }
 
 /** --------------------------- 일반 공격 --------------------------- */
@@ -482,6 +493,12 @@ void ARPGBasePlayerCharacter::GetHitCursor()
 
 void ARPGBasePlayerCharacter::GetHitCursorServer_Implementation(const FHitResult& Hit)
 {
+	GetHitCursorMulticast(Hit);
+}
+
+void ARPGBasePlayerCharacter::GetHitCursorMulticast_Implementation(const FHitResult& Hit)
+{
+	if (IsLocallyControlled()) return;
 	TargetingHitResult = Hit;
 }
 

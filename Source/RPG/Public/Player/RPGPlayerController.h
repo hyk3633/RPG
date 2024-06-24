@@ -33,6 +33,15 @@ protected:
 
 	virtual void BeginPlay() override;
 
+public:
+
+	void OnCharacterSelected(ECharacterType Type);
+
+protected:
+
+	UFUNCTION(Server, Reliable)
+	void OnCharacterSelectedServer(ECharacterType Type);
+
 	virtual void OnPossess(APawn* InPawn) override;
 
 	void ReloadCharacterAndEquipmentStat();
@@ -44,7 +53,6 @@ public:
 
 	FORCEINLINE void SaveUniqueID(const FString& NewUniqueID) { UniqueID = NewUniqueID; }
 	FORCEINLINE const FString& GetUniqueID() { return UniqueID; }
-	ECharacterType GetCharacterType();
 
 	virtual void Tick(float DeltaTime) override;
 

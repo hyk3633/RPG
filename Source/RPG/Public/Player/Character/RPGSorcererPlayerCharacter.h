@@ -167,7 +167,7 @@ protected:
 
 protected:
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 	UProjectilePoolerComponent* PrimaryProjPooler;
 
 	UPROPERTY()

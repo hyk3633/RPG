@@ -41,15 +41,17 @@ void ARPGMainScreenController::CharacterSelected(ECharacterType Type)
 	if (!HasAuthority())
 	{
 		DeliverCharacterTypeServer(Type);
+		//ClientTravel(FString(TEXT("/Game/_Assets/Maps/MainLevel")), ETravelType::TRAVEL_Absolute);
+		//UGameplayStatics::OpenLevel(this, TEXT("127.0.0.1"));
 	}
 }
 
 void ARPGMainScreenController::DeliverCharacterTypeServer_Implementation(ECharacterType Type)
 {
 	// 고유 ID를 키, 캐릭터 타입을 값으로 하는 서버의 게임 인스턴스의 맵에 저장
-	GetWorld()->GetGameInstance<URPGGameInstance>()->SaveCharacterTypeToSpawn(UniqueID, Type);
 	// 게임 모드에서 Open Level 호출
-	GetWorld()->GetAuthGameMode<ARPGMainScreenGameMode>()->ConnectToMainMap();
+	//GetWorld()->GetAuthGameMode<ARPGMainScreenGameMode>()->ConnectToMainMap();
+	GetWorld()->ServerTravel(FString(TEXT("/Game/_Assets/Maps/MainLevel")));
 }
 
 void ARPGMainScreenController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

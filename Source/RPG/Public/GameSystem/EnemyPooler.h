@@ -18,18 +18,13 @@ public:
 
 	AEnemyPooler();
 
-	void CreatePool(const int32 Size, const EEnemyType Type, const FVector& WaitingLocation);
+	void CreatePool(const int32 Size, const EEnemyType Type, const FVector& NewWaitingLocation);
 
 	void DestroyPool();
 
 	ARPGBaseEnemyCharacter* GetPooledEnemy();
 
 	FORCEINLINE const TArray<ARPGBaseEnemyCharacter*>& GetEnemyArr() const { return EnemyArr; }
-
-protected:
-
-	UFUNCTION()
-	void AddDeactivatedNum();
 
 private:
 
@@ -44,8 +39,6 @@ private:
 
 	int32 PoolSize;
 
-	int32 ActivatedNum;
-
-	int32 DeactivatedNum;
+	FVector WaitingLocation;
 
 };

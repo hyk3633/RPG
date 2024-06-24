@@ -18,26 +18,8 @@ public:
 
 	URPGGameInstance();
 
-	void SaveUniqueID(const FString& ID);
+protected:
 
-	void SaveCharacterTypeToSpawn(ECharacterType Type);
+	virtual void Init() override;
 
-	void SaveCharacterTypeToSpawn(const FString& ID, ECharacterType Type);
-
-	ECharacterType GetPlayersCharacterType(const FString& ID);
-
-	FORCEINLINE const FString& GetUniqueID() { return UniqueID; }
-	FORCEINLINE ECharacterType GetCharacterType() const { return CharacterType; }
-
-	void Host();
-
-	void Join();
-
-private:
-
-	ECharacterType CharacterType;
-
-	FString UniqueID;
-
-	TMap<FString, ECharacterType> PlayersCharacterTypeMap;
 };

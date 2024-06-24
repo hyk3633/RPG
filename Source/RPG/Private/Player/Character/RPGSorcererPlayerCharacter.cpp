@@ -74,7 +74,7 @@ void ARPGSorcererPlayerCharacter::BeginPlay()
 
 	if (HasAuthority())
 	{
-		PrimaryProjPooler->CreatePool(ARPGBaseProjectile::StaticClass(), 50, EProjectileType::EPT_Sorcerer_Primary);
+		PrimaryProjPooler->CreatePool(ARPGBaseProjectile::StaticClass(), 30, EProjectileType::EPT_Sorcerer_Primary);
 		RestrictionProjPooler->CreatePool(ARPGBaseProjectile::StaticClass(), 5, EProjectileType::EPT_Sorcerer_Restriction);
 		MeteorliteProjPooler->CreatePool(ARPGBaseProjectile::StaticClass(), 5, EProjectileType::EPT_Sorcerer_Meteorlite);
 	}
@@ -226,7 +226,6 @@ void ARPGSorcererPlayerCharacter::SpawnProjectile(const EProjectileType Type, co
 	if (Type == EProjectileType::EPT_Sorcerer_Primary)
 	{
 		Projectile = PrimaryProjPooler->GetPooledProjectile(this, GetStrikingPower());
-
 	}
 	else if (Type == EProjectileType::EPT_Sorcerer_Restriction)
 	{

@@ -14,25 +14,18 @@ void UProjectilePoolerComponent::CreatePool(TSubclassOf<ARPGBaseProjectile> Proj
 {
 	ProjectileClass = ProjClass;
 
-	PoolSize = ActivatedNum = DeactivatedNum = Size;
+	ProjectileType = Type;
+	PoolSize = Size;
 	ProjectileArr.Init(nullptr, Size);
 
-	const FProjectileInfo& NewProjectileInfo = *GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetProjectileInfo(Type);
-
-	const FProjectileAssets& NewProjectileAssets = *GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetProjectileAssets(Type);
+	ProjectileInfo = *GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetProjectileInfo(Type);
+	ProjectileAssets = *GetWorld()->GetAuthGameMode<ARPGGameModeBase>()->GetProjectileAssets(Type);
 
 	if (ProjectileClass)
 	{
-		UWorld* World = GetWorld();
-		if (World == nullptr) return;
-		for (int16 Idx = 0; Idx < PoolSize; Idx++)
+		for (uint32 Idx = 0; Idx < PoolSize; Idx++)
 		{
-			ARPGBaseProjectile* Projectile = World->SpawnActorDeferred<ARPGBaseProjectile>(ProjectileClass, FTransform(FRotator().ZeroRotator, FVector().ZeroVector));
-			Projectile->SetProjectileInfo(NewProjectileInfo);
-			Projectile->SetProjectileAssets(NewProjectileAssets);
-			Projectile->DDeactivateProjectile.BindUObject(this, &UProjectilePoolerComponent::AddDeactivatedNum);
-			Projectile->FinishSpawning(FTransform(FRotator().ZeroRotator, FVector().ZeroVector));
-			ProjectileArr[Idx] = Projectile;
+			ProjectileArr[Idx] = CreateProjectile();
 		}
 	}
 }
@@ -48,20 +41,29 @@ void UProjectilePoolerComponent::DestroyPool()
 
 ARPGBaseProjectile* UProjectilePoolerComponent::GetPooledProjectile(APawn* CallerPawn, const float Damage)
 {
-	if (DeactivatedNum == 0) return nullptr;
-	if (ActivatedNum == 0) ActivatedNum = PoolSize;
+	for (uint32 Idx = 0; Idx < PoolSize; Idx++)
+	{
+		if (ProjectileArr[Idx]->GetActivated() == false)
+		{
+			ProjectileArr[Idx]->SetOwner(CallerPawn);
+			ProjectileArr[Idx]->SetInstigator(CallerPawn);
+			ProjectileArr[Idx]->SetProjectileDamage(Damage);
 
-	DeactivatedNum--;
-	ActivatedNum--;
+			return ProjectileArr[Idx];
+		}
+	}
 
-	ProjectileArr[ActivatedNum]->SetOwner(CallerPawn);
-	ProjectileArr[ActivatedNum]->SetInstigator(CallerPawn);
-	ProjectileArr[ActivatedNum]->SetProjectileDamage(Damage);
-	return ProjectileArr[ActivatedNum];
+	ARPGBaseProjectile* NewProjectile = CreateProjectile();
+	ProjectileArr.Add(NewProjectile);
+	PoolSize++;
+	return NewProjectile;
 }
 
-void UProjectilePoolerComponent::AddDeactivatedNum()
+ARPGBaseProjectile* UProjectilePoolerComponent::CreateProjectile()
 {
-	DeactivatedNum++;
+	ARPGBaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ARPGBaseProjectile>(ProjectileClass, FTransform(FRotator().ZeroRotator, FVector().ZeroVector));
+	Projectile->SetProjectileInfo(ProjectileInfo);
+	Projectile->SetProjectileAssets(ProjectileAssets);
+	Projectile->FinishSpawning(FTransform(FRotator().ZeroRotator, FVector().ZeroVector));
+	return Projectile;
 }
-

@@ -8,7 +8,6 @@
 #include "../RPGGameModeBase.h"
 #include "../RPG.h"
 #include "Components/BoxComponent.h"
-#include "Components/BillBoardComponent.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
@@ -21,9 +20,6 @@ AEnemySpawner::AEnemySpawner()
 	SetRootComponent(AreaBox);
 	AreaBox->SetCollisionResponseToAllChannels(ECR_Ignore);
 	AreaBox->SetCollisionResponseToChannel(ECC_PlayerBody, ECR_Overlap);
-
-	BillBoard = CreateDefaultSubobject<UBillboardComponent>(TEXT("BillBoard"));
-	BillBoard->SetupAttachment(RootComponent);
 }
 
 void AEnemySpawner::PostInitializeComponents()
@@ -52,8 +48,6 @@ void AEnemySpawner::BeginPlay()
 		GetActorBounds(true, SpawnerOrigin, SpawnerExtent);
 		if (bLoadingDataAssetSuccessful) SpawnEnemies();
 	}
-
-	//DrawDebugGrid();
 }
 
 void AEnemySpawner::SpawnEnemies()
@@ -91,7 +85,6 @@ void AEnemySpawner::SpawnEnemies()
 			{
 				Enemy->SetActorRotation(FRotator(0, 180, 0));
 				Enemy->ActivateEnemy(SpawnLocation);
-				EnemiesInArea.Add(Enemy);
 			}
 		}
 	}
@@ -228,7 +221,6 @@ void AEnemySpawner::OnAreaBoxEndOverlap(UPrimitiveComponent* OverlappedComponent
 
 void AEnemySpawner::AddEnemyToRespawnQueue(EEnemyType Type, ARPGBaseEnemyCharacter* Enemy)
 {
-	EnemiesInArea.Remove(Enemy);
 	RespawnWaitingQueue.Enqueue(Type);
 }
 
@@ -244,7 +236,8 @@ void AEnemySpawner::EnemyRespawn()
 
 	FVector SpawnLocation;
 	const bool bIsSafeLocation = GetSpawnLocation(SpawnLocation);
-	ARPGBaseEnemyCharacter* Enemy = (*EnemyPoolerMap.Find(Index))->GetPooledEnemy();
+	AEnemyPooler* EnemyPooler = *EnemyPoolerMap.Find(Index);
+	ARPGBaseEnemyCharacter* Enemy = EnemyPooler->GetPooledEnemy();
 	if (bIsSafeLocation)
 	{
 		if (Enemy)
@@ -256,6 +249,7 @@ void AEnemySpawner::EnemyRespawn()
 	else
 	{
 		RespawnWaitingQueue.Enqueue(TypeToRespawn);
+		EnemyPooler->AddDeactivatedNum();
 		if (Enemy) Enemy->RespawnDelay();
 	}
 }
@@ -264,23 +258,6 @@ void AEnemySpawner::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// 디버깅 시에는 !PlayersInArea로
-	/*if (HasAuthority() && PlayersInArea.Num())
-	{
-		CumulTime += DeltaTime;
-		if (CumulTime >= 1.f)
-		{
-			//CalculateFlowVector(nullptr); // 디버깅용
-			for (ACharacter* Target : PlayersInArea)
-			{
-				if (Target->GetVelocity().Length() >= 0)
-				{
-					CalculateFlowVector(Target);
-				}
-			}
-			CumulTime = 0.f;
-		}
-	}*/
 }
 
 FVector* AEnemySpawner::GetFlowVector(ACharacter* TargetCharacter, ACharacter* EnemyCharacter)
@@ -308,16 +285,6 @@ int32 AEnemySpawner::GetConvertCurrentLocationToIndex(const FVector& Location)
 void AEnemySpawner::CalculateFlowVector(ACharacter* TargetCharacter)
 {
 	//double start = FPlatformTime::Seconds();
-
-	// 디버그
-	//APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-	//FHitResult Hit;
-	//PlayerController->GetHitResultUnderCursor(ECC_GroundTrace, false, Hit);
-	//if (!Hit.bBlockingHit) return;
-	//FFlowVector FVarr2(TotalSize);
-	//FFlowVector* FVArr = &FVarr2;
-	//const int32 DestIdx = GetConvertCurrentLocationToIndex(Hit.ImpactPoint);
-	//if (DestIdx >= TotalSize) return;
 
 	FFlowVector* FVArr = TargetsFlowVectors.Find(TargetCharacter);
 	if (FVArr == nullptr) return;

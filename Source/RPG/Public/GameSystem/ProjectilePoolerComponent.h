@@ -25,8 +25,7 @@ public:
 
 protected:
 
-	UFUNCTION()
-	void AddDeactivatedNum();
+	ARPGBaseProjectile* CreateProjectile();
 
 private:
 
@@ -38,7 +37,9 @@ private:
 
 	int32 PoolSize;
 
-	int32 ActivatedNum;
+	EProjectileType ProjectileType;
 
-	int32 DeactivatedNum;
+	FProjectileInfo ProjectileInfo;
+
+	FProjectileAssets ProjectileAssets
 };

@@ -339,7 +339,7 @@ void ARPGBaseEnemyCharacter::OnHealthChanged()
 	}
 	else if(Health == 0)
 	{
-		GetWorldTimerManager().SetTimer(HideMeshTimer, this, &ARPGBaseEnemyCharacter::HideMesh, 5.f);
+		GetWorldTimerManager().SetTimer(HideMeshTimer, this, &ARPGBaseEnemyCharacter::HideMesh, 3.f);
 		SetCollisionDeactivate();
 		MyAnimInst->CancelAttackMontage();
 		EnemyDeath();
@@ -461,19 +461,19 @@ void ARPGBaseEnemyCharacter::UpdateMovementFlowField()
 	}
 }
 
+// 멈춰야 할 경우 : should가 트루
+// 계속 가야 할 경우 : should가 폴스면서 경로 끝, dist > 56
+
 void ARPGBaseEnemyCharacter::UpdateMovementAStar()
 {
 	const int32 Dist = FMath::FloorToInt(FVector::Dist(NextPoint, GetActorLocation()));
-	if (ShouldIStopMovement() || CurrentPathIdx == PathArr.Num() || Dist > 56)
+	if (ShouldIStopMovement())
 	{
-		if (Dist > 56)
-		{
-			RecalculatingPathToTarget();
-		}
-		else
-		{
-			StopMovement(false);
-		}
+		StopMovement(false);
+	}
+	else if(CurrentPathIdx == PathArr.Num() || Dist > 56)
+	{
+		RecalculatingPathToTarget();
 	}
 	else
 	{

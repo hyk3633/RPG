@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Enums/CharacterType.h"
 #include "Enums/PressedKey.h"
 #include "Enums/MontageEnded.h"
 #include "Structs/StatInfo.h"
@@ -18,6 +19,7 @@ class USphereComponent;
 class ARPGBaseEnemyCharacter;
 class UDamageTypeBase;
 class USceneCaptureComponent2D;
+class UTextureRenderTarget2D;
 class UPaperSpriteComponent;
 class UPaperSprite;
 struct FCharacterStats;
@@ -118,6 +120,9 @@ protected:
 	void InitDestAndDir();
 
 	UFUNCTION(Server, Reliable)
+	void InitDestAndDirServer();
+
+	UFUNCTION(Server, Reliable)
 	void SetDestinaionAndPathServer(const FVector_NetQuantize& HitLocation);
 
 	void UpdateMovement();
@@ -137,6 +142,9 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void GetHitCursorServer(const FHitResult& Hit);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void GetHitCursorMulticast(const FHitResult& Hit);
 
 	UFUNCTION(Server, Reliable)
 	void NormalAttackWithComboServer();
@@ -222,12 +230,14 @@ protected:
 
 public: /** ---------- 반환 및 설정 함수 ---------- */
 
+	FORCEINLINE void SetCharacterType(ECharacterType Type) { CharacterType = Type; }
 	FORCEINLINE URPGAnimInstance* GetRPGAnimInstance() const { return RPGAnimInstance; }
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 	FORCEINLINE int32 GetCurrentCombo() const { return CurrentCombo; }
 	FORCEINLINE int8 GetAbilityCooldownBit() const { return AbilityCooldownBit; }
 	FORCEINLINE float GetStrikingPower() const { return CharacterStrikingPower + EquipmentStrikingPower; }
 	FORCEINLINE bool GetStunned() const { return bStunned; }
+	FORCEINLINE UMaterialInstanceDynamic* GetMinimapMatInst() const { return MinimapMatInstDynamic; }
 	float GetSkillPower(EPressedKey KeyType);
 	float GetCooldownPercentage(int8 Bit) const;
 	bool IsAbilityAvailable(EPressedKey KeyType);
@@ -310,19 +320,30 @@ protected:
 
 private:
 
+	ECharacterType CharacterType;
+
 	UPROPERTY(EditAnywhere)
 	USphereComponent* TargetingComp;
 
 	UPROPERTY(VisibleAnywhere, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraArm;
 
-	UPROPERTY(EditAnywhere, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Character | Minimap", meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* MinimapArm;
 
-	UPROPERTY(EditAnywhere, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = "Character | Minimap", meta = (AllowPrivateAccess = "true"))
 	USceneCaptureComponent2D* MinimapCapture;
 
-	UPROPERTY(EditAnywhere, Category = "Minimap", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY()
+	UTextureRenderTarget2D* MinimapRenderTarget;
+
+	UPROPERTY(EditAnywhere, Category = "Character | Minimap", meta = (AllowPrivateAccess = "true"))
+	UMaterialInterface* MinimapMatInterface;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* MinimapMatInstDynamic;
+
+	UPROPERTY(EditAnywhere, Category = "Character | Minimap", meta = (AllowPrivateAccess = "true"))
 	UPaperSpriteComponent* PlayerIconSprite;
 
 	UPROPERTY()
@@ -453,4 +474,5 @@ protected:
 	/** 스킬 공격력 보정 값 */
 
 	TArray<float> SkillPowerCorrectionValues;
+
 };

@@ -75,7 +75,6 @@ protected:
 public:
 
 	FORCEINLINE TArray<ACharacter*>& GetPlayersInArea() { return PlayersInArea; };
-	FORCEINLINE TArray<ARPGBaseEnemyCharacter*>& GetEnemiesInArea() { return EnemiesInArea; }
 
 	void EnemyRespawn();
 
@@ -93,9 +92,6 @@ protected:
 
 private:
 
-	UPROPERTY(EditInstanceOnly)
-	UBillboardComponent* BillBoard;
-
 	UPROPERTY(EditAnywhere)
 	UBoxComponent* AreaBox;
 
@@ -112,9 +108,6 @@ private:
 
 	UPROPERTY()
 	TArray<ACharacter*> PlayersInArea;
-
-	UPROPERTY()
-	TArray<ARPGBaseEnemyCharacter*> EnemiesInArea;
 
 	FVector SpawnerOrigin;
 	FVector SpawnerExtent;

@@ -16,8 +16,6 @@ void ARPGPlayerState::PostInitializeComponents()
 	CharacterStats.MaxMP = 300;
 
 	EquippedItemStats = FStatInfo();
-	EquippedItemStats.Dexterity = 0;
-	EquippedItemStats.AttackSpeed = 0;
 
 	EquippedArmourUniqueNum = -1;
 	EquippedAccessoriesUniqueNum = -1;

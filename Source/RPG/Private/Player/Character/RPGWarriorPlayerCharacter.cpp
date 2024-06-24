@@ -275,7 +275,6 @@ void ARPGWarriorPlayerCharacter::SpawnWieldImpactParticleMulticast_Implementatio
 void ARPGWarriorPlayerCharacter::RevealEnemies(ENotifyCode NotifyCode)
 {
 	if (NotifyCode != ENotifyCode::ENC_W_W_RevealEnemies) return;
-	// TODO : 같은 맵에 있는 적들만 감지
 	if (IsLocallyControlled())
 	{
 		RevealEnemiesServer();

@@ -3,6 +3,7 @@
 #include "GameSystem/EnemySpawner.h"
 #include "DataAsset/MapNavDataAsset.h"
 #include "Enemy/Character/RPGBaseEnemyCharacter.h"
+#include "GameInstance/RPGGameInstance.h"
 #include "../RPG.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "DrawDebugHelpers.h"
@@ -148,8 +149,8 @@ void UWorldGridManagerComponent::GetAStarPath(const FVector& Start, const FVecto
 				continue;
 
 			// 현재 그리드와 다음 그리드의 높이 차를 가중치로 부여
-			const int32 HeightConst = FMath::TruncToInt(FieldHeights[NodeIdx] - FieldHeights[NextIdx]) * (bIsGoingUp ? 10 : -10);
-			const int32 G = Node.G + Cost[Dir] + ObstacleExtraCost[NextIdx] + HeightConst;
+			const int32 HeightCost = FMath::TruncToInt(FieldHeights[NodeIdx] - FieldHeights[NextIdx]) * (bIsGoingUp ? 10 : -10);
+			const int32 G = Node.G + Cost[Dir] + ObstacleExtraCost[NextIdx] + HeightCost;
 
 			const int32 H = 10 * (abs(DestPos.Y - NextPos.Y) + abs(DestPos.X - NextPos.X));
 			if (Best[NextIdx] <= G + H)
@@ -260,8 +261,8 @@ void UWorldGridManagerComponent::GetAStarPath(const FVector& Start, const FVecto
 				continue;
 
 			// 현재 그리드와 다음 그리드의 높이 차를 가중치로 부여
-			const int32 HeightConst = FMath::TruncToInt(FieldHeights[NodeIdx] - FieldHeights[NextIdx]) * (bIsGoingUp ? 100.f : -100.f);
-			const int32 G = Node.G + Cost[Dir] + ObstacleExtraCost[NextIdx] + EnemiesPathCost[NextIdx] + HeightConst;
+			const int32 HeightCost = FMath::TruncToInt(FieldHeights[NodeIdx] - FieldHeights[NextIdx]) * (bIsGoingUp ? 100.f : -100.f);
+			const int32 G = Node.G + Cost[Dir] + ObstacleExtraCost[NextIdx] + EnemiesPathCost[NextIdx] + HeightCost;
 
 			const int32 H = 10 * (abs(DestPos.Y - NextPos.Y) + abs(DestPos.X - NextPos.X));
 			if (Best[NextIdx] <= G + H)

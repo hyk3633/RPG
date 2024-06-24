@@ -121,7 +121,16 @@ void URPGEnemyFormComponent::GetSocketLocationAndSpawn(ARPGBaseEnemyCharacter* A
 	const FVector TraceStart = (bIsWeaponed ? Attacker->WeaponMesh : Attacker->GetMesh())->GetSocketTransform(FName("Muzzle_Socket")).GetLocation();
 	FVector TraceEnd = TraceStart;
 
-	if (IsValid(HomingTarget))
+	if (!IsValid(HomingTarget)) return;
+
+	FRotator FireRotation = (HomingTarget->GetActorLocation() - TraceStart).Rotation();
+	//FireRotation.Pitch = 0.f;
+
+	SpawnProjectile(Attacker, TraceStart, FireRotation, HomingTarget);
+
+	return;
+
+	/*if (IsValid(HomingTarget))
 	{
 		TraceEnd += (HomingTarget->GetActorLocation() - TraceStart);
 	}
@@ -134,7 +143,7 @@ void URPGEnemyFormComponent::GetSocketLocationAndSpawn(ARPGBaseEnemyCharacter* A
 		FireRotation.Pitch = 0.f;
 
 		SpawnProjectile(Attacker, TraceStart, FireRotation, HomingTarget);
-	}
+	}*/
 }
 
 void URPGEnemyFormComponent::SpawnProjectile(ARPGBaseEnemyCharacter* Attacker, const FVector& SpawnLocation, const FRotator& SpawnRotation, APawn* HomingTarget)

@@ -14,17 +14,16 @@ AEnemyPooler::AEnemyPooler()
 	EnemyFormComponent = CreateDefaultSubobject<URPGEnemyFormComponent>(TEXT("Enemy Form Component"));
 }
 
-void AEnemyPooler::CreatePool(const int32 Size, const EEnemyType Type, const FVector& WaitingLocation)
+void AEnemyPooler::CreatePool(const int32 Size, const EEnemyType Type, const FVector& NewWaitingLocation)
 {
-	PoolSize = ActivatedNum = DeactivatedNum = Size;
+	PoolSize = Size;
 	EnemyArr.Init(nullptr, Size);
-
+	WaitingLocation = NewWaitingLocation;
 	EnemyFormComponent->InitEnemyFormComponent(Type);
 
-	for (int8 Idx = 0; Idx < PoolSize; Idx++)
+	for (uint32 Idx = 0; Idx < PoolSize; Idx++)
 	{
 		EnemyArr[Idx] = EnemyFormComponent->CreateNewEnemy(WaitingLocation);
-		EnemyArr[Idx]->DOnDeath.AddUFunction(this, FName("AddDeactivatedNum"));
 	}
 }
 
@@ -39,17 +38,15 @@ void AEnemyPooler::DestroyPool()
 
 ARPGBaseEnemyCharacter* AEnemyPooler::GetPooledEnemy()
 {
-	if (DeactivatedNum == 0) return nullptr;
-	if (ActivatedNum == 0) ActivatedNum = PoolSize;
+	for (uint32 Idx = 0; Idx < PoolSize; Idx++)
+	{
+		if(EnemyArr[Idx]->GetIsActivated() == false)
+			return EnemyArr[Idx];
+	}
 
-	DeactivatedNum--;
-	ActivatedNum--;
-
-	return EnemyArr[ActivatedNum];
-}
-
-void AEnemyPooler::AddDeactivatedNum()
-{
-	DeactivatedNum++;
+	auto NewEnemy = EnemyFormComponent->CreateNewEnemy(WaitingLocation);
+	EnemyArr.Add(NewEnemy);
+	PoolSize++;
+	return NewEnemy;
 }
 

@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "Engine/DataTable.h"
+#include "Enums/CharacterType.h"
 #include "Enums/EnemyType.h"
 #include "Enums/ProjectileType.h"
 #include "Structs/ItemInfo.h"
@@ -33,17 +34,13 @@ public:
 
 	ARPGGameModeBase();
 
-	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
-
 protected:
 
 	virtual void BeginPlay() override;
 
-	virtual void PostLogin(APlayerController* NewPlayer) override;
-
 public:
 
-	void SpawnPlayerCharacterAndPossess(APlayerController* Player);
+	void SpawnPlayerCharacterAndPossess(APlayerController* Player, ECharacterType Type);
 
 	FORCEINLINE UWorldGridManagerComponent* GetWorldGridManager() const { return WorldGridManager; }
 

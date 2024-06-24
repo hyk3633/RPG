@@ -37,7 +37,6 @@ ARPGBaseProjectile::ARPGBaseProjectile()
 void ARPGBaseProjectile::SetProjectileInfo(const FProjectileInfo& NewInfo)
 {
 	ProjInfo = NewInfo;
-
 	if (ProjInfo.bIsPlayers)
 	{
 		CollisionComponent->SetCollisionProfileName(FName("PlayerProjectileProfile"));
@@ -46,8 +45,6 @@ void ARPGBaseProjectile::SetProjectileInfo(const FProjectileInfo& NewInfo)
 	{
 		CollisionComponent->SetCollisionProfileName(FName("EnemyProjectileProfile"));
 	}
-	ProjectileMovementComponent->InitialSpeed = ProjInfo.InitialSpeed;
-	ProjectileMovementComponent->MaxSpeed = ProjInfo.InitialSpeed;
 	CollisionComponent->SetSphereRadius(ProjInfo.CollisionRadius);
 }
 
@@ -78,6 +75,7 @@ void ARPGBaseProjectile::OnRep_ProjAssets()
 			EPSCPoolMethod::None,
 			false
 		);
+		BodyParticleComp->Deactivate();
 	}
 }
 
@@ -106,7 +104,7 @@ void ARPGBaseProjectile::OnImpact(const FHitResult& HitResult)
 
 void ARPGBaseProjectile::ProcessHitEvent(const FHitResult& HitResult)
 {
-	DeactivateProjectileMulticast();
+	DeactivateProjectileToAllClients();
 
 	if (ProjInfo.bIsExplosive)
 	{
@@ -130,6 +128,7 @@ void ARPGBaseProjectile::ProcessHitEvent(const FHitResult& HitResult)
 
 void ARPGBaseProjectile::ActivateProjectileToAllClients()
 {
+	ActivateProjectile();
 	ActivateProjectileMulticast();
 }
 
@@ -141,39 +140,36 @@ void ARPGBaseProjectile::Tick(float DeltaTime)
 
 void ARPGBaseProjectile::ActivateProjectileMulticast_Implementation()
 {
-	ActivateProjectile();
+	if (!HasAuthority())
+	{
+		if (BodyParticleComp) BodyParticleComp->Activate();
+		BodyMesh->SetVisibility(true);
+		bActivated = true;
+	}
 }
 
 void ARPGBaseProjectile::ActivateProjectile()
 {
-	if (HasAuthority())
+	GetWorldTimerManager().SetTimer(ExpireTimer, this, &ARPGBaseProjectile::ExpireProjectile, ProjInfo.ExpireTime, false);
+
+	ProjectileMovementComponent->SetUpdatedComponent(RootComponent);
+	ProjectileMovementComponent->SetVelocityInLocalSpace(FVector(ProjInfo.InitialSpeed, 0, 0));
+	ProjectileMovementComponent->Activate();
+
+	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
+	if (ProjInfo.bIsHoming && IsValid(TargetCharacter))
 	{
-		GetWorldTimerManager().SetTimer(ExpireTimer, this, &ARPGBaseProjectile::ExpireProjectile, ProjInfo.ExpireTime, false);
-
-		ProjectileMovementComponent->SetUpdatedComponent(RootComponent);
-		ProjectileMovementComponent->SetVelocityInLocalSpace(FVector(ProjInfo.InitialSpeed, 0, 0));
-		ProjectileMovementComponent->Activate();
-
-		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-
-		if (ProjInfo.bIsHoming && IsValid(TargetCharacter))
-		{
-			ProjectileMovementComponent->bIsHomingProjectile = true;
-			ProjectileMovementComponent->HomingTargetComponent = TargetCharacter->GetCapsuleComponent();
-			ProjectileMovementComponent->HomingAccelerationMagnitude = 3000.f;
-		}
-	}
-	else
-	{
-		if (BodyParticleComp) BodyParticleComp->Activate();
-		BodyMesh->SetVisibility(true);
+		ProjectileMovementComponent->bIsHomingProjectile = true;
+		ProjectileMovementComponent->HomingTargetComponent = TargetCharacter->GetCapsuleComponent();
+		ProjectileMovementComponent->HomingAccelerationMagnitude = 3000.f;
 	}
 }
 
 void ARPGBaseProjectile::ExpireProjectile()
 {
-	DeactivateProjectileMulticast();
 	SpawnEffectMulticast(EParticleType::EPT_NoImpact, GetActorLocation(), GetActorRotation());
+	DeactivateProjectileToAllClients();
 }
 
 void ARPGBaseProjectile::SpawnEffectMulticast_Implementation(EParticleType Type, const FVector_NetQuantize& SpawnLocation, const FRotator& SpawnRotation)
@@ -191,7 +187,6 @@ void ARPGBaseProjectile::SpawnEffectMulticast_Implementation(EParticleType Type,
 		if (ProjAssets.ImpactSound)
 		{
 			UGameplayStatics::PlaySoundAtLocation(this, ProjAssets.ImpactSound, SpawnLocation);
-			CF();
 		}
 	}
 	else if (Type == EParticleType::EPT_NoImpact)
@@ -202,33 +197,31 @@ void ARPGBaseProjectile::SpawnEffectMulticast_Implementation(EParticleType Type,
 
 void ARPGBaseProjectile::DeactivateProjectileToAllClients()
 {
+	DeactivateProjectile();
 	DeactivateProjectileMulticast();
 }
 
 void ARPGBaseProjectile::DeactivateProjectileMulticast_Implementation()
 {
-	DeactivateProjectile();
+	if (!HasAuthority())
+	{
+		BodyMesh->SetVisibility(false);
+		if (BodyParticleComp) BodyParticleComp->Deactivate();
+		bActivated = false;
+	}
 }
 
 void ARPGBaseProjectile::DeactivateProjectile()
 {
-	if (HasAuthority())
-	{
-		GetWorldTimerManager().ClearTimer(ExpireTimer);
-		ProjectileMovementComponent->StopMovementImmediately();
-		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		DDeactivateProjectile.ExecuteIfBound();
+	GetWorldTimerManager().ClearTimer(ExpireTimer);
+	ProjectileMovementComponent->Deactivate();
+	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	DDeactivateProjectile.ExecuteIfBound();
 
-		if (ProjInfo.bIsHoming && TargetCharacter)
-		{
-			ProjectileMovementComponent->bIsHomingProjectile = false;
-			TargetCharacter = nullptr;
-		}
-	}
-	else
+	if (ProjInfo.bIsHoming && TargetCharacter)
 	{
-		BodyMesh->SetVisibility(false);
-		if (BodyParticleComp) BodyParticleComp->Deactivate();
+		ProjectileMovementComponent->bIsHomingProjectile = false;
+		TargetCharacter = nullptr;
 	}
 }
 
@@ -269,3 +262,5 @@ void ARPGBaseProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 
 	DOREPLIFETIME(ARPGBaseProjectile, ProjAssets);
 }
+
+
